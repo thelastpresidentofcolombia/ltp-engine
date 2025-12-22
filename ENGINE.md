@@ -1,12 +1,19 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.1.0  
-> **Last Updated:** December 22, 2025  
-> **Status:** Engine-First Architecture ✓ VERIFIED | Products Architecture ✓ IMPLEMENTED
+> **Version:** 1.1.1  
+> **Last Updated:** December 23, 2025  
+> **Status:** Engine-First Architecture ✓ VERIFIED | Products CTA Wiring ✓ COMPLETE
 
 ---
 
 ## 📋 Changelog
+
+### v1.1.1 (December 23, 2025)
+- **FIX:** checkoutUrl-first pattern — Products can bypass `/api/checkout` with direct URLs
+- **FIX:** No hardcoded modal labels — All strings from `operator.ui.labels.products.*`
+- **FIX:** Standardized module anchor IDs — `hero`, `fit`, `offers`, `products`, `tools`, `proof`, `intel`, `conversion`, `footer`
+- **UPDATED:** `ProductsConsultancy.astro` — Full engine-first CTA wiring with modal
+- **UPDATED:** `consultancyDefaults` — Added `detailsLabel`, `modalCta`, `checkoutPending` labels
 
 ### v1.1.0 (December 22, 2025)
 - **NEW:** `mergeById()` — Merges core + lang arrays by ID
@@ -951,12 +958,20 @@ npm run type-check
 
 ## � Roadmap & Next Steps
 
+### ✅ Completed (v1.1.1)
+| Task | Description | Status |
+|------|-------------|--------|
+| Wire Product CTAs | Products components use `resolveProductAction()` | ✅ Done |
+| checkoutUrl-first | Products can bypass API with direct checkout URLs | ✅ Done |
+| No hardcoded labels | Modal strings from `operator.ui.labels` | ✅ Done |
+| Module anchor IDs | All modules have standardized `id` attributes | ✅ Done |
+
 ### Immediate (Next Session)
 | Task | Description | Priority |
 |------|-------------|----------|
-| Wire Product CTAs | Update Products components to use `resolveProductAction()` | 🔴 High |
-| `/api/checkout` | Create Stripe checkout endpoint | 🔴 High |
+| `/api/checkout` | Create Stripe checkout endpoint (stubbed, returns `{ url }`) | 🔴 High |
 | Stripe Price IDs | Add real `stripe.priceId` to Jose's products | 🟡 Medium |
+| Port Offers | Wire `OffersConsultancy.astro` with engine-first patterns | 🟡 Medium |
 
 ### Short-Term (This Week)
 | Task | Description | Priority |

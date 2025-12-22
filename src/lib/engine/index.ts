@@ -7,6 +7,7 @@
  * - resolveModules: Determine which modules to render
  * - applyThemeVars: Generate CSS custom properties from vibe config
  * - resolveProductAction: Determine CTA behavior for products
+ * - resolveOfferAction: Determine CTA behavior for offers
  * - mergeById: Merge core + lang arrays by ID
  */
 
@@ -25,6 +26,21 @@ export {
   getStripePriceId,
   type ProductAction,
 } from './resolveProductAction';
+
+// Offer Actions (Engine-first behavior)
+export {
+  resolveOfferAction,
+  hasOfferStripeIntegration,
+  getOfferStripePriceId,
+  hasDirectCheckoutUrl,
+  getDirectCheckoutUrl,
+  isOfferPurchasable,
+  type OfferAction,
+  type Offer,
+  type OfferCore,
+  type OfferLang,
+  type OfferPrimaryAction,
+} from './resolveOfferAction';
 
 // Merge Utilities
 export { mergeById } from './mergeById';

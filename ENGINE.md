@@ -34,7 +34,7 @@
 
 | Gap | Status | Notes |
 |-----|--------|-------|
-| **Offers not engine-first** | 🔴 Next priority | Products done; Offers need `resolveOfferAction()` or shared resolver |
+| **Offers not engine-first** | � In Progress | `resolveOfferAction()` created; OffersConsultancy.astro wiring next |
 | **Schema.org FAQPage** | 🔄 Planned | JSON-LD injection not yet in EngineLayout |
 | **Stripe Connect** | 🔄 Planned | Current: checkoutUrl-first; Target: split payouts + webhooks |
 | **Zod runtime validation** | 🔄 Planned | Build-time validation exists via scripts |
@@ -308,6 +308,7 @@ The engine library is the **brain** of the system. All business logic lives here
 | `applyThemeVars()` | `applyThemeVars.ts` | Converts vibe tokens to CSS custom properties |
 | `mergeById()` | `mergeById.ts` | Merges core + lang arrays by ID (products, founders, offers) |
 | `resolveProductAction()` | `resolveProductAction.ts` | Determines CTA behavior (checkout/scroll/details) |
+| `resolveOfferAction()` | `resolveOfferAction.ts` | Determines offer CTA behavior (checkout/scroll/details/contact) |
 | `hasStripeIntegration()` | `resolveProductAction.ts` | Checks if product has Stripe config |
 | `getStripePriceId()` | `resolveProductAction.ts` | Gets Stripe price ID for checkout |
 
@@ -999,9 +1000,9 @@ npm run type-check
 ### Immediate (Next Session)
 | Task | Description | Priority |
 |------|-------------|----------|
+| Wire OffersConsultancy | Refactor `OffersConsultancy.astro` to use `resolveOfferAction()` | 🔴 High |
 | `/api/checkout` | Create Stripe checkout endpoint (stubbed, returns `{ url }`) | 🔴 High |
 | Stripe Price IDs | Add real `stripe.priceId` to Jose's products | 🟡 Medium |
-| Port Offers | Wire `OffersConsultancy.astro` with engine-first patterns | 🟡 Medium |
 
 ### Short-Term (This Week)
 | Task | Description | Priority |

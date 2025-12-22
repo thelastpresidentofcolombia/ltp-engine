@@ -5,6 +5,7 @@
  * ENGINE CONTRACT:
  * - Reads: operator.offers, operator.ui.labels.offers
  * - Skin defaults: consultancyDefaults.labels.offers
+ * - Uses: resolveOfferAction() for ALL CTA behavior
  * 
  * TOKEN DEPENDENCIES:
  * - --color-bg-base, --color-bg-inverse
@@ -13,9 +14,17 @@
  * 
  * VISUAL METAPHOR: Systems Architecture / Entry Points
  * Premium card layout with strong visual hierarchy.
+ * 
+ * ENGINE-FIRST WIRING:
+ * - Components don't decide CTA behavior — the engine does
+ * - All buttons use data-action, data-offer-id attributes
+ * - Client script reads attributes and routes accordingly
+ * - Stripe checkout is a drop-in: just implement /api/checkout
  */
 
 import { consultancyDefaults } from '../skin';
+import { resolveOfferAction } from '@/lib/engine/resolveOfferAction';
+import type { Offer } from '@/lib/engine/resolveOfferAction';
 
 interface Props {
   operator: any;
@@ -24,11 +33,35 @@ interface Props {
 
 const { operator } = Astro.props;
 
-const offers: any[] = operator.offers ?? [];
+const offers = (operator.offers ?? []) as Offer[];
 
 // === LABELS (operator.ui.labels.offers → skin defaults) ===
 const sectionLabel = operator.ui?.labels?.offers?.section ?? consultancyDefaults.labels.offers.section;
 const sectionTitle = operator.ui?.labels?.offers?.title ?? consultancyDefaults.labels.offers.title;
+
+// === CTA LABELS (operator.ui.labels.offers → skin defaults) ===
+const primaryCtaLabel = operator.ui?.labels?.offers?.primaryCta ?? consultancyDefaults.labels.offers.primaryCta;
+const detailsLabel = operator.ui?.labels?.offers?.detailsLabel ?? consultancyDefaults.labels.offers.detailsLabel;
+const modalCtaLabel = operator.ui?.labels?.offers?.modalCta ?? consultancyDefaults.labels.offers.modalCta;
+const checkoutPendingMsg = operator.ui?.labels?.offers?.checkoutPending ?? consultancyDefaults.labels.offers.checkoutPending;
+
+// Serialize offers for client-side script (strip functions, keep data)
+// Include checkoutUrl if offer has one (bypass API pattern)
+const offersForClient = offers.map(o => ({
+  id: o.id,
+  name: o.name ?? (o as any).title,
+  description: o.description ?? '',
+  features: o.features ?? (o as any).included ?? [],
+  price: (o as any).priceDisplay ?? (o as any).price ?? '',
+  checkoutUrl: (o as any).checkoutUrl ?? null,
+  cta: o.cta ?? primaryCtaLabel,
+}));
+
+// Labels for client script (no hardcoded strings in JS)
+const clientLabels = {
+  checkoutPending: checkoutPendingMsg,
+  modalCta: modalCtaLabel,
+};
 ---
 
 <section id="offers" class="py-2">
@@ -44,70 +77,119 @@ const sectionTitle = operator.ui?.labels?.offers?.title ?? consultancyDefaults.l
 
     {offers.length > 0 ? (
       <div class="grid md:grid-cols-2 gap-4">
-        {offers.map((offer: any) => (
-          <div 
-            class:list={[
-              'group relative p-6 lg:p-8 flex flex-col border transition-all duration-300',
-              offer.highlight 
-                ? 'bg-[var(--color-bg-inverse)] text-[var(--color-text-inverse)] border-[var(--color-bg-inverse)]' 
-                : 'bg-[var(--color-bg-base)] border-[var(--color-border)] hover:border-[var(--color-border-strong)]',
-            ]}
-          >
-            {/* Featured tag */}
-            {offer.highlight && (
-              <div class="absolute -top-2.5 left-6">
-                <span class="inline-block bg-[var(--color-bg-base)] text-[var(--color-text-primary)] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em]">
-                  Recommended
-                </span>
-              </div>
-            )}
-            
-            {offer.badge && (
-              <p class:list={[
-                'font-mono text-[9px] uppercase tracking-[0.12em] mb-2',
-                offer.highlight ? 'text-[var(--color-text-inverse)]/60' : 'text-[var(--color-text-muted)]',
-              ]}>
-                {offer.badge}
-              </p>
-            )}
-            
-            <h3 class="text-xl lg:text-2xl font-bold mb-3 tracking-tight">{offer.title}</h3>
-            
-            {offer.description && (
-              <p class:list={[
-                'text-sm leading-relaxed mb-6 flex-grow',
-                offer.highlight ? 'text-[var(--color-text-inverse)]/70' : 'text-[var(--color-text-secondary)]',
-              ]}>
-                {offer.description}
-              </p>
-            )}
-            
-            <div class="mt-auto space-y-4">
-              {offer.price && (
-                <p class="text-2xl font-black tracking-tight">
-                  {offer.price}
+        {offers.map((offer) => {
+          // === ENGINE-FIRST: Resolve action at build time ===
+          const action = resolveOfferAction(offer);
+          
+          // Support both new and legacy field names
+          const offerName = offer.name ?? (offer as any).title;
+          const offerDescription = offer.description ?? '';
+          const offerPrice = (offer as any).priceDisplay ?? (offer as any).price ?? '';
+          const offerFeatures = offer.features ?? (offer as any).included ?? [];
+          const offerCta = offer.cta ?? primaryCtaLabel;
+          const isHighlighted = (offer as any).highlight ?? (offer as any).featured ?? false;
+          const offerBadge = (offer as any).badge ?? ((offer as any).kicker ?? '');
+          
+          return (
+            <div 
+              class:list={[
+                'group relative p-6 lg:p-8 flex flex-col border transition-all duration-300',
+                isHighlighted 
+                  ? 'bg-[var(--color-bg-inverse)] text-[var(--color-text-inverse)] border-[var(--color-bg-inverse)]' 
+                  : 'bg-[var(--color-bg-base)] border-[var(--color-border)] hover:border-[var(--color-border-strong)]',
+              ]}
+            >
+              {/* Featured tag */}
+              {isHighlighted && (
+                <div class="absolute -top-2.5 left-6">
+                  <span class="inline-block bg-[var(--color-bg-base)] text-[var(--color-text-primary)] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em]">
+                    Recommended
+                  </span>
+                </div>
+              )}
+              
+              {offerBadge && (
+                <p class:list={[
+                  'font-mono text-[9px] uppercase tracking-[0.12em] mb-2',
+                  isHighlighted ? 'text-[var(--color-text-inverse)]/60' : 'text-[var(--color-text-muted)]',
+                ]}>
+                  {offerBadge}
                 </p>
               )}
               
-              {offer.cta && (
-                <a 
-                  href={offer.href ?? '#conversion'}
-                  class:list={[
-                    'inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] font-bold transition-all duration-200 group/btn',
-                    offer.highlight 
-                      ? 'text-[var(--color-text-inverse)] hover:opacity-80' 
-                      : 'text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)]',
-                  ]}
-                >
-                  {offer.cta}
-                  <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
+              <h3 class="text-xl lg:text-2xl font-bold mb-3 tracking-tight">{offerName}</h3>
+              
+              {offerDescription && (
+                <p class:list={[
+                  'text-sm leading-relaxed mb-4',
+                  isHighlighted ? 'text-[var(--color-text-inverse)]/70' : 'text-[var(--color-text-secondary)]',
+                ]}>
+                  {offerDescription}
+                </p>
               )}
+
+              {/* Features list */}
+              {offerFeatures.length > 0 && (
+                <ul class:list={[
+                  'text-sm space-y-1.5 mb-6 flex-grow',
+                  isHighlighted ? 'text-[var(--color-text-inverse)]/80' : 'text-[var(--color-text-secondary)]',
+                ]}>
+                  {offerFeatures.map((feature: string) => (
+                    <li class="flex items-start gap-2">
+                      <span class={isHighlighted ? 'text-[var(--color-text-inverse)]/40' : 'text-[var(--color-border-strong)]'}>—</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              
+              <div class="mt-auto space-y-4">
+                {offerPrice && (
+                  <p class="text-2xl font-black tracking-tight">
+                    {offerPrice}
+                  </p>
+                )}
+                
+                {/* PRIMARY CTA - Engine-first: uses data-action pattern */}
+                <div class="flex items-center gap-3">
+                  <button 
+                    type="button"
+                    class:list={[
+                      'inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] font-bold transition-all duration-200 group/btn cursor-pointer',
+                      isHighlighted 
+                        ? 'text-[var(--color-text-inverse)] hover:opacity-80' 
+                        : 'text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)]',
+                    ]}
+                    data-action={action.type}
+                    data-offer-id={offer.id}
+                    data-checkout-url={(offer as any).checkoutUrl ?? ''}
+                    data-scroll-target={action.type === 'scroll' ? (action as any).target : (action.type === 'contact' ? (action as any).target : '')}
+                  >
+                    {offerCta}
+                    <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </button>
+
+                  {/* DETAILS BUTTON - Opens modal */}
+                  <button
+                    type="button"
+                    class:list={[
+                      'text-[10px] uppercase tracking-[0.12em] font-medium transition-colors cursor-pointer',
+                      isHighlighted 
+                        ? 'text-[var(--color-text-inverse)]/50 hover:text-[var(--color-text-inverse)]/80' 
+                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]',
+                    ]}
+                    data-action="details"
+                    data-offer-id={offer.id}
+                  >
+                    {detailsLabel}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     ) : (
       <div class="border border-[var(--color-border)] p-10 text-[var(--color-text-muted)]">
@@ -116,3 +198,219 @@ const sectionTitle = operator.ui?.labels?.offers?.title ?? consultancyDefaults.l
     )}
   </div>
 </section>
+
+<!-- OFFER DETAILS MODAL -->
+<dialog 
+  id="offer-details-modal" 
+  class="fixed inset-0 w-full max-w-lg mx-auto my-auto p-0 bg-[var(--color-bg-base)] border border-[var(--color-border)] shadow-2xl backdrop:bg-black/50"
+>
+  <div class="p-8">
+    <div class="flex items-start justify-between mb-6">
+      <h3 id="offer-modal-title" class="text-xl font-bold tracking-tight text-[var(--color-text-primary)]"></h3>
+      <button 
+        id="offer-modal-close" 
+        type="button"
+        class="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <p id="offer-modal-description" class="text-[var(--color-text-secondary)] text-sm mb-4"></p>
+    <ul id="offer-modal-features" class="text-[var(--color-text-secondary)] text-sm leading-relaxed space-y-2 mb-4"></ul>
+    <p id="offer-modal-price" class="text-xl font-bold text-[var(--color-text-primary)] mb-6"></p>
+    <div class="pt-6 border-t border-[var(--color-border)]">
+      <button
+        id="offer-modal-cta"
+        type="button"
+        class="w-full bg-[var(--color-bg-inverse)] text-[var(--color-bg-base)] font-mono text-[10px] uppercase tracking-[0.12em] px-6 py-4 hover:opacity-90 transition-opacity cursor-pointer"
+        data-action="checkout"
+        data-offer-id=""
+      >
+        {modalCtaLabel}
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ENGINE-FIRST CLIENT SCRIPT -->
+<script define:vars={{ offersForClient, clientLabels }}>
+  // Offer data passed from server (serialized at build time)
+  const OFFERS = offersForClient;
+  const LABELS = clientLabels;
+
+  /**
+   * Scroll to target element
+   */
+  function scrollToTarget(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn(`[Engine] Scroll target #${id} not found`);
+      return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /**
+   * Start checkout flow (checkoutUrl-first pattern)
+   * 
+   * Priority:
+   * 1. If offer has checkoutUrl → redirect directly (bypass API)
+   * 2. Else → POST /api/checkout → expects { url } → redirect
+   * 
+   * This keeps Stripe wiring optional and avoids fake API dependencies.
+   */
+  async function startCheckout(offerId, checkoutUrl) {
+    console.log(`[Engine] Checkout requested for offer: ${offerId}`);
+    
+    // Pattern A: Direct checkout URL (Gumroad, Teachable, pre-built Stripe link, etc.)
+    if (checkoutUrl) {
+      console.log(`[Engine] Using direct checkoutUrl`);
+      window.location.href = checkoutUrl;
+      return;
+    }
+
+    // Check if offer has checkoutUrl in data
+    const offer = OFFERS.find(o => o.id === offerId);
+    if (offer?.checkoutUrl) {
+      console.log(`[Engine] Using offer checkoutUrl from data`);
+      window.location.href = offer.checkoutUrl;
+      return;
+    }
+    
+    // Pattern B: API-based checkout (Stripe Checkout Sessions)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offerId }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Checkout failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Stripe Checkout returns { url }
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (e) {
+      console.error('[Engine] Checkout error:', e);
+      // Graceful fallback - uses operator label, not hardcoded string
+      alert(LABELS.checkoutPending);
+    }
+  }
+
+  /**
+   * Open offer details modal
+   */
+  function openDetails(offerId) {
+    const offer = OFFERS.find(o => o.id === offerId);
+    if (!offer) {
+      console.warn(`[Engine] Offer not found: ${offerId}`);
+      return;
+    }
+
+    const modal = document.getElementById('offer-details-modal');
+    const title = document.getElementById('offer-modal-title');
+    const description = document.getElementById('offer-modal-description');
+    const featuresList = document.getElementById('offer-modal-features');
+    const price = document.getElementById('offer-modal-price');
+    const closeBtn = document.getElementById('offer-modal-close');
+    const ctaBtn = document.getElementById('offer-modal-cta');
+
+    if (!modal || !title || !closeBtn) return;
+
+    // Set title
+    title.textContent = offer.name;
+
+    // Set description
+    if (description) {
+      description.textContent = offer.description || '';
+    }
+
+    // Set features
+    if (featuresList) {
+      const items = offer.features ?? [];
+      featuresList.innerHTML = items.map(item => `
+        <li class="flex items-start gap-2">
+          <span class="text-[var(--color-border-strong)] mt-0.5">—</span>
+          <span>${item}</span>
+        </li>
+      `).join('');
+    }
+
+    // Set price
+    if (price) {
+      price.textContent = offer.price || '';
+    }
+
+    // Wire modal CTA to checkout
+    if (ctaBtn) {
+      ctaBtn.setAttribute('data-offer-id', offerId);
+      ctaBtn.setAttribute('data-checkout-url', offer.checkoutUrl || '');
+      if (offer.cta) {
+        ctaBtn.textContent = offer.cta;
+      }
+    }
+
+    // Close handlers
+    closeBtn.onclick = () => modal.close();
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.close();
+    });
+
+    // Show modal
+    modal.showModal();
+  }
+
+  /**
+   * Global click handler for all engine actions
+   * Reads data-action and routes accordingly
+   */
+  document.addEventListener('click', (e) => {
+    const btn = e.target?.closest?.('button[data-action]');
+    if (!btn) return;
+
+    // Only handle offers module buttons (check for offer-specific attributes)
+    const action = btn.getAttribute('data-action');
+    const offerId = btn.getAttribute('data-offer-id');
+    const checkoutUrl = btn.getAttribute('data-checkout-url');
+
+    // Skip if no offer ID (this is a product button, not an offer button)
+    if (!offerId) return;
+
+    console.log(`[Engine/Offers] Action: ${action}, Offer: ${offerId}`);
+
+    switch (action) {
+      case 'checkout':
+        startCheckout(offerId, checkoutUrl);
+        break;
+
+      case 'scroll':
+        const scrollTarget = btn.getAttribute('data-scroll-target') || 'intel';
+        scrollToTarget(scrollTarget);
+        break;
+
+      case 'contact':
+        const contactTarget = btn.getAttribute('data-scroll-target') || 'conversion';
+        scrollToTarget(contactTarget);
+        break;
+
+      case 'details':
+        openDetails(offerId);
+        break;
+
+      default:
+        console.warn(`[Engine/Offers] Unknown action: ${action}`);
+    }
+  });
+
+  // Log engine initialization
+  console.log(`[Engine] Offers module initialized with ${OFFERS.length} offers`);
+</script>

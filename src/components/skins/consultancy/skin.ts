@@ -48,6 +48,11 @@ export const consultancyDefaults = {
     offers: {
       section: 'Entry Points',
       title: 'Systems & Engagements',
+      // CTA labels (engine contract: no hardcoded strings)
+      primaryCta: 'Get Started',
+      detailsLabel: 'Learn More',
+      modalCta: 'Start Now',
+      checkoutPending: 'Checkout is not live yet. Coming soon!',
     },
     products: {
       section: 'Digital Infrastructure',

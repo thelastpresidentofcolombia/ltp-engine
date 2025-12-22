@@ -5,6 +5,7 @@
  * ENGINE CONTRACT:
  * - Reads: operator.products, operator.tools, operator.ui.labels.products
  * - Skin defaults: consultancyDefaults.labels.products
+ * - Uses: resolveProductAction() for ALL CTA behavior
  * 
  * TOKEN DEPENDENCIES:
  * - --color-bg-base, --color-bg-offset, --color-bg-inverse
@@ -13,9 +14,17 @@
  * 
  * VISUAL METAPHOR: Digital Infrastructure / Installable Systems
  * Premium card grid with Swiss precision.
+ * 
+ * ENGINE-FIRST WIRING:
+ * - Components don't decide CTA behavior — the engine does
+ * - All buttons use data-action, data-product-id attributes
+ * - Client script reads attributes and routes accordingly
+ * - Stripe checkout is a drop-in: just implement /api/checkout
  */
 
 import { consultancyDefaults } from '../skin';
+import { resolveProductAction } from '@/lib/engine/resolveProductAction';
+import type { Product } from '@/types/products';
 
 interface Props {
   operator: any;
@@ -24,7 +33,7 @@ interface Props {
 
 const { operator } = Astro.props;
 
-const products: any[] = operator.products ?? [];
+const products = (operator.products ?? []) as Product[];
 
 // Tools might be in a separate array or embedded in products
 const tools: any[] = 
@@ -39,6 +48,15 @@ const productsLabel = operator.ui?.labels?.products?.section ?? consultancyDefau
 const productsTitle = operator.ui?.labels?.products?.title ?? consultancyDefaults.labels.products.title;
 const toolsLabel = operator.ui?.labels?.products?.toolsSection ?? consultancyDefaults.labels.products.toolsSection;
 const toolsTitle = operator.ui?.labels?.products?.tools ?? consultancyDefaults.labels.products.tools;
+
+// Serialize products for client-side script (strip functions, keep data)
+const productsForClient = coreProducts.map(p => ({
+  id: p.id,
+  title: p.title ?? (p as any).name,
+  tagline: p.tagline ?? (p as any).outcome,
+  bullets: p.bullets ?? (p as any).includes ?? [],
+  details: (p as any).details ?? [],
+}));
 ---
 
 <!-- DIGITAL PRODUCTS SECTION -->
@@ -55,61 +73,98 @@ const toolsTitle = operator.ui?.labels?.products?.tools ?? consultancyDefaults.l
 
     {coreProducts.length > 0 ? (
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-0 border border-[var(--color-border)] bg-[var(--color-bg-base)]">
-        {coreProducts.map((product: any, index: number) => (
-          <div 
-            class:list={[
-              'p-6 lg:p-8 flex flex-col relative group',
-              'hover:bg-[var(--color-bg-offset)] transition-colors duration-300',
-              index % 3 !== 2 ? 'lg:border-r border-[var(--color-border)]' : '',
-              index < coreProducts.length - 3 ? 'border-b lg:border-b-0' : '',
-              index < coreProducts.length - (coreProducts.length % 3 || 3) ? 'lg:border-b border-[var(--color-border)]' : '',
-            ]}
-          >
-            {/* Top accent line on hover */}
-            <div class="absolute top-0 left-0 w-full h-0.5 bg-[var(--color-bg-inverse)] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-            
-            {product.badge && (
-              <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2">
-                {product.badge}
-              </p>
-            )}
-            
-            <h3 class="text-lg lg:text-xl font-bold mb-3 tracking-tight text-[var(--color-text-primary)]">{product.name}</h3>
-            
-            {product.outcome && (
-              <p class="text-[var(--color-text-secondary)] text-sm leading-relaxed mb-4">{product.outcome}</p>
-            )}
-            
-            {product.includes && product.includes.length > 0 && (
-              <ul class="text-[10px] text-[var(--color-text-muted)] space-y-2 font-mono border-t border-[var(--color-border)] pt-4 mb-6 flex-grow">
-                {product.includes.slice(0, 5).map((item: string) => (
-                  <li class="flex items-start gap-2">
-                    <span class="text-[var(--color-border-strong)] mt-0.5">—</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            
-            <div class="mt-auto flex items-end justify-between">
-              {product.priceUsd && (
-                <div>
-                  <span class="text-2xl font-black tracking-tight text-[var(--color-text-primary)]">${product.priceUsd.toLocaleString()}</span>
-                  <span class="text-[var(--color-text-muted)] text-xs ml-1">USD</span>
-                </div>
+        {coreProducts.map((product, index: number) => {
+          // === ENGINE-FIRST: Resolve action at build time ===
+          const action = resolveProductAction(product as Product);
+          
+          // Support both new (title) and legacy (name) field names
+          const productTitle = product.title ?? (product as any).name;
+          const productTagline = product.tagline ?? (product as any).outcome;
+          const productBullets = product.bullets ?? (product as any).includes ?? [];
+          const productPrice = product.price ?? (product as any).priceUsd;
+          const productCurrency = product.currency ?? 'USD';
+          const productCta = product.cta ?? 'Get';
+          const productDetailsLabel = product.detailsLabel ?? 'Details';
+          
+          return (
+            <article 
+              class:list={[
+                'p-6 lg:p-8 flex flex-col relative group',
+                'hover:bg-[var(--color-bg-offset)] transition-colors duration-300',
+                index % 3 !== 2 ? 'lg:border-r border-[var(--color-border)]' : '',
+                index < coreProducts.length - 3 ? 'border-b lg:border-b-0' : '',
+                index < coreProducts.length - (coreProducts.length % 3 || 3) ? 'lg:border-b border-[var(--color-border)]' : '',
+              ]}
+            >
+              {/* Top accent line on hover */}
+              <div class="absolute top-0 left-0 w-full h-0.5 bg-[var(--color-bg-inverse)] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+              
+              {product.badge && (
+                <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2">
+                  {product.badge}
+                </p>
               )}
-              <a 
-                href="#conversion"
-                class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors flex items-center gap-1"
-              >
-                Details
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        ))}
+              
+              <h3 class="text-lg lg:text-xl font-bold mb-3 tracking-tight text-[var(--color-text-primary)]">
+                {productTitle}
+              </h3>
+              
+              {productTagline && (
+                <p class="text-[var(--color-text-secondary)] text-sm leading-relaxed mb-4">{productTagline}</p>
+              )}
+              
+              {productBullets.length > 0 && (
+                <ul class="text-[10px] text-[var(--color-text-muted)] space-y-2 font-mono border-t border-[var(--color-border)] pt-4 mb-6 flex-grow">
+                  {productBullets.slice(0, 5).map((item: string) => (
+                    <li class="flex items-start gap-2">
+                      <span class="text-[var(--color-border-strong)] mt-0.5">—</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              
+              <div class="mt-auto flex flex-col gap-4">
+                {/* Price display */}
+                {productPrice && (
+                  <div>
+                    <span class="text-2xl font-black tracking-tight text-[var(--color-text-primary)]">
+                      ${typeof productPrice === 'number' ? productPrice.toLocaleString() : productPrice}
+                    </span>
+                    <span class="text-[var(--color-text-muted)] text-xs ml-1">{productCurrency}</span>
+                  </div>
+                )}
+                
+                {/* === ENGINE-FIRST ACTION BUTTONS === */}
+                <div class="flex items-center justify-between gap-2">
+                  {/* Primary CTA - routes through engine action */}
+                  <button
+                    type="button"
+                    class="flex-1 bg-[var(--color-bg-inverse)] text-[var(--color-bg-base)] font-mono text-[10px] uppercase tracking-[0.12em] px-4 py-3 hover:opacity-90 transition-opacity"
+                    data-action={action.type}
+                    data-product-id={product.id}
+                    data-scroll-target={action.type === 'scroll' ? action.target : ''}
+                  >
+                    {productCta}
+                  </button>
+                  
+                  {/* Secondary CTA - always opens details modal */}
+                  <button
+                    type="button"
+                    class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors flex items-center gap-1 px-2"
+                    data-action="details"
+                    data-product-id={product.id}
+                  >
+                    {productDetailsLabel}
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     ) : (
       <div class="border border-[var(--color-border)] p-10 bg-[var(--color-bg-base)] text-[var(--color-text-muted)]">
@@ -157,3 +212,170 @@ const toolsTitle = operator.ui?.labels?.products?.tools ?? consultancyDefaults.l
     </div>
   </section>
 )}
+
+<!-- PRODUCT DETAILS MODAL -->
+<dialog 
+  id="product-details-modal" 
+  class="fixed inset-0 w-full max-w-lg mx-auto my-auto p-0 bg-[var(--color-bg-base)] border border-[var(--color-border)] shadow-2xl backdrop:bg-black/50"
+>
+  <div class="p-8">
+    <div class="flex items-start justify-between mb-6">
+      <h3 id="modal-title" class="text-xl font-bold tracking-tight text-[var(--color-text-primary)]"></h3>
+      <button 
+        id="modal-close" 
+        type="button"
+        class="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <ul id="modal-details" class="text-[var(--color-text-secondary)] text-sm leading-relaxed space-y-2"></ul>
+    <div class="mt-8 pt-6 border-t border-[var(--color-border)]">
+      <button
+        id="modal-cta"
+        type="button"
+        class="w-full bg-[var(--color-bg-inverse)] text-[var(--color-bg-base)] font-mono text-[10px] uppercase tracking-[0.12em] px-6 py-4 hover:opacity-90 transition-opacity"
+        data-action="checkout"
+        data-product-id=""
+      >
+        Get Now
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ENGINE-FIRST CLIENT SCRIPT -->
+<script define:vars={{ productsForClient }}>
+  // Product data passed from server (serialized at build time)
+  const PRODUCTS = productsForClient;
+
+  /**
+   * Scroll to target element
+   */
+  function scrollToTarget(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn(`[Engine] Scroll target #${id} not found`);
+      return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /**
+   * Start checkout flow
+   * POST /api/checkout → expects { url } → redirect
+   * Stubbed until Stripe is wired.
+   */
+  async function startCheckout(productId) {
+    console.log(`[Engine] Checkout requested for product: ${productId}`);
+    
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Checkout failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Stripe Checkout returns { url }
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (e) {
+      console.error('[Engine] Checkout error:', e);
+      // Graceful fallback until Stripe is live
+      alert('Checkout is not live yet. Coming soon!');
+    }
+  }
+
+  /**
+   * Open product details modal
+   */
+  function openDetails(productId) {
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) {
+      console.warn(`[Engine] Product not found: ${productId}`);
+      return;
+    }
+
+    const modal = document.getElementById('product-details-modal');
+    const title = document.getElementById('modal-title');
+    const list = document.getElementById('modal-details');
+    const closeBtn = document.getElementById('modal-close');
+    const ctaBtn = document.getElementById('modal-cta');
+
+    if (!modal || !title || !list || !closeBtn) return;
+
+    // Set title
+    title.textContent = product.title;
+
+    // Set details (prefer details[], fallback to bullets[])
+    const items = product.details?.length ? product.details : (product.bullets ?? []);
+    list.innerHTML = items.map(item => `
+      <li class="flex items-start gap-2">
+        <span class="text-[var(--color-border-strong)] mt-0.5">—</span>
+        <span>${item}</span>
+      </li>
+    `).join('');
+
+    // Wire modal CTA to checkout
+    if (ctaBtn) {
+      ctaBtn.setAttribute('data-product-id', productId);
+    }
+
+    // Close handlers
+    closeBtn.onclick = () => modal.close();
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.close();
+    });
+
+    // Show modal
+    modal.showModal();
+  }
+
+  /**
+   * Global click handler for all engine actions
+   * Reads data-action and routes accordingly
+   */
+  document.addEventListener('click', (e) => {
+    const btn = e.target?.closest?.('button[data-action]');
+    if (!btn) return;
+
+    const action = btn.getAttribute('data-action');
+    const productId = btn.getAttribute('data-product-id');
+
+    if (!action) return;
+
+    console.log(`[Engine] Action: ${action}, Product: ${productId}`);
+
+    switch (action) {
+      case 'checkout':
+        if (productId) startCheckout(productId);
+        break;
+
+      case 'scroll':
+        const target = btn.getAttribute('data-scroll-target') || 'intel';
+        scrollToTarget(target);
+        break;
+
+      case 'details':
+        if (productId) openDetails(productId);
+        break;
+
+      default:
+        console.warn(`[Engine] Unknown action: ${action}`);
+    }
+  });
+
+  // Log engine initialization
+  console.log(`[Engine] Products module initialized with ${PRODUCTS.length} products`);
+</script>

@@ -1,0 +1,178 @@
+---
+/**
+ * Proof Module (Engine Default)
+ * 
+ * Social proof: testimonials, metrics, badges.
+ */
+
+import type { Operator } from '@/types/operator';
+
+interface Props {
+  operator: Operator;
+  variant?: string;
+}
+
+const { operator, variant = 'proof-carousel' } = Astro.props;
+const proof = (operator as any).proof || [];
+
+const lang = (operator as any).lang || operator._meta?.lang || 'en';
+const labels: Record<string, { title: string }> = {
+  en: { title: 'What Clients Say' },
+  es: { title: 'Lo Que Dicen Nuestros Clientes' },
+};
+const t = labels[lang] || labels.en;
+
+// Separate proof types
+const testimonials = proof?.filter((p: any) => p.type === 'testimonial') || [];
+const metrics = proof?.filter((p: any) => p.type === 'metric') || [];
+---
+
+{proof && proof.length > 0 && (
+  <div class="proof">
+    <div class="container">
+      <h2 class="section-title">{t.title}</h2>
+      
+      {metrics.length > 0 && (
+        <div class="metrics-row">
+          {metrics.map((metric: any) => (
+            <div class="metric">
+              <span class="metric-value">{metric.value}</span>
+              <span class="metric-label">{metric.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {testimonials.length > 0 && (
+        <div class="testimonials-grid">
+          {testimonials.map((item: any) => (
+            <div class="testimonial-card">
+              <div class="testimonial-content">
+                <p>"{item.content}"</p>
+              </div>
+              <div class="testimonial-author">
+                <div class="author-info">
+                  <span class="author-name">{item.author}</span>
+                  {item.role && <span class="author-role">{item.role}</span>}
+                </div>
+                {item.rating && (
+                  <div class="rating">
+                    {Array.from({ length: item.rating }).map(() => (
+                      <span class="star">★</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+<style>
+  .proof {
+    padding: 5rem 2rem;
+    background: var(--color-bg-base);
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .section-title {
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 3rem;
+    color: var(--color-text-primary);
+  }
+  
+  .metrics-row {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    margin-bottom: 4rem;
+    flex-wrap: wrap;
+  }
+  
+  .metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .metric-value {
+    font-family: var(--font-heading);
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--color-accent);
+    line-height: 1;
+  }
+  
+  .metric-label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.5rem;
+  }
+  
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .testimonial-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .testimonial-content p {
+    color: var(--color-text-secondary);
+    font-style: italic;
+    line-height: 1.7;
+    font-size: 1.0625rem;
+  }
+  
+  .testimonial-author {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .author-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .author-name {
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .author-role {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+  
+  .rating {
+    display: flex;
+    gap: 0.125rem;
+  }
+  
+  .star {
+    color: #fbbf24;
+    font-size: 1.125rem;
+  }
+</style>

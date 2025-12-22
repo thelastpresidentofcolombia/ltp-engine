@@ -1,0 +1,292 @@
+{
+  "lang": "es",
+  "location": {
+    "cityName": "Medellín",
+    "countryName": "Colombia"
+  },
+  "brand": {
+    "name": "APEX Performance",
+    "tagline": "Diseña Tu Evolución",
+    "shortName": "APEX",
+    "systemTag": "PERFORMANCE"
+  },
+  "seo": {
+    "title": "APEX Performance // Diseña Tu Evolución",
+    "description": "Programas de transformación respaldados por ciencia para alto rendimiento. Coaching premium que entrega resultados medibles en fuerza, físico y performance.",
+    "keywords": ["coaching de rendimiento", "entrenamiento elite", "transformación corporal", "fitness Medellín"]
+  },
+  "hero": {
+    "badge": "Inscripciones Abiertas: Cohorte Q1",
+    "headline": "Diseña Tu",
+    "headlineAccent": "Evolución",
+    "subhead": "Deja de adivinar. Empieza a diseñar. Nuestros sistemas han transformado 500+ alto performers usando protocolos basados en datos que realmente funcionan.",
+    "stats": [
+      { "value": "500+", "label": "Transformaciones" },
+      { "value": "12 Semanas", "label": "Tiempo Promedio" },
+      { "value": "97%", "label": "Logro de Metas" }
+    ],
+    "cta": {
+      "primary": "Iniciar Evaluación",
+      "secondary": "Ver Programas"
+    }
+  },
+  "diagnostic": {
+    "title": "Evaluación Rápida",
+    "cta": "Obtener Mi Protocolo",
+    "disclaimer": "Evaluación de 2 minutos • Recomendaciones personalizadas"
+  },
+  "fitFilter": {
+    "title": "¿Es Para Ti?",
+    "compatible": {
+      "heading": "Candidatos Ideales",
+      "profiles": [
+        "Profesionales que valoran entrenamiento eficiente y basado en ciencia",
+        "Quienes están listos para comprometer 4-6 horas/semana en mejora sistemática",
+        "Personas que quieren accountability y guía experta",
+        "Alto performers buscando la ventaja en capacidad física"
+      ]
+    },
+    "incompatible": {
+      "heading": "No Es Para",
+      "profiles": [
+        "Buscando soluciones rápidas o píldoras mágicas",
+        "No listo para priorizar sueño y recuperación",
+        "Buscando la opción más barata disponible",
+        "Incapaz de comprometerse a la frecuencia mínima de entrenamiento"
+      ]
+    }
+  },
+  "offers": [
+    {
+      "id": "offer-assessment",
+      "badge": "Gratis",
+      "title": "Evaluación de Performance",
+      "description": "Evaluación comprensiva de tu fitness actual, metas y camino óptimo. Incluye análisis de composición corporal y recomendación de protocolo personalizado.",
+      "price": "Gratis",
+      "cta": "Reservar Evaluación",
+      "highlight": true
+    },
+    {
+      "id": "offer-trial",
+      "badge": "Limitado",
+      "title": "Prueba de 2 Semanas",
+      "description": "Experimenta la metodología APEX con una prueba de 14 días. Incluye programación, acceso a app y un check-in de coaching.",
+      "price": "$97",
+      "cta": "Iniciar Prueba"
+    }
+  ],
+  "products": [
+    {
+      "id": "product-foundation",
+      "badge": "Fundación",
+      "name": "Protocolo Foundation",
+      "description": "El programa esencial de 12 semanas para construir tu base. Perfecto para quienes son nuevos en entrenamiento estructurado o regresan después de tiempo.",
+      "outcome": "Construye fuerza fundacional y hábitos sostenibles",
+      "includes": [
+        "Programa Progresivo de 12 Semanas",
+        "Acceso a App APEX",
+        "Actualizaciones Semanales de Programación",
+        "Biblioteca de Videos de Forma",
+        "Guías de Nutrición",
+        "Acceso a Comunidad"
+      ],
+      "priceUsd": 497,
+      "duration": "12 semanas",
+      "stripePriceId": "price_foundation_xxx"
+    },
+    {
+      "id": "product-elite",
+      "badge": "Más Popular",
+      "name": "Transformación Elite",
+      "description": "Nuestro programa insignia de 16 semanas de recomposición corporal. Combina periodización avanzada con optimización nutricional para resultados dramáticos.",
+      "outcome": "Transformación física completa con resultados duraderos",
+      "includes": [
+        "Programa Periodizado de 16 Semanas",
+        "Llamadas de Coaching 1:1 Bisemanales",
+        "Cálculos de Macros Personalizados",
+        "Análisis de Fotos de Progreso",
+        "Protocolo de Recuperación",
+        "Acceso a Soporte Prioritario"
+      ],
+      "priceUsd": 1497,
+      "duration": "16 semanas",
+      "stripePriceId": "price_elite_xxx"
+    },
+    {
+      "id": "product-apex",
+      "badge": "Premium",
+      "name": "APEX Coaching Privado",
+      "description": "La experiencia de rendimiento definitiva. Contacto diario con coach, todo completamente personalizado y accountability completo.",
+      "outcome": "Rendimiento y físico pico con servicio premium",
+      "includes": [
+        "Programación Completamente Personalizada",
+        "Acceso Diario al Coach (Async)",
+        "Video Llamadas Semanales",
+        "Ajustes de Programa en Tiempo Real",
+        "Protocolo de Suplementos",
+        "Optimización de Estilo de Vida",
+        "Sesiones Presenciales (Local)"
+      ],
+      "priceUsd": 3000,
+      "duration": "por mes",
+      "stripePriceId": "price_apex_xxx"
+    }
+  ],
+  "proof": [
+    {
+      "type": "transformation",
+      "author": "James R.",
+      "role": "Ejecutivo Tech, 38",
+      "beforeImage": "/images/proof/james-before.jpg",
+      "afterImage": "/images/proof/james-after.jpg",
+      "content": "Perdí 14 kg y gané músculo visible en 16 semanas. El sistema simplemente funciona si lo sigues.",
+      "metric": { "value": "-14 kg", "label": "12% Grasa Perdida" },
+      "duration": "16 semanas"
+    },
+    {
+      "type": "transformation",
+      "author": "Maria S.",
+      "role": "Emprendedora, 29",
+      "beforeImage": "/images/proof/maria-before.jpg",
+      "afterImage": "/images/proof/maria-after.jpg",
+      "content": "Finalmente superé mi estancamiento. El accountability del coaching cambió todo.",
+      "metric": { "value": "+7 kg", "label": "Masa Magra Ganada" },
+      "duration": "12 semanas"
+    },
+    {
+      "type": "metric",
+      "value": "500+",
+      "label": "Transformaciones Completadas",
+      "context": "Desde 2020"
+    },
+    {
+      "type": "metric",
+      "value": "97%",
+      "label": "Tasa de Logro de Metas",
+      "context": "Entre clientes que completan programa completo"
+    },
+    {
+      "type": "testimonial",
+      "author": "Carlos M.",
+      "role": "Abogado, 45",
+      "avatar": "/images/proof/carlos.jpg",
+      "content": "A los 45, estoy en la mejor forma de mi vida. Mejor que en mis 20s. El enfoque basado en ciencia hizo toda la diferencia.",
+      "rating": 5
+    }
+  ],
+  "intel": {
+    "title": "Intel de Entrenamiento",
+    "searchPlaceholder": "Buscar preguntas...",
+    "faq": [
+      {
+        "question": "¿Cómo es APEX diferente de otro coaching online?",
+        "answer": "Combinamos programación basada en evidencia con accountability genuino. Cada protocolo está construido sobre investigación revisada por pares, y nuestros coaches tienen certificaciones avanzadas. No hacemos plantillas genéricas — tu programa evoluciona basado en tu biofeedback y datos de progreso.",
+        "category": "general"
+      },
+      {
+        "question": "¿Qué equipo necesito?",
+        "answer": "Los programas Foundation y Elite están diseñados para gimnasios comerciales con equipo estándar (barras, mancuernas, poleas, máquinas). Podemos adaptar para home gyms con aviso previo. APEX Private incluye personalización específica de equipo.",
+        "category": "equipment"
+      },
+      {
+        "question": "¿Cuánto tiempo necesito por semana?",
+        "answer": "La mayoría de programas requieren 4-5 sesiones de entrenamiento de 60-75 minutos cada una. Compromiso semanal total incluyendo prep de comidas y check-ins: aproximadamente 6-8 horas. Programas Elite y APEX pueden ajustarse para agendas más ocupadas.",
+        "category": "time"
+      },
+      {
+        "question": "¿Proveen planes de nutrición?",
+        "answer": "Todos los programas incluyen guía nutricional. Foundation provee objetivos de macros y guías. Elite incluye cálculos personalizados y ajustes bisemanales. APEX Private incluye planificación completa de comidas si se desea.",
+        "category": "nutrition"
+      },
+      {
+        "question": "¿Qué resultados puedo esperar realistamente?",
+        "answer": "Los resultados varían según punto de partida, adherencia y genética. Resultados típicos de 12 semanas: 5-10 kg pérdida de grasa O 2-5 kg ganancia muscular. Nuestra tasa de logro del 97% es entre clientes que completan el programa con 80%+ adherencia.",
+        "category": "results"
+      }
+    ]
+  },
+  "pricing": {
+    "currency": "USD",
+    "title": "Elige Tu Protocolo",
+    "subtitle": "Todos los programas incluyen la app APEX, seguimiento de progreso y acceso a comunidad.",
+    "tiers": [
+      {
+        "id": "tier-foundation",
+        "name": "Foundation",
+        "description": "Construye tu base",
+        "priceUsd": 497,
+        "priceLabel": "12 semanas",
+        "bullets": [
+          "Programa Progresivo 12 Semanas",
+          "Acceso App APEX",
+          "Biblioteca de Videos de Forma",
+          "Guías de Nutrición",
+          "Acceso a Comunidad"
+        ],
+        "cta": "Iniciar Foundation",
+        "popular": false
+      },
+      {
+        "id": "tier-elite",
+        "name": "Elite",
+        "description": "Transformación completa",
+        "priceUsd": 1497,
+        "priceLabel": "16 semanas",
+        "bullets": [
+          "Todo en Foundation",
+          "Coaching 1:1 Bisemanal",
+          "Cálculos de Macros Personalizados",
+          "Análisis de Fotos de Progreso",
+          "Soporte Prioritario"
+        ],
+        "cta": "Ir Elite",
+        "popular": true
+      },
+      {
+        "id": "tier-apex",
+        "name": "APEX Privado",
+        "description": "Coaching premium",
+        "priceUsd": 3000,
+        "priceLabel": "por mes",
+        "bullets": [
+          "Todo en Elite",
+          "Acceso Diario al Coach",
+          "Video Llamadas Semanales",
+          "Todo Completamente Personalizado",
+          "Presencial Disponible"
+        ],
+        "cta": "Aplicar Ahora",
+        "popular": false
+      }
+    ]
+  },
+  "conversion": {
+    "headline": "¿Listo para Iniciar Tu Transformación?",
+    "subhead": "Reserva tu Evaluación de Performance gratuita. Evaluaremos tu estado actual, discutiremos tus metas y recomendaremos el protocolo óptimo para tu situación.",
+    "cta": "Reservar Evaluación Gratis",
+    "ctaSecondary": "¿Preguntas? Chatea con nosotros",
+    "urgency": "Cohorte Q1: 8 lugares restantes"
+  },
+  "footer": {
+    "tagline": "Diseñando rendimiento humano.",
+    "copyright": "© 2024 APEX Performance. Todos los derechos reservados.",
+    "location": "Medellín, Colombia",
+    "links": [
+      { "label": "Programas", "href": "#products" },
+      { "label": "Resultados", "href": "#proof" },
+      { "label": "FAQ", "href": "#intel" }
+    ],
+    "social": [
+      { "platform": "instagram", "url": "https://instagram.com/apexperformance" },
+      { "platform": "youtube", "url": "https://youtube.com/apexperformance" }
+    ],
+    "legal": [
+      { "label": "Privacidad", "href": "/privacy" },
+      { "label": "Términos", "href": "/terms" }
+    ]
+  },
+  "_meta": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-12-22"
+  }
+}

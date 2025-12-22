@@ -1,0 +1,318 @@
+{
+  "lang": "en",
+  "location": {
+    "cityName": "New York City",
+    "countryName": "USA"
+  },
+  "brand": {
+    "name": "Jose Espinosa",
+    "tagline": "Restaurant Operations That Actually Work",
+    "shortName": "JDE",
+    "systemTag": "OPS"
+  },
+  "seo": {
+    "title": "Jose Espinosa // NYC Restaurant Operations Playbooks & Systems",
+    "description": "Battle-tested playbooks from a District Manager running 8 NYC restaurants and $18M+ in annual sales. Stop bleeding labor. Start operating like a pro.",
+    "keywords": ["restaurant operations", "NYC GM playbooks", "restaurant labor management", "restaurant training systems", "Le Pain Quotidien"]
+  },
+  "hero": {
+    "badge": "17 Years in NYC Restaurants",
+    "headline": "Stop Bleeding",
+    "headlineAccent": "Labor & Cash.",
+    "subhead": "You're not bad at this — you just don't have the systems yet. I've spent 17 years managing NYC restaurant floors, from barista to District Manager. Now I'm sharing the exact playbooks that run 8 locations and $18M in sales.",
+    "stats": [
+      { "value": "8", "label": "Restaurants Managed" },
+      { "value": "$18M+", "label": "Annual Sales Oversight" },
+      { "value": "35+", "label": "Managers Trained" }
+    ],
+    "cta": {
+      "primary": "Get the Playbooks",
+      "secondary": "Free Labor Audit"
+    }
+  },
+  "founders": [
+    {
+      "id": "founder-jose",
+      "name": "Jose Daniel Espinosa",
+      "title": "District Manager • Le Pain Quotidien",
+      "shortBio": "From Bronx barista to running 8 NYC restaurants. I know what breaks and what scales.",
+      "credentials": ["District Manager @ LPQ", "$18M+ P&L Responsibility", "35+ Managers Developed"]
+    }
+  ],
+  "fitFilter": {
+    "title": "Is This For You?",
+    "compatible": {
+      "heading": "✓ Built For You If",
+      "profiles": [
+        "You're a GM drowning in daily fires with no SOPs",
+        "You're an owner watching labor costs eat your margins",
+        "You're promoting managers who've never been trained",
+        "You run 2-10 NYC locations and need real systems"
+      ]
+    },
+    "incompatible": {
+      "heading": "✗ Not For You If",
+      "profiles": [
+        "You want theory and frameworks, not executable playbooks",
+        "You're outside NYC and don't deal with our labor laws",
+        "You're looking for magic fixes without implementation",
+        "You think your 'vibe' can replace documented process"
+      ]
+    }
+  },
+  "products": [
+    {
+      "id": "product-gm-playbooks",
+      "badge": "Best Seller",
+      "name": "NYC Restaurant GM Playbook Bundle",
+      "description": "The complete operator toolkit I use to run 8 restaurants. Not video courses — real PDFs, sheets, and checklists you can implement Monday morning.",
+      "outcome": "Run your floor like a district-level operator",
+      "includes": [
+        "Weekly GM Operating Rhythm",
+        "Daily Floor Execution Checklist",
+        "Opening / Closing Manager Playbook",
+        "Labor Control SOP (NYC-Specific)",
+        "Variance Review Template",
+        "P&L Review Framework"
+      ],
+      "priceUsd": 349,
+      "originalPrice": 596,
+      "stripePriceId": "price_playbook_bundle"
+    },
+    {
+      "id": "product-labor-templates",
+      "badge": "Pain Killer",
+      "name": "NYC Labor & Scheduling Templates",
+      "description": "Labor is the #1 killer in NYC restaurants. These templates account for minimum wage, OT rules, split shifts, and manager coverage — the stuff generic tools ignore.",
+      "outcome": "Cut labor costs without cutting quality",
+      "includes": [
+        "Labor Forecast Model",
+        "Sales-to-Labor Ratio Calculator",
+        "NYC-Compliant Schedule Builder",
+        "OT & Split Shift Tracker",
+        "Weekly Variance Report",
+        "Short Loom Walkthroughs"
+      ],
+      "priceUsd": 149,
+      "stripePriceId": "price_labor_templates"
+    },
+    {
+      "id": "product-career-kit",
+      "badge": "Career Move",
+      "name": "GM to District Manager Career Kit",
+      "description": "The invisible jump from store ops to multi-unit leadership. I've made it. This kit shows you exactly how to think, present, and position yourself for promotion.",
+      "outcome": "Get promoted or get hired at the next level",
+      "includes": [
+        "Leadership Mindset Shift Guide",
+        "KPIs That Matter Above Store Level",
+        "How to Present Numbers to Ownership",
+        "Multi-Unit Operator Framework",
+        "Promotion Positioning Playbook",
+        "Interview Prep for DM Roles"
+      ],
+      "priceUsd": 199,
+      "stripePriceId": "price_career_kit"
+    },
+    {
+      "id": "product-diagnostic",
+      "badge": "Self-Assessment",
+      "name": "Restaurant Turnaround Diagnostic",
+      "description": "Before you hire a consultant, diagnose yourself. This structured assessment gives you a Red/Yellow/Green scorecard across the 6 areas that make or break restaurants.",
+      "outcome": "Know exactly what's bleeding before you spend a dime",
+      "includes": [
+        "Labor Health Assessment",
+        "COGS & Variance Analysis",
+        "Management Structure Audit",
+        "Scheduling Discipline Check",
+        "Guest Experience Scorecard",
+        "Sales Leakage Identifier"
+      ],
+      "priceUsd": 79,
+      "stripePriceId": "price_diagnostic_tool"
+    },
+    {
+      "id": "product-training-system",
+      "badge": "Scale Ready",
+      "name": "Manager Training & Onboarding System",
+      "description": "Tired of managers quitting in month 2? This system gives you the SOPs, timelines, and checklists to onboard managers who actually stick and perform.",
+      "outcome": "Stop losing managers to chaos",
+      "includes": [
+        "Manager Onboarding Timeline (Week 1-8)",
+        "Role Expectations by Week",
+        "Training Checklist Templates",
+        "NYC Labor & Safety Awareness Guide",
+        "30/60/90 Day Review Framework",
+        "Manager Retention Playbook"
+      ],
+      "priceUsd": 299,
+      "stripePriceId": "price_training_system"
+    },
+    {
+      "id": "product-investor-kit",
+      "badge": "Exit Ready",
+      "name": "NYC Restaurant Investor Readiness Kit",
+      "description": "Whether you're seeking partners or planning an exit, you need to speak investor language. This kit shows you how to present your numbers credibly.",
+      "outcome": "Get investor-ready without expensive advisors",
+      "includes": [
+        "What Investors Actually Look For",
+        "Clean P&L Structure Template",
+        "EBITDA Normalization Guide",
+        "Red Flags That Kill Deals",
+        "Investor Presentation Framework",
+        "Due Diligence Prep Checklist"
+      ],
+      "priceUsd": 499,
+      "stripePriceId": "price_investor_kit"
+    }
+  ],
+  "offers": [
+    {
+      "id": "offer-starter-bundle",
+      "badge": "Most Popular",
+      "title": "Operator Starter Bundle",
+      "description": "GM Playbooks + Labor Templates. The two systems that stop the bleeding and give you control of your floor. Best value for new operators.",
+      "price": "$449",
+      "originalPrice": "$498",
+      "cta": "Get the Bundle",
+      "highlight": true,
+      "includes": ["GM Playbook Bundle", "Labor & Scheduling Templates", "Priority Email Support"]
+    },
+    {
+      "id": "offer-consultation",
+      "badge": "1:1 Support",
+      "title": "Operations Deep Dive",
+      "description": "90-minute video call where we walk through your specific operation. I'll identify your top 3 priority fixes and give you an action plan.",
+      "price": "$350",
+      "cta": "Book Your Session",
+      "includes": ["90-Min Video Call", "Recording + Notes", "Custom Action Plan", "30-Day Email Follow-up"]
+    }
+  ],
+  "proof": [
+    {
+      "type": "metric",
+      "value": "$18M+",
+      "label": "Annual Sales Under Management",
+      "context": "Across 8 Le Pain Quotidien locations in NYC"
+    },
+    {
+      "type": "metric",
+      "value": "35+",
+      "label": "Managers Trained",
+      "context": "From server to GM, AM to District Manager"
+    },
+    {
+      "type": "metric",
+      "value": "+18%",
+      "label": "Efficiency Gains",
+      "context": "Productivity increase in last quarter through systems"
+    },
+    {
+      "type": "testimonial",
+      "author": "Restaurant Operations Leader",
+      "role": "Multi-Unit NYC Operator",
+      "content": "Jose's labor templates saved us 6 hours per week on scheduling alone. More importantly, we stopped getting hit with OT surprises.",
+      "metric": { "value": "6hrs", "label": "Saved Weekly" },
+      "rating": 5
+    },
+    {
+      "type": "career",
+      "timeline": [
+        { "year": "2003", "role": "Barista/Server", "company": "Café Mozart" },
+        { "year": "2007", "role": "Assistant Manager", "company": "Le Pain Quotidien" },
+        { "year": "2018", "role": "General Manager", "company": "Le Pain Quotidien" },
+        { "year": "2019", "role": "District Manager", "company": "Le Pain Quotidien (8 locations)" }
+      ]
+    }
+  ],
+  "intel": {
+    "title": "Common Questions",
+    "searchPlaceholder": "Search questions...",
+    "faq": [
+      {
+        "question": "Are these playbooks NYC-specific or can I use them elsewhere?",
+        "answer": "The labor templates are specifically built for NYC wage laws, OT rules, and split shift regulations. The GM playbooks and training systems work anywhere, but the labor math is NYC-calibrated. If you're in another city, the principles apply but you'll need to adjust the compliance pieces.",
+        "category": "general"
+      },
+      {
+        "question": "I'm a new GM with no formal training. Will these help?",
+        "answer": "These playbooks were built exactly for you. Most GMs get promoted based on hustle, then left to figure it out. Every playbook is immediately executable — no theory, no fluff. You can implement the Daily Floor Execution Checklist your first morning.",
+        "category": "audience"
+      },
+      {
+        "question": "Why PDF and spreadsheets instead of software?",
+        "answer": "Because operators hate logging into another platform. You need tools that work in the middle of a rush, that you can print and hand to a manager, that don't require wifi. Every template is designed for real-world restaurant chaos, not demo mode.",
+        "category": "format"
+      },
+      {
+        "question": "What makes you qualified to sell these?",
+        "answer": "17 years in NYC restaurants. Started as a barista, now running 8 locations with $18M in sales. I've made every mistake, fixed every problem, and trained 35+ managers. These aren't theoretical frameworks — they're the exact systems I use today.",
+        "category": "credibility"
+      },
+      {
+        "question": "Do you offer refunds?",
+        "answer": "If you implement a playbook and it doesn't work for your operation, email me within 30 days. I'll either help you adapt it or refund you. I don't want your money if you can't use the work.",
+        "category": "guarantee"
+      },
+      {
+        "question": "Can I hire you to consult directly?",
+        "answer": "Yes, but start with the playbooks first. Most operators solve 80% of their problems with the right systems. If you still need hands-on help, book an Operations Deep Dive and we'll build a custom plan.",
+        "category": "service"
+      },
+      {
+        "question": "I manage multiple locations. Is there a bulk option?",
+        "answer": "Email me directly for multi-unit pricing. If you're running 3+ locations, I can put together a custom bundle and potentially include a strategy call to help you roll out across your portfolio.",
+        "category": "pricing"
+      }
+    ]
+  },
+  "conversion": {
+    "headline": "Your Floor Won't Fix Itself.",
+    "subhead": "Every day without systems is another day of labor waste, manager burnout, and preventable fires. Get the playbooks that run $18M in NYC restaurants.",
+    "cta": "Get the Playbooks Now",
+    "ctaSecondary": "Book a Free Call Instead",
+    "urgency": "Same playbooks I use today at Le Pain Quotidien"
+  },
+  "footer": {
+    "tagline": "Restaurant operations that actually work.",
+    "copyright": "© 2025 Jose Espinosa. All rights reserved.",
+    "location": "New York City, NY",
+    "links": [
+      { "label": "Playbooks", "href": "#products" },
+      { "label": "FAQ", "href": "#intel" },
+      { "label": "Book Call", "href": "#conversion" }
+    ],
+    "social": [
+      { "platform": "linkedin", "url": "https://linkedin.com/in/jose-espinosa" }
+    ],
+    "legal": [
+      { "label": "Privacy", "href": "/privacy" },
+      { "label": "Terms", "href": "/terms" }
+    ]
+  },
+  "ui": {
+    "nav": [
+      { "label": "Playbooks", "href": "#products" },
+      { "label": "Bundles", "href": "#offers" },
+      { "label": "FAQ", "href": "#intel" }
+    ],
+    "labels": {
+      "hero": { "metrics": "The Numbers" },
+      "fitFilter": { "section": "Right Fit Check" },
+      "offers": { "section": "Bundles", "title": "Best Value" },
+      "products": { "section": "Digital Playbooks", "title": "Operator-Grade Systems" },
+      "proof": { "section": "Track Record", "title": "17 Years of Results" },
+      "intel": { "section": "Got Questions?" },
+      "conversion": { "section": "Get Started" },
+      "footer": { "nav": "Quick Links", "social": "Connect" }
+    },
+    "cta": {
+      "startHere": "Start Here",
+      "learnMore": "Learn More",
+      "bookCall": "Book a Call"
+    }
+  },
+  "_meta": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-12-22"
+  }
+}

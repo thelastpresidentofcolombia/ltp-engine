@@ -1,0 +1,170 @@
+---
+/**
+ * FitFilter Module (Engine Default)
+ * 
+ * Shows who this service is for (compatible) and not for (incompatible).
+ * Helps qualify leads and set expectations.
+ */
+
+import type { Operator } from '@/types/operator';
+
+interface Props {
+  operator: Operator;
+  variant?: string;
+}
+
+const { operator, variant } = Astro.props;
+const fitFilter = operator.fitFilter as any;
+
+// Get language for labels
+const lang = (operator as any).lang || operator._meta?.lang || 'en';
+
+// Handle both flat array and nested object structures
+const compatibleProfiles = Array.isArray(fitFilter?.compatible) 
+  ? fitFilter.compatible 
+  : fitFilter?.compatible?.profiles || [];
+
+const incompatibleProfiles = Array.isArray(fitFilter?.incompatible)
+  ? fitFilter.incompatible
+  : fitFilter?.incompatible?.profiles || [];
+
+// Use data-provided title/headings or fallback to defaults
+const sectionTitle = fitFilter?.title || (lang === 'es' ? '¿Es Para Ti?' : 'Is This For You?');
+const compatibleHeading = fitFilter?.compatible?.heading || (lang === 'es' ? 'Perfecto si tú...' : 'Perfect fit if you...');
+const incompatibleHeading = fitFilter?.incompatible?.heading || (lang === 'es' ? 'No ideal si tú...' : 'Not ideal if you...');
+---
+
+{fitFilter && (compatibleProfiles.length > 0 || incompatibleProfiles.length > 0) && (
+  <div class="fit-filter">
+    <div class="container">
+      <h2 class="section-title">{sectionTitle}</h2>
+      
+      <div class="filter-grid">
+        {compatibleProfiles.length > 0 && (
+          <div class="filter-column compatible">
+            <div class="column-header">
+              <span class="icon">✓</span>
+              <h3>{compatibleHeading}</h3>
+            </div>
+            <ul>
+              {compatibleProfiles.map((item: any) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {incompatibleProfiles.length > 0 && (
+          <div class="filter-column incompatible">
+            <div class="column-header">
+              <span class="icon">✕</span>
+              <h3>{incompatibleHeading}</h3>
+            </div>
+            <ul>
+              {incompatibleProfiles.map((item: any) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  .fit-filter {
+    padding: 5rem 2rem;
+    background: var(--color-bg-surface);
+  }
+  
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  .section-title {
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 3rem;
+    color: var(--color-text-primary);
+  }
+  
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+  
+  .filter-column {
+    background: var(--color-bg-elevated);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    border: 1px solid var(--color-border);
+  }
+  
+  .column-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .column-header .icon {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: bold;
+  }
+  
+  .compatible .icon {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+  }
+  
+  .incompatible .icon {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+  }
+  
+  .column-header h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  li {
+    color: var(--color-text-secondary);
+    padding-left: 1.5rem;
+    position: relative;
+    line-height: 1.5;
+  }
+  
+  .compatible li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #22c55e;
+    font-weight: bold;
+  }
+  
+  .incompatible li::before {
+    content: '✕';
+    position: absolute;
+    left: 0;
+    color: #ef4444;
+  }
+</style>

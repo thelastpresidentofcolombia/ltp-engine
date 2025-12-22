@@ -1,0 +1,174 @@
+---
+/**
+ * Footer Module (Engine Default)
+ * 
+ * Site footer with links, contact, and legal.
+ */
+
+import type { Operator } from '@/types/operator';
+
+interface Props {
+  operator: Operator;
+  variant?: string;
+}
+
+const { operator, variant = 'footer-simple' } = Astro.props;
+const footer = (operator as any).footer || {};
+const brand = (operator as any).brand || {};
+const contact = (operator as any).contact || {};
+
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <h3 class="brand-name">{brand.name}</h3>
+        {footer.tagline && (
+          <p class="brand-tagline">{footer.tagline}</p>
+        )}
+      </div>
+      
+      {footer.links && footer.links.length > 0 && (
+        <nav class="footer-links">
+          {footer.links.map((link: any) => (
+            <a href={link.href}>{link.label}</a>
+          ))}
+        </nav>
+      )}
+      
+      <div class="footer-contact">
+        {contact.email && (
+          <a href={`mailto:${contact.email}`} class="contact-link">
+            {contact.email}
+          </a>
+        )}
+        {contact.whatsapp && (
+          <a 
+            href={`https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="contact-link"
+          >
+            WhatsApp
+          </a>
+        )}
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p class="copyright">
+        {footer.copyright || `© ${currentYear} ${brand.name}. All rights reserved.`}
+      </p>
+      
+      {footer.legal && footer.legal.length > 0 && (
+        <nav class="legal-links">
+          {footer.legal.map((link: any) => (
+            <a href={link.href}>{link.label}</a>
+          ))}
+        </nav>
+      )}
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    padding: 4rem 2rem 2rem;
+    background: var(--color-bg-base);
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .footer-main {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+  
+  .footer-brand {
+    grid-column: span 1;
+  }
+  
+  .brand-name {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 0.5rem;
+  }
+  
+  .brand-tagline {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  
+  .footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .footer-links a {
+    color: var(--color-text-secondary);
+    transition: color 0.2s ease;
+    font-size: 0.9375rem;
+  }
+  
+  .footer-links a:hover {
+    color: var(--color-accent);
+  }
+  
+  .footer-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .contact-link {
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+    transition: color 0.2s ease;
+  }
+  
+  .contact-link:hover {
+    color: var(--color-accent);
+  }
+  
+  .footer-bottom {
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .copyright {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+  
+  .legal-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+  
+  .legal-links a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    transition: color 0.2s ease;
+  }
+  
+  .legal-links a:hover {
+    color: var(--color-text-secondary);
+  }
+</style>

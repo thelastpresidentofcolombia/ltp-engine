@@ -1,0 +1,10 @@
+# Open Graph Images
+
+Place OG images here following the naming convention:
+- `{vertical}-{slug}.jpg` (1200x630px recommended)
+- `default.jpg` (fallback)
+
+Example:
+- consultancy-jose-daniel-espinosa.jpg
+- fitness-coach-jane-doe.jpg
+- nightlife-medellin-bar-crawl.jpg

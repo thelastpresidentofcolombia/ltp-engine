@@ -1,0 +1,323 @@
+{
+  "lang": "en",
+  "location": {
+    "cityName": "Medellín",
+    "countryName": "Colombia"
+  },
+  "brand": {
+    "name": "Bar Crawl Medellín",
+    "tagline": "The Official Nightlife Circuit",
+    "shortName": "BAR CRAWL",
+    "systemTag": "MDE"
+  },
+  "seo": {
+    "title": "Bar Crawl Medellín // The Official Nightlife Circuit",
+    "description": "The original Medellín bar crawl experience. 4 curated venues, skip-the-line access, local guides, and legendary nights. Running since 2019.",
+    "keywords": ["Medellin bar crawl", "Medellin nightlife", "Poblado nightlife", "Colombia party"]
+  },
+  "hero": {
+    "badge": "Live Status: Poblado District",
+    "headline": "MEDELLÍN",
+    "headlineAccent": "AFTER DARK",
+    "subhead": "Not just a bar crawl. A curated circuit through Medellín's best nightlife — with locals who know every doorman, DJ, and hidden rooftop.",
+    "stats": [
+      { "value": "4", "label": "Curated Venues" },
+      { "value": "500+", "label": "Crawls Run" },
+      { "value": "4.9★", "label": "Google Rating" }
+    ],
+    "cta": {
+      "primary": "Book Your Spot",
+      "secondary": "See The Route"
+    }
+  },
+  "fitFilter": {
+    "title": "The Vibe Check",
+    "compatible": {
+      "heading": "You'll Love This If",
+      "profiles": [
+        "You want the real Medellín experience, not tourist traps",
+        "You're here to meet people and have genuine fun",
+        "You appreciate quality over quantity",
+        "You want someone handling logistics so you can just enjoy"
+      ]
+    },
+    "incompatible": {
+      "heading": "Not For You If",
+      "profiles": [
+        "Looking for the cheapest drinks possible",
+        "Want to cause trouble or drama",
+        "Expect a wild, out-of-control party bus",
+        "Under 21 years old"
+      ]
+    }
+  },
+  "offers": [
+    {
+      "id": "offer-nextcrawl",
+      "badge": "Next Crawl",
+      "title": "This Saturday",
+      "description": "Poblado District • 9 PM Start • 4 Premium Venues",
+      "price": "From $45",
+      "cta": "Reserve Spot",
+      "highlight": true,
+      "urgency": "6 spots left"
+    },
+    {
+      "id": "offer-private",
+      "badge": "Private Groups",
+      "title": "Book Your Crew",
+      "description": "Customize your route, pick your date, VIP treatment guaranteed",
+      "price": "From $300/group",
+      "cta": "Plan Your Night",
+      "highlight": false
+    }
+  ],
+  "products": [
+    {
+      "id": "product-standard",
+      "badge": "The Classic",
+      "name": "Standard Crawl",
+      "description": "The full Bar Crawl Medellín experience. Four venues, local guide, skip-the-line, and welcome drinks included.",
+      "outcome": "A legendary night with zero logistics stress",
+      "includes": [
+        "4 Curated Venues",
+        "Skip-the-Line Entry",
+        "Welcome Drink at Each Stop",
+        "Local Expert Guide",
+        "WhatsApp Concierge",
+        "Photo Memories"
+      ],
+      "priceUsd": 45,
+      "stripePriceId": "price_standard_xxx"
+    },
+    {
+      "id": "product-vip",
+      "badge": "Most Popular",
+      "name": "VIP Experience",
+      "description": "Everything in Standard plus reserved tables, premium spirits, and priority access to exclusive venues.",
+      "outcome": "The premium night out you deserve",
+      "includes": [
+        "Everything in Standard",
+        "Reserved VIP Tables",
+        "Premium Spirits Upgrade",
+        "Exclusive 5th Venue Access",
+        "Private Transport Between Venues",
+        "Priority WhatsApp Support"
+      ],
+      "priceUsd": 95,
+      "stripePriceId": "price_vip_xxx"
+    },
+    {
+      "id": "product-private",
+      "badge": "Groups",
+      "name": "Private Crawl",
+      "description": "Custom route, your people, your pace. Perfect for bachelor/ette parties, birthdays, or corporate events.",
+      "outcome": "Your group, your rules, legendary night",
+      "includes": [
+        "Custom Venue Selection",
+        "Dedicated Private Guide",
+        "Flexible Timing",
+        "VIP Tables Guaranteed",
+        "Open Bar Option Available",
+        "Photographer Add-on Available"
+      ],
+      "priceUsd": 500,
+      "priceLabel": "group rate",
+      "stripePriceId": "price_private_xxx"
+    }
+  ],
+  "route": {
+    "title": "The Circuit",
+    "description": "Four legendary stops, one unforgettable night",
+    "stops": [
+      {
+        "order": 1,
+        "time": "9:00 PM",
+        "name": "Rooftop Warm-Up",
+        "type": "Rooftop Bar",
+        "description": "Start with panoramic city views and craft cocktails",
+        "vibe": "Chill • Sunset Views • Good Music"
+      },
+      {
+        "order": 2,
+        "time": "10:30 PM",
+        "name": "The Speakeasy",
+        "type": "Hidden Bar",
+        "description": "A secret spot most tourists never find",
+        "vibe": "Intimate • Mixology • Conversation"
+      },
+      {
+        "order": 3,
+        "time": "12:00 AM",
+        "name": "Club Central",
+        "type": "Dance Club",
+        "description": "Where the night really begins",
+        "vibe": "Dancing • International • High Energy"
+      },
+      {
+        "order": 4,
+        "time": "2:00 AM",
+        "name": "The Finale",
+        "type": "Main Event",
+        "description": "The venue everyone talks about",
+        "vibe": "Legendary • Peak Hours • Main Event"
+      }
+    ]
+  },
+  "proof": [
+    {
+      "type": "testimonial",
+      "author": "Mike & Group",
+      "role": "Bachelor Party from Texas",
+      "content": "Best night of the whole trip. The guide knew everyone and got us into places we never would have found.",
+      "rating": 5,
+      "platform": "Google"
+    },
+    {
+      "type": "testimonial",
+      "author": "Sarah L.",
+      "role": "Solo Traveler from London",
+      "content": "Was nervous going solo but met amazing people. The guides actually care about everyone having fun.",
+      "rating": 5,
+      "platform": "TripAdvisor"
+    },
+    {
+      "type": "metric",
+      "value": "500+",
+      "label": "Crawls Completed",
+      "context": "Since 2019"
+    },
+    {
+      "type": "metric",
+      "value": "4.9★",
+      "label": "Google Rating",
+      "context": "200+ Reviews"
+    },
+    {
+      "type": "metric",
+      "value": "12,000+",
+      "label": "Happy Crawlers",
+      "context": "From 50+ countries"
+    }
+  ],
+  "intel": {
+    "title": "Intel / FAQ",
+    "searchPlaceholder": "Search...",
+    "faq": [
+      {
+        "question": "What should I wear?",
+        "answer": "Smart casual is the sweet spot. Closed shoes required for clubs (no sandals or flip flops). Guys: jeans and a nice shirt work great. Ladies: dress to impress but comfortable enough to dance!",
+        "category": "dress-code"
+      },
+      {
+        "question": "How much money should I bring?",
+        "answer": "Welcome drinks are included. Budget $30-50 for additional drinks throughout the night. Most venues accept card but having some cash (Colombian pesos) is smart.",
+        "category": "budget"
+      },
+      {
+        "question": "Is it safe?",
+        "answer": "Yes. We've been doing this since 2019 without incident. Our guides know the city intimately, we only go to vetted venues, and we look after our group. That said, normal nightlife precautions apply — don't flash valuables, don't wander off alone.",
+        "category": "safety"
+      },
+      {
+        "question": "Can I join solo?",
+        "answer": "Absolutely! About 40% of our crawlers come solo. The whole point is to meet people. We're experts at breaking the ice and making sure nobody feels left out.",
+        "category": "solo"
+      },
+      {
+        "question": "What if I need to leave early?",
+        "answer": "No problem. You're free to leave whenever you want. Our guides can help you grab a safe taxi. We just can't offer refunds for leaving early.",
+        "category": "logistics"
+      },
+      {
+        "question": "What's the age range usually?",
+        "answer": "Most crawlers are 25-40, but we get everyone from 21 to 55. The common thread is wanting to have a good time responsibly. Must be 21+ to join.",
+        "category": "demographics"
+      }
+    ]
+  },
+  "pricing": {
+    "currency": "USD",
+    "title": "Choose Your Experience",
+    "subtitle": "Every option includes guide, skip-the-line, and welcome drinks.",
+    "tiers": [
+      {
+        "id": "tier-standard",
+        "name": "Standard",
+        "description": "The classic experience",
+        "priceUsd": 45,
+        "priceLabel": "per person",
+        "bullets": [
+          "4 Curated Venues",
+          "Skip-the-Line",
+          "Welcome Drinks",
+          "Local Guide",
+          "WhatsApp Support"
+        ],
+        "cta": "Book Standard",
+        "popular": false
+      },
+      {
+        "id": "tier-vip",
+        "name": "VIP",
+        "description": "Premium night out",
+        "priceUsd": 95,
+        "priceLabel": "per person",
+        "bullets": [
+          "Everything in Standard",
+          "VIP Tables",
+          "Premium Spirits",
+          "5th Exclusive Venue",
+          "Private Transport"
+        ],
+        "cta": "Go VIP",
+        "popular": true
+      },
+      {
+        "id": "tier-private",
+        "name": "Private Group",
+        "description": "Custom experience",
+        "priceUsd": 500,
+        "priceLabel": "up to 10 people",
+        "bullets": [
+          "Custom Route",
+          "Private Guide",
+          "Your Schedule",
+          "VIP Everywhere",
+          "Photographer Available"
+        ],
+        "cta": "Plan Private Crawl",
+        "popular": false
+      }
+    ]
+  },
+  "conversion": {
+    "headline": "Ready for a Legendary Night?",
+    "subhead": "Next crawl: This Saturday, 9 PM. Poblado District. Limited spots.",
+    "cta": "Book Your Spot",
+    "ctaSecondary": "WhatsApp Concierge",
+    "urgency": "6 spots remaining for Saturday"
+  },
+  "footer": {
+    "tagline": "The original Medellín nightlife experience.",
+    "copyright": "© 2024 Bar Crawl Medellín. All rights reserved.",
+    "location": "El Poblado, Medellín",
+    "links": [
+      { "label": "The Route", "href": "#route" },
+      { "label": "Intel", "href": "#intel" },
+      { "label": "Book Now", "href": "#conversion" }
+    ],
+    "social": [
+      { "platform": "instagram", "url": "https://instagram.com/barcrawlmedellin" },
+      { "platform": "tiktok", "url": "https://tiktok.com/@barcrawlmedellin" }
+    ],
+    "legal": [
+      { "label": "Privacy", "href": "/privacy" },
+      { "label": "Terms", "href": "/terms" }
+    ]
+  },
+  "_meta": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-12-22"
+  }
+}

@@ -1,0 +1,135 @@
+---
+/**
+ * Intel Module - Consultancy Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.intel, operator.ui.labels.intel
+ * - Skin defaults: consultancyDefaults.labels.intel
+ * 
+ * TOKEN DEPENDENCIES:
+ * - --color-bg-base, --color-bg-offset, --color-bg-surface
+ * - --color-text-primary, --color-text-secondary, --color-text-muted
+ * - --color-border, --color-border-strong
+ * - --color-bg-inverse (focus ring)
+ * 
+ * VISUAL METAPHOR: Knowledge Base / Intel Database
+ * Clean accordion design with search UX.
+ */
+
+import { consultancyDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const intel = operator.intel ?? {};
+
+// === LABELS (operator.intel → operator.ui.labels.intel → skin defaults) ===
+const sectionLabel = operator.ui?.labels?.intel?.section ?? consultancyDefaults.labels.intel.section;
+const title = intel.title ?? operator.ui?.labels?.intel?.title ?? consultancyDefaults.labels.intel.title;
+const searchPlaceholder = intel.searchPlaceholder ?? operator.ui?.labels?.intel?.searchPlaceholder ?? consultancyDefaults.labels.intel.searchPlaceholder;
+
+const faqItems: any[] = intel.faq ?? [];
+
+// Generate unique ID for client-side search functionality
+const searchId = `intel-search-${Math.random().toString(36).substring(7)}`;
+---
+
+<section id="intel" class="py-2 bg-[var(--color-bg-offset)]">
+  <div class="max-w-[800px] mx-auto px-4 lg:px-10">
+    <div class="mb-2">
+      <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2">
+        {sectionLabel}
+      </p>
+      <h2 class="text-2xl md:text-3xl font-black tracking-tight text-[var(--color-text-primary)]">{title}</h2>
+    </div>
+
+    <!-- Search Input -->
+    <div class="relative mb-6">
+      <input 
+        type="text"
+        id={searchId}
+        placeholder={searchPlaceholder}
+        class="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] px-5 py-4 font-mono text-[11px] uppercase tracking-[0.1em] focus:outline-none focus:border-[var(--color-bg-inverse)] focus:ring-1 focus:ring-[var(--color-bg-inverse)] transition-all placeholder:text-[var(--color-text-muted)] text-[var(--color-text-primary)]"
+        data-intel-search
+      />
+      <svg class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </div>
+
+    <!-- FAQ List -->
+    {faqItems.length > 0 ? (
+      <div class="space-y-0 border-t border-[var(--color-border)] bg-[var(--color-bg-base)]" data-faq-container>
+        {faqItems.map((item: any, index: number) => (
+          <details 
+            class="group border-b border-[var(--color-border)]"
+            data-faq-item
+            data-question={item.question?.toLowerCase()}
+            data-answer={item.answer?.toLowerCase()}
+            data-category={item.category?.toLowerCase()}
+          >
+            <summary class="flex items-center justify-between py-6 px-6 cursor-pointer list-none hover:bg-[var(--color-bg-offset)] transition-colors select-none">
+              <span class="font-medium text-[15px] text-[var(--color-text-primary)] pr-8">{item.question}</span>
+              <span class="flex-shrink-0 w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center group-hover:border-[var(--color-border-strong)] transition-colors">
+                <svg class="w-4 h-4 text-[var(--color-text-muted)] group-open:rotate-45 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+              </span>
+            </summary>
+            <div class="px-6 pb-6 pt-0">
+              <p class="text-[var(--color-text-secondary)] text-[15px] leading-relaxed max-w-2xl">
+                {item.answer}
+              </p>
+            </div>
+          </details>
+        ))}
+      </div>
+    ) : (
+      <div class="border border-[var(--color-border)] p-10 bg-[var(--color-bg-base)] text-[var(--color-text-muted)]">
+        Add FAQ items in <code class="font-mono bg-[var(--color-bg-offset)] px-1.5 py-0.5 text-xs">intel.faq[]</code> array.
+      </div>
+    )}
+  </div>
+</section>
+
+<script>
+  // Client-side search functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInputs = document.querySelectorAll('[data-intel-search]');
+    
+    searchInputs.forEach((input) => {
+      input.addEventListener('input', (e) => {
+        const query = (e.target as HTMLInputElement).value.toLowerCase().trim();
+        const container = input.closest('section')?.querySelector('[data-faq-container]');
+        const items = container?.querySelectorAll('[data-faq-item]');
+        
+        items?.forEach((item) => {
+          const question = item.getAttribute('data-question') ?? '';
+          const answer = item.getAttribute('data-answer') ?? '';
+          const category = item.getAttribute('data-category') ?? '';
+          
+          const matches = query === '' || 
+            question.includes(query) || 
+            answer.includes(query) || 
+            category.includes(query);
+          
+          (item as HTMLElement).style.display = matches ? 'block' : 'none';
+        });
+      });
+    });
+  });
+</script>
+
+<style>
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+  
+  details[open] summary {
+    background-color: var(--color-bg-surface);
+  }
+</style>

@@ -1,0 +1,137 @@
+---
+/**
+ * 404 Not Found Page
+ * 
+ * Displayed when a route doesn't match any operator or page.
+ * Provides language selection and links back to valid content.
+ */
+
+import { seoConfig, SUPPORTED_LANGUAGES, LANGUAGE_NAMES, DEFAULT_LANGUAGE } from '@config/seo';
+
+// Default to 'en' since we can't use request.headers in static mode
+const detectedLang = DEFAULT_LANGUAGE;
+---
+
+<!DOCTYPE html>
+<html lang={detectedLang}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 - Page Not Found | {seoConfig.siteName}</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 2rem;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 500px;
+    }
+    
+    .error-code {
+      font-size: 8rem;
+      font-weight: 800;
+      line-height: 1;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      margin: 1rem 0;
+      font-weight: 600;
+    }
+    
+    p {
+      color: #a0aec0;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    
+    .links {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.5rem;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    
+    a:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    .language-selector {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .language-selector p {
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="error-code">404</div>
+    <h1>Page Not Found</h1>
+    <p>
+      The page you're looking for doesn't exist or has been moved.
+      This might be an invalid operator URL or a broken link.
+    </p>
+    
+    <div class="links">
+      <a href={`/${detectedLang}/`}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Go Home
+      </a>
+    </div>
+    
+    <div class="language-selector">
+      <p>Or select a language:</p>
+      <div class="links">
+        {SUPPORTED_LANGUAGES.map((lang) => (
+          <a href={`/${lang}/`}>
+            {LANGUAGE_NAMES[lang]}
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+</body>
+</html>

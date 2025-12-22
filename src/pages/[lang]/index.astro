@@ -1,0 +1,182 @@
+---
+/**
+ * Language Landing Page
+ * 
+ * Shows available operators for this language or acts as a portal.
+ * In v1, this can be a simple redirect or placeholder.
+ * 
+ * Route: /en/ or /es/
+ */
+
+import type { GetStaticPaths } from 'astro';
+import { SUPPORTED_LANGUAGES, LANGUAGE_NAMES, seoConfig, getAlternateLanguage, buildUrl } from '@config/seo';
+import type { SupportedLanguage } from '@/types/operator';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  return SUPPORTED_LANGUAGES.map((lang) => ({
+    params: { lang },
+  }));
+};
+
+interface Props {
+  lang: SupportedLanguage;
+}
+
+const { lang } = Astro.params as { lang: string };
+const alternateLang = getAlternateLanguage(lang as SupportedLanguage);
+
+// Content by language
+const content = {
+  en: {
+    title: 'Welcome',
+    subtitle: 'Premium operator experiences powered by LTP Engine',
+    cta: 'Explore Operators',
+    switchLang: 'Ver en Español',
+  },
+  es: {
+    title: 'Bienvenido',
+    subtitle: 'Experiencias de operador premium impulsadas por LTP Engine',
+    cta: 'Explorar Operadores',
+    switchLang: 'View in English',
+  },
+};
+
+const t = content[lang as keyof typeof content] || content.en;
+---
+
+<!DOCTYPE html>
+<html lang={lang}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{t.title} | {seoConfig.siteName}</title>
+  <meta name="description" content={t.subtitle} />
+  
+  <!-- Canonical & Hreflang -->
+  <link rel="canonical" href={buildUrl(`/${lang}/`)} />
+  <link rel="alternate" hreflang={lang} href={buildUrl(`/${lang}/`)} />
+  <link rel="alternate" hreflang={alternateLang} href={buildUrl(`/${alternateLang}/`)} />
+  <link rel="alternate" hreflang="x-default" href={buildUrl('/en/')} />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+      color: #fff;
+      padding: 2rem;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 600px;
+    }
+    
+    .logo {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #667eea;
+      margin-bottom: 2rem;
+    }
+    
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #fff 0%, #a0aec0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      font-size: 1.25rem;
+      color: #a0aec0;
+      margin-bottom: 3rem;
+      line-height: 1.6;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">LTP Engine</div>
+    <h1>{t.title}</h1>
+    <p class="subtitle">{t.subtitle}</p>
+    
+    <div class="actions">
+      <a href={`/${lang}/v/consultancy/demo`} class="btn btn-primary">
+        {t.cta}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+      <a href={`/${alternateLang}/`} class="btn btn-secondary">
+        {t.switchLang}
+      </a>
+    </div>
+    
+    <div class="footer">
+      <p>© {new Date().getFullYear()} {seoConfig.siteName}. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>

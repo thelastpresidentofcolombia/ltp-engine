@@ -1,0 +1,83 @@
+{
+  "id": "tours-demo",
+  "vertical": "tours",
+  "contact": {
+    "email": "book@barcrawl-medellin.com",
+    "whatsapp": "+573005551234",
+    "conciergeWhatsapp": "+573005555678"
+  },
+  "location": {
+    "city": "medellin",
+    "country": "CO",
+    "timezone": "America/Bogota",
+    "district": "El Poblado"
+  },
+  "vibe": {
+    "vibeId": "nightlife-electric",
+    "nomenclatureSetId": "nightlife-crawl",
+    "presentationSetId": "neon-dark",
+    "tokens": {
+      "bgDeep": "#050505",
+      "neonAccent": "#39ff14",
+      "textPrimary": "#ffffff",
+      "textMuted": "#9ca3af",
+      "fontBrand": "Syncopate",
+      "fontBody": "Space Mono"
+    }
+  },
+  "modules": [
+    "hero",
+    "fitFilter",
+    "offers",
+    "products",
+    "proof",
+    "intel",
+    "conversion",
+    "footer"
+  ],
+  "media": {
+    "heroImage": "/images/tours/hero-nightlife.jpg",
+    "heroImageAlt": "Medellin nightlife scene",
+    "heroVideoUrl": "https://videos.example.com/medellin-nightlife.mp4",
+    "ogImage": "/images/tours/og-demo.jpg",
+    "favicon": "/favicon.ico",
+    "galleryImages": [
+      "/images/tours/gallery-1.jpg",
+      "/images/tours/gallery-2.jpg",
+      "/images/tours/gallery-3.jpg"
+    ]
+  },
+  "liveStatus": {
+    "enabled": true,
+    "label": "Live Status",
+    "district": "Poblado District"
+  },
+  "pricing": {
+    "currency": "USD",
+    "tiers": [
+      {
+        "id": "tier-standard",
+        "priceUsd": 75
+      },
+      {
+        "id": "tier-vip",
+        "priceUsd": 150
+      },
+      {
+        "id": "tier-private",
+        "priceUsd": 300
+      }
+    ]
+  },
+  "integrations": {
+    "stripeProductIds": {
+      "tier-standard": "price_standard_xxx",
+      "tier-vip": "price_vip_xxx",
+      "tier-private": "price_private_xxx"
+    },
+    "analytics": {
+      "gaId": "G-ZZZZZZZZZZ",
+      "gtmId": "GTM-ZZZZZZZ"
+    }
+  }
+}

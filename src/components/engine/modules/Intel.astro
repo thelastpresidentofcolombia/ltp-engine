@@ -1,0 +1,131 @@
+---
+/**
+ * Intel Module (Engine Default)
+ * 
+ * FAQ section and additional information.
+ */
+
+import type { Operator } from '@/types/operator';
+
+interface Props {
+  operator: Operator;
+  variant?: string;
+}
+
+const { operator, variant } = Astro.props;
+const intel = (operator as any).intel || {};
+
+const lang = (operator as any).lang || operator._meta?.lang || 'en';
+const labels: Record<string, { defaultTitle: string }> = {
+  en: { defaultTitle: 'Frequently Asked Questions' },
+  es: { defaultTitle: 'Preguntas Frecuentes' },
+};
+const t = labels[lang] || labels.en;
+
+const title = intel?.title || t.defaultTitle;
+const faq = intel?.faq || [];
+---
+
+{faq.length > 0 && (
+  <div class="intel">
+    <div class="container">
+      <h2 class="section-title">{title}</h2>
+      
+      <div class="faq-list">
+        {faq.map((item: any) => (
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span class="question-text">{item.question}</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="faq-answer">
+              <p>{item.answer}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  .intel {
+    padding: 5rem 2rem;
+    background: var(--color-bg-surface);
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .section-title {
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 3rem;
+    color: var(--color-text-primary);
+  }
+  
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .faq-item {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  
+  .faq-question {
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    list-style: none;
+    transition: background 0.2s ease;
+  }
+  
+  .faq-question::-webkit-details-marker {
+    display: none;
+  }
+  
+  .faq-question:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  
+  .question-text {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.4;
+  }
+  
+  .icon {
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--color-accent);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  
+  .faq-item[open] .icon {
+    transform: rotate(45deg);
+  }
+  
+  .faq-answer {
+    padding: 0 1.5rem 1.25rem;
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .faq-answer p {
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    padding-top: 1rem;
+  }
+</style>

@@ -1,0 +1,104 @@
+---
+/**
+ * Main Operator Page Route
+ * 
+ * This is the core route that renders any operator in any language.
+ * Route pattern: /[lang]/v/[vertical]/[slug]
+ * 
+ * Examples:
+ * - /en/v/consultancy/demo
+ * - /es/v/fitness/demo
+ * - /en/v/tours/demo
+ * 
+ * The page:
+ * 1. Validates lang, vertical, slug params
+ * 2. Loads operator data (core.json + {lang}.json merged)
+ * 3. Resolves the skin for this vertical
+ * 4. Resolves module order
+ * 5. Applies vibe theme variables
+ * 6. Renders via ModuleRenderer
+ */
+
+import type { GetStaticPaths } from 'astro';
+import type { SupportedLang, SupportedVertical, Operator } from '@/types/operator';
+import { SUPPORTED_LANGS, buildHreflangLinks, buildOperatorUrl } from '@config/seo';
+import { SUPPORTED_VERTICALS } from '@config/engine';
+import EngineLayout from '@/layouts/EngineLayout.astro';
+import ModuleRenderer from '@/components/engine/ModuleRenderer.astro';
+
+// Engine library
+import { 
+  loadOperator,
+  loadAllOperatorPaths,
+  resolveSkin, 
+  resolveModules, 
+  applyThemeVars,
+  skinToCssClasses,
+} from '@/lib/engine';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  // Load all operator paths from JSON files
+  const allPaths = loadAllOperatorPaths();
+  
+  return allPaths.map(({ vertical, slug, lang }) => {
+    const operator = loadOperator(vertical, slug, lang);
+    
+    if (!operator) {
+      throw new Error(`Failed to load operator: ${vertical}/${slug}/${lang}`);
+    }
+    
+    return {
+      params: { lang, vertical, slug },
+      props: { operator },
+    };
+  });
+};
+
+interface Props {
+  operator: Operator;
+}
+
+const { lang, vertical, slug } = Astro.params as { lang: string; vertical: string; slug: string };
+const { operator } = Astro.props as unknown as Props;
+
+// Validate params (defensive check - getStaticPaths should only return valid combos)
+if (!SUPPORTED_LANGS.includes(lang as SupportedLang)) {
+  return Astro.redirect('/404');
+}
+
+if (!SUPPORTED_VERTICALS.includes(vertical as SupportedVertical)) {
+  return Astro.redirect('/404');
+}
+
+// Build hreflang links
+const hreflangLinks = buildHreflangLinks(vertical, slug);
+const canonicalUrl = buildOperatorUrl(vertical, slug, lang as SupportedLang);
+
+// Apply theme variables from vibe system
+const { styleString } = applyThemeVars(operator);
+
+// Resolve skin for this vertical/operator
+const skin = resolveSkin(operator);
+const skinClasses = skinToCssClasses(skin);
+
+// Resolve which modules to render
+const { modules: activeModules, skipped, errors } = resolveModules(operator);
+
+// Log any module resolution issues in dev
+if (import.meta.env.DEV && (skipped.length > 0 || errors.length > 0)) {
+  console.log(`[${operator.id}] Module resolution:`, { activeModules, skipped, errors });
+}
+---
+
+<EngineLayout 
+  title={operator.seo.title}
+  description={operator.seo.description}
+  lang={lang as SupportedLang}
+  canonicalUrl={canonicalUrl}
+  hreflangLinks={hreflangLinks}
+  operator={operator}
+>
+  <div class:list={skinClasses} style={styleString}>
+    <ModuleRenderer operator={operator} modules={activeModules} skin={skin} />
+  </div>
+</EngineLayout>

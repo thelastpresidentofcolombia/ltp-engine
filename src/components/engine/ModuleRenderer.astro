@@ -1,0 +1,120 @@
+---
+/**
+ * Module Renderer
+ * 
+ * The core engine component that renders operator modules in order.
+ * Each module is resolved to its appropriate skin component.
+ * 
+ * Props:
+ * - operator: Full operator data
+ * - modules: Resolved list of module IDs to render (from resolveModules)
+ * - skin: Resolved skin config (from resolveSkin)
+ */
+
+import type { Operator, ModuleId } from '@/types/operator';
+import type { SkinConfig } from '@/lib/engine/resolveSkin';
+
+// Default module components (fallback)
+import HeroModule from '@/components/engine/modules/Hero.astro';
+import FitFilterModule from '@/components/engine/modules/FitFilter.astro';
+import OffersModule from '@/components/engine/modules/Offers.astro';
+import ProductsModule from '@/components/engine/modules/Products.astro';
+import ProofModule from '@/components/engine/modules/Proof.astro';
+import IntelModule from '@/components/engine/modules/Intel.astro';
+import ConversionModule from '@/components/engine/modules/Conversion.astro';
+import FooterModule from '@/components/engine/modules/Footer.astro';
+
+// Vertical-specific skins
+import { consultancySkin } from '@/components/skins/consultancy/skin';
+
+interface Props {
+  operator: Operator;
+  modules?: ModuleId[];
+  skin?: SkinConfig;
+}
+
+const { operator, modules, skin } = Astro.props;
+
+// Default module component mapping (fallback for verticals without skins)
+const defaultModuleComponents: Record<string, any> = {
+  hero: HeroModule,
+  fitFilter: FitFilterModule,
+  offers: OffersModule,
+  products: ProductsModule,
+  proof: ProofModule,
+  intel: IntelModule,
+  conversion: ConversionModule,
+  footer: FooterModule,
+};
+
+// Skin registry - maps verticals to their skin component overrides
+const skinRegistry: Record<string, Record<string, any>> = {
+  consultancy: consultancySkin.components,
+  // fitness: fitnessSkin.components,  // TODO: Phase 6
+  // tours: toursSkin.components,      // TODO: Phase 6
+  // nightlife: nightlifeSkin.components, // TODO: Phase 6
+};
+
+// Resolve module components based on vertical
+// Uses skin components if available, falls back to default
+const vertical = operator.vertical ?? 'consultancy';
+const skinComponents = skinRegistry[vertical] ?? {};
+const moduleComponents: Record<string, any> = {
+  ...defaultModuleComponents,
+  ...skinComponents, // Skin overrides default
+};
+
+// Use provided modules or fall back to operator's module list
+const modulesToRender = modules || (operator.modules as ModuleId[]);
+
+// Filter to only modules we have components for
+const validModules = modulesToRender.filter(
+  (moduleId) => moduleId in moduleComponents
+);
+---
+
+<div class="module-stack" data-skin={skin?.id}>
+  {validModules.map((moduleId) => {
+    const ModuleComponent = moduleComponents[moduleId];
+    // Variant priority: operator.vibe.moduleVariants > skin default
+    const operatorVariant = operator.vibe?.moduleVariants?.[moduleId as ModuleId];
+    const skinVariant = skin?.components?.[moduleId as keyof typeof skin.components];
+    const variant = operatorVariant ?? skinVariant;
+    
+    return (
+      <section 
+        class="module"
+        data-module={moduleId}
+        data-variant={variant}
+        id={moduleId}
+      >
+        <ModuleComponent 
+          operator={operator} 
+          variant={variant}
+        />
+      </section>
+    );
+  })}
+</div>
+
+<style>
+  .module-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .module {
+    /* Modules control their own internal spacing */
+  }
+  
+  /* Hero has no top spacing */
+  .module[data-module="hero"] {
+    margin-top: 0;
+  }
+  
+  /* Footer has no bottom gap */
+  .module[data-module="footer"] {
+    margin-top: auto;
+  }
+</style>

@@ -1,0 +1,12 @@
+# Robots.txt for Go Elite Engine sites
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://goeliteglobal.com/sitemap.xml
+
+# Disallow admin/private paths (if any)
+Disallow: /api/
+Disallow: /_astro/

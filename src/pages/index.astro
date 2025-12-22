@@ -1,0 +1,16 @@
+---
+/**
+ * Root index - redirects to default language
+ * 
+ * The engine uses URL-based language routing:
+ * - /en/... for English
+ * - /es/... for Spanish
+ * 
+ * Root "/" redirects to the default language.
+ */
+
+import { DEFAULT_LANGUAGE } from '@config/seo';
+
+// Redirect to default language
+return Astro.redirect(`/${DEFAULT_LANGUAGE}/`, 301);
+---

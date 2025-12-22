@@ -1,0 +1,141 @@
+---
+/**
+ * Proof Module - Consultancy Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.proof, operator.ui.labels.proof
+ * - Skin defaults: consultancyDefaults.labels.proof
+ * 
+ * TOKEN DEPENDENCIES:
+ * - --color-bg-base, --color-bg-offset
+ * - --color-text-primary, --color-text-secondary, --color-text-muted
+ * - --color-border, --color-border-strong
+ * 
+ * VISUAL METAPHOR: Verified Results / Track Record
+ * Metrics, testimonials, and social proof with premium visual treatment.
+ */
+
+import { consultancyDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const proofItems: any[] = operator.proof ?? [];
+
+// Separate by type
+const metrics = proofItems.filter((p: any) => p.type === 'metric');
+const testimonials = proofItems.filter((p: any) => p.type === 'testimonial');
+const logoWall = proofItems.find((p: any) => p.type === 'logo-wall');
+
+// === LABELS (operator.ui.labels.proof → skin defaults) ===
+const sectionLabel = operator.ui?.labels?.proof?.section ?? consultancyDefaults.labels.proof.section;
+const sectionTitle = operator.ui?.labels?.proof?.title ?? consultancyDefaults.labels.proof.title;
+const logosLabel = operator.ui?.labels?.proof?.logos ?? consultancyDefaults.labels.proof.logos;
+---
+
+<section id="proof" class="py-2 bg-[var(--color-bg-offset)]">
+  <div class="max-w-[1100px] mx-auto px-4 lg:px-10">
+    <div class="mb-2">
+      <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2">
+        {sectionLabel}
+      </p>
+      <h2 class="text-2xl md:text-3xl font-black tracking-tight text-[var(--color-text-primary)]">{sectionTitle}</h2>
+    </div>
+
+    {proofItems.length > 0 ? (
+      <div class="space-y-4">
+        <!-- Metrics Row - only as many columns as we have metrics -->
+        {metrics.length > 0 && (
+          <div class:list={[
+            'grid gap-0 border border-[var(--color-border)] bg-[var(--color-bg-base)]',
+            metrics.length === 1 ? 'grid-cols-1' : '',
+            metrics.length === 2 ? 'grid-cols-2' : '',
+            metrics.length === 3 ? 'grid-cols-3' : '',
+            metrics.length >= 4 ? 'grid-cols-2 lg:grid-cols-4' : '',
+          ]}>
+            {metrics.slice(0, 4).map((metric: any, index: number) => (
+              <div 
+                class:list={[
+                  'p-6 lg:p-8 text-center group hover:bg-[var(--color-bg-offset)] transition-colors',
+                  index < metrics.slice(0, 4).length - 1 && metrics.length > 1 ? 'border-r border-[var(--color-border)]' : '',
+                ]}
+              >
+                <p class="text-3xl md:text-4xl font-black tracking-tight text-[var(--color-text-primary)]">
+                  {metric.value}
+                </p>
+                <p class="text-[9px] text-[var(--color-text-muted)] font-mono uppercase tracking-[0.1em] mt-2">
+                  {metric.label}
+                </p>
+                {metric.context && (
+                  <p class="text-[11px] text-[var(--color-text-muted)] mt-1">{metric.context}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <!-- Testimonials Grid -->
+        {testimonials.length > 0 && (
+          <div class="grid md:grid-cols-2 gap-4">
+            {testimonials.map((testimonial: any) => (
+              <div class="group border border-[var(--color-border)] bg-[var(--color-bg-base)] p-5 lg:p-6 hover:border-[var(--color-border-strong)] transition-all duration-300 relative">
+                {/* Quote mark */}
+                <div class="absolute top-3 right-4 text-4xl text-[var(--color-border)] font-serif leading-none select-none">
+                  "
+                </div>
+                
+                <blockquote class="text-sm lg:text-base text-[var(--color-text-primary)] leading-relaxed mb-4 relative z-10 pr-8">
+                  "{testimonial.content}"
+                </blockquote>
+                
+                <div class="flex items-center justify-between pt-6 border-t border-[var(--color-border)]">
+                  <div>
+                    <p class="font-bold text-[var(--color-text-primary)]">{testimonial.author}</p>
+                    {testimonial.role && (
+                      <p class="text-sm text-[var(--color-text-muted)] mt-0.5">{testimonial.role}</p>
+                    )}
+                  </div>
+                  
+                  {testimonial.metric && (
+                    <div class="text-right pl-4">
+                      <p class="text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
+                        {testimonial.metric.value}
+                      </p>
+                      <p class="text-[10px] text-[var(--color-text-muted)] font-mono uppercase tracking-[0.1em]">
+                        {testimonial.metric.label}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <!-- Logo Wall -->
+        {logoWall && logoWall.logos && logoWall.logos.length > 0 && (
+          <div class="border-t border-[var(--color-border)] pt-6">
+            <p class="font-mono text-[9px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-3 text-center">
+              {logosLabel}
+            </p>
+            <div class="flex flex-wrap justify-center items-center gap-x-12 gap-y-4">
+              {logoWall.logos.map((logo: any) => (
+                <div class="text-lg font-bold text-[var(--color-border-strong)] hover:text-[var(--color-text-muted)] transition-colors cursor-default">
+                  {logo.name}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    ) : (
+      <div class="border border-[var(--color-border)] p-10 bg-[var(--color-bg-base)] text-[var(--color-text-muted)]">
+        Add proof items in <code class="font-mono bg-[var(--color-bg-offset)] px-1.5 py-0.5 text-xs">proof[]</code> array.
+      </div>
+    )}
+  </div>
+</section>

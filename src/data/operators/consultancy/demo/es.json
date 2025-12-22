@@ -1,0 +1,290 @@
+{
+  "lang": "es",
+  "location": {
+    "cityName": "Medellín",
+    "countryName": "Colombia"
+  },
+  "brand": {
+    "name": "Elite Systems",
+    "tagline": "Arquitectura de Negocios para Escalar",
+    "shortName": "ELITE",
+    "systemTag": "SYSTEMS"
+  },
+  "seo": {
+    "title": "Elite Systems // Arquitectura de Negocios para Escalar",
+    "description": "Instala sistemas operativos probados que transforman cómo adquieres, conviertes y retienes clientes de alto valor. Consultoría estratégica para operadores que construyen para escalar.",
+    "keywords": ["consultoría de negocios", "arquitectura de sistemas", "estrategia de escalamiento", "consultoría Medellín"]
+  },
+  "hero": {
+    "badge": "Sistemas Estratégicos",
+    "headline": "Crecimiento Predecible",
+    "headlineAccent": "por Diseño.",
+    "subhead": "No necesitas más tácticas. Necesitas un sistema operativo que se multiplique. Instalamos la arquitectura que convierte el caos en precisión.",
+    "stats": [
+      { "value": "127+", "label": "Sistemas Instalados" },
+      { "value": "3.2x", "label": "Aumento Promedio" },
+      { "value": "14", "label": "Países Atendidos" }
+    ],
+    "cta": {
+      "primary": "Ver Sistemas",
+      "secondary": "Diagnóstico Gratis"
+    }
+  },
+  "founders": [
+    {
+      "id": "founder-principal",
+      "name": "Juan D. Espinosa",
+      "title": "Consultor Principal",
+      "shortBio": "Ex-McKinsey. 12+ años construyendo sistemas que escalan.",
+      "credentials": ["Ex-McKinsey", "MBA Harvard", "127+ Sistemas Instalados"]
+    }
+  ],
+  "fitFilter": {
+    "title": "Verificación de Compatibilidad",
+    "compatible": {
+      "heading": "[01] Operadores Compatibles",
+      "profiles": [
+        "Ingresos $500K+ buscando sistemas de escalamiento predecibles",
+        "Negocios de servicios con ofertas premium ($2K+)",
+        "Fundadores listos para instalar procesos sobre personalidad",
+        "Equipos que ejecutan — no solo idean"
+      ]
+    },
+    "incompatible": {
+      "heading": "[00] No es un Fit",
+      "profiles": [
+        "Startups pre-ingresos aún buscando product-market fit",
+        "Negocios buscando tácticas de marketing rápidas",
+        "Operadores que no quieren documentar y sistematizar",
+        "Quienes esperan resultados sin compromiso de implementación"
+      ]
+    }
+  },
+  "offers": [
+    {
+      "id": "offer-diagnostic",
+      "badge": "Punto de Entrada",
+      "title": "Diagnóstico de Sistemas",
+      "description": "Inmersión de 90 minutos en tus operaciones actuales. Sales con un roadmap priorizado de los sistemas exactos que bloquean tu siguiente nivel.",
+      "price": "Gratis",
+      "cta": "Reservar Diagnóstico",
+      "highlight": true
+    },
+    {
+      "id": "offer-sprint",
+      "badge": "Victoria Rápida",
+      "title": "Sprint de 7 Días",
+      "description": "Un sistema crítico, completamente instalado en 7 días. Elige entre: Motor de Adquisición, Suite de SOPs de Entrega, o Dashboard de Revenue Ops.",
+      "price": "$2,500",
+      "cta": "Iniciar Sprint"
+    }
+  ],
+  "products": [
+    {
+      "id": "product-acquisition",
+      "badge": "Sistema Core",
+      "name": "Motor de Adquisición de Clientes",
+      "description": "El sistema completo para atraer, calificar y convertir clientes de alto valor en autopiloto. Incluye funnels, secuencias y frameworks de calificación.",
+      "outcome": "Convierte extraños en llamadas calificadas sin perseguir",
+      "includes": [
+        "Arquitectura de Lead Magnet",
+        "Plantillas de Secuencia de Email (12)",
+        "Scorecard de Calificación",
+        "Guía de Setup de CRM",
+        "Calendario de Lanzamiento 90 Días"
+      ],
+      "priceUsd": 997,
+      "stripePriceId": "price_acquisition_xxx"
+    },
+    {
+      "id": "product-delivery",
+      "badge": "Sistema Core",
+      "name": "Suite de Excelencia en Entrega",
+      "description": "Deja de reinventar cada engagement. Instala SOPs que aseguran entrega consistente y premium sin importar quién ejecuta.",
+      "outcome": "Entrega resultados 5 estrellas siempre, con cualquier miembro del equipo",
+      "includes": [
+        "SOPs de Entrega de Servicio (8)",
+        "Automatización de Onboarding",
+        "Sistema de Checklist de QA",
+        "Plantillas de Loop de Feedback",
+        "Módulos de Entrenamiento de Equipo"
+      ],
+      "priceUsd": 1497,
+      "stripePriceId": "price_delivery_xxx"
+    },
+    {
+      "id": "product-revenue",
+      "badge": "Sistema Avanzado",
+      "name": "Sistema Operativo de Revenue",
+      "description": "El centro de comando para escalar. Visibilidad en tiempo real de pipeline, capacidad y flujo de caja — las métricas que importan.",
+      "outcome": "Toma decisiones basadas en datos, no en intuición",
+      "includes": [
+        "Dashboard de KPIs (Notion + Sheets)",
+        "Sistema de Tracking de Pipeline",
+        "Modelo de Planificación de Capacidad",
+        "Plantillas de Proyección Financiera",
+        "Protocolo de Revisión Semanal"
+      ],
+      "priceUsd": 1997,
+      "stripePriceId": "price_revenue_xxx"
+    }
+  ],
+  "proof": [
+    {
+      "type": "testimonial",
+      "author": "Marcus Chen",
+      "role": "Fundador, Chen & Associates",
+      "avatar": "/images/proof/marcus.jpg",
+      "content": "Pasamos de 'ocupados pero quebrados' a meses de $180K en 6 meses. Los sistemas que instalaron cambiaron todo sobre cómo operamos.",
+      "metric": { "value": "3.6x", "label": "Crecimiento de Ingresos" },
+      "rating": 5
+    },
+    {
+      "type": "testimonial",
+      "author": "Daniela Vargas",
+      "role": "CEO, Vargas Legal Group",
+      "avatar": "/images/proof/daniela.jpg",
+      "content": "Finalmente tomé vacaciones de 3 semanas y los ingresos SUBIERON. Ese es el poder de sistemas sobre personalidad.",
+      "metric": { "value": "23%", "label": "Mientras de Vacaciones" },
+      "rating": 5
+    },
+    {
+      "type": "metric",
+      "value": "127+",
+      "label": "Sistemas Instalados",
+      "context": "En 14 países desde 2021"
+    },
+    {
+      "type": "metric",
+      "value": "$47M+",
+      "label": "Ingresos Generados para Clientes",
+      "context": "Resultados rastreados de sistemas instalados"
+    },
+    {
+      "type": "logo-wall",
+      "logos": [
+        { "name": "TechCrunch", "src": "/images/logos/techcrunch.svg" },
+        { "name": "Forbes", "src": "/images/logos/forbes.svg" },
+        { "name": "Inc", "src": "/images/logos/inc.svg" }
+      ]
+    }
+  ],
+  "intel": {
+    "title": "Base de Conocimiento",
+    "searchPlaceholder": "Buscar preguntas...",
+    "faq": [
+      {
+        "question": "¿Qué es exactamente un 'sistema' en su contexto?",
+        "answer": "Un sistema es un proceso documentado y repetible que produce resultados predecibles sin importar quién lo ejecute. Incluye SOPs, plantillas, automatizaciones y entrenamiento — todo lo necesario para operar esa función sin ti.",
+        "category": "general"
+      },
+      {
+        "question": "¿Cuánto tiempo hasta ver resultados de un sistema instalado?",
+        "answer": "La mayoría de clientes ven impacto medible dentro de 30-60 días de implementación completa. El Motor de Adquisición típicamente genera leads calificados dentro de 2 semanas del lanzamiento. Los resultados dependen de tu velocidad de implementación e infraestructura existente.",
+        "category": "results"
+      },
+      {
+        "question": "¿Ofrecen implementación done-for-you?",
+        "answer": "Nuestros productos core son done-with-you — proveemos los sistemas, plantillas y guía mientras tú implementas. Para instalación hands-off, ofrecemos Sprints de Asesoría y paquetes de Retainer para operadores calificados.",
+        "category": "service"
+      },
+      {
+        "question": "¿Qué pasa si un sistema no funciona para mi negocio?",
+        "answer": "Cada sistema viene con garantía de implementación de 30 días. Si implementas completamente y no ves el resultado prometido, trabajaremos contigo 1:1 hasta que lo logres, o devolvemos tu inversión.",
+        "category": "guarantee"
+      },
+      {
+        "question": "¿Puedo instalar múltiples sistemas a la vez?",
+        "answer": "Recomendamos instalar un sistema a la vez, dominarlo, y luego agregar el siguiente. El Systems Stack (los tres sistemas core) incluye una secuencia de implementación sugerida y framework de priorización.",
+        "category": "implementation"
+      }
+    ]
+  },
+  "pricing": {
+    "currency": "USD",
+    "title": "Elige Tu Punto de Entrada",
+    "subtitle": "Comienza con un sistema. Apila mientras escalas.",
+    "tiers": [
+      {
+        "id": "tier-starter",
+        "name": "Sistema Individual",
+        "description": "Un sistema core, completamente documentado",
+        "priceUsd": 997,
+        "priceLabel": "único pago",
+        "bullets": [
+          "Documentación completa del sistema",
+          "Todas las plantillas y SOPs incluidos",
+          "Biblioteca de video walkthroughs",
+          "Soporte de implementación 30 días",
+          "Actualizaciones de por vida"
+        ],
+        "cta": "Comenzar",
+        "popular": false
+      },
+      {
+        "id": "tier-professional",
+        "name": "Systems Stack",
+        "description": "Los tres sistemas core + bonos",
+        "priceUsd": 2997,
+        "originalPrice": 4491,
+        "priceLabel": "único pago",
+        "bullets": [
+          "Los 3 Sistemas Core incluidos",
+          "Secuencia de implementación prioritaria",
+          "2x Llamadas de Estrategia 1:1",
+          "Acceso a canal privado de Slack",
+          "Actualizaciones trimestrales",
+          "Bono: SOP de Contratación y Delegación"
+        ],
+        "cta": "Obtener el Stack",
+        "popular": true
+      },
+      {
+        "id": "tier-enterprise",
+        "name": "Retainer de Asesoría",
+        "description": "Instalación de sistemas done-with-you",
+        "priceUsd": 5000,
+        "priceLabel": "por mes",
+        "bullets": [
+          "Todo en Systems Stack",
+          "Llamadas semanales 1:1 de asesoría",
+          "Builds de sistemas personalizados",
+          "Sesiones de entrenamiento de equipo",
+          "Acceso Slack al fundador",
+          "Engagement mínimo 3 meses"
+        ],
+        "cta": "Aplicar Ahora",
+        "popular": false
+      }
+    ]
+  },
+  "conversion": {
+    "headline": "¿Listo para Instalar Tu Primer Sistema?",
+    "subhead": "Reserva un diagnóstico gratuito de 90 minutos. Mapearemos tus operaciones actuales e identificaremos el sistema #1 que desbloqueará tu siguiente nivel.",
+    "cta": "Reservar Tu Diagnóstico",
+    "ctaSecondary": "O explora sistemas primero",
+    "urgency": "Limitado a 4 diagnósticos por semana"
+  },
+  "footer": {
+    "tagline": "Construyendo operadores que escalan.",
+    "copyright": "© 2024 Elite Systems. Todos los derechos reservados.",
+    "location": "Medellín, Colombia",
+    "links": [
+      { "label": "Sistemas", "href": "#products" },
+      { "label": "Intel", "href": "#intel" },
+      { "label": "Reservar", "href": "#conversion" }
+    ],
+    "social": [
+      { "platform": "linkedin", "url": "https://linkedin.com/company/elite-systems" },
+      { "platform": "twitter", "url": "https://twitter.com/elitesystems" }
+    ],
+    "legal": [
+      { "label": "Privacidad", "href": "/privacy" },
+      { "label": "Términos", "href": "/terms" }
+    ]
+  },
+  "_meta": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-12-22"
+  }
+}

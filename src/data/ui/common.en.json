@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "description": "Centralized UI strings for engine defaults. Components use these as fallbacks when operator data is missing.",
+    "language": "en"
+  },
+  "accessibility": {
+    "skipToContent": "Skip to content",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "loading": "Loading...",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "previousSlide": "Previous",
+    "nextSlide": "Next",
+    "searchInput": "Search",
+    "clearSearch": "Clear search"
+  },
+  "legal": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "cookies": "Cookie Policy",
+    "copyright": "© {year} {operatorName}. All rights reserved."
+  },
+  "actions": {
+    "learnMore": "Learn More",
+    "getStarted": "Get Started",
+    "viewAll": "View All",
+    "readMore": "Read More",
+    "submit": "Submit",
+    "send": "Send",
+    "apply": "Apply",
+    "book": "Book",
+    "contact": "Contact"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email",
+    "invalidPhone": "Please enter a valid phone number"
+  },
+  "status": {
+    "available": "Available",
+    "soldOut": "Sold Out",
+    "comingSoon": "Coming Soon",
+    "limited": "Limited Availability"
+  }
+}

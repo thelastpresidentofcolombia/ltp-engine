@@ -1,0 +1,108 @@
+---
+/**
+ * Conversion Module (Engine Default)
+ * 
+ * Final CTA section to drive action.
+ */
+
+import type { Operator } from '@/types/operator';
+
+interface Props {
+  operator: Operator;
+  variant?: string;
+}
+
+const { operator, variant = 'conversion-centered' } = Astro.props;
+const conversion = (operator as any).conversion || {};
+const contact = (operator as any).contact || {};
+---
+
+<div class="conversion">
+  <div class="container">
+    <h2 class="conversion-headline">{conversion.headline}</h2>
+    
+    {conversion.subhead && (
+      <p class="conversion-subhead">{conversion.subhead}</p>
+    )}
+    
+    <div class="conversion-actions">
+      <a 
+        href={contact.whatsapp ? `https://wa.me/${contact.whatsapp.replace(/\D/g, '')}` : `mailto:${contact.email}`}
+        class="btn btn-primary"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {conversion.cta}
+      </a>
+    </div>
+    
+    {conversion.disclaimer && (
+      <p class="conversion-disclaimer">{conversion.disclaimer}</p>
+    )}
+  </div>
+</div>
+
+<style>
+  .conversion {
+    padding: 6rem 2rem;
+    background: linear-gradient(
+      135deg,
+      var(--color-bg-elevated) 0%,
+      var(--color-bg-surface) 100%
+    );
+    text-align: center;
+  }
+  
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .conversion-headline {
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  
+  .conversion-subhead {
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  
+  .conversion-actions {
+    margin-bottom: 1.5rem;
+  }
+  
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2.5rem;
+    font-weight: 600;
+    font-size: 1.125rem;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .btn-primary {
+    background: var(--color-accent);
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+  }
+  
+  .conversion-disclaimer {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+</style>

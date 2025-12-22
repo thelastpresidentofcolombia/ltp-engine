@@ -1,0 +1,117 @@
+{
+  "id": "jose-espinosa",
+  "vertical": "consultancy",
+  "contact": {
+    "email": "JoseEspinosa1184@yahoo.com",
+    "phone": "+1-646-271-3718",
+    "calendlyUrl": "https://calendly.com/jose-espinosa/restaurant-diagnostic"
+  },
+  "location": {
+    "city": "new-york",
+    "country": "US",
+    "timezone": "America/New_York"
+  },
+  "vibe": {
+    "vibeId": "consultancy-nyc-operator",
+    "nomenclatureSetId": "restaurant-ops",
+    "presentationSetId": "industrial-warm",
+    "moduleVariants": {
+      "fitFilter": "stacked"
+    },
+    "tokens": {
+      "bgBase": "#faf9f7",
+      "bgOffset": "#f5f3f0",
+      "bgSurface": "#ffffff",
+      "bgInverse": "#1a1a1a",
+      "textMain": "#1a1a1a",
+      "textSecondary": "#4a4a4a",
+      "textMuted": "#737373",
+      "textInverse": "#faf9f7",
+      "borderLine": "#e8e6e3",
+      "borderStrong": "#d1cec9",
+      "accent": "#c45a2c",
+      "accentHover": "#a84a22",
+      "hoverBg": "#f0eeeb",
+      "success": "#2d7a4f",
+      "error": "#c23b3b",
+      "radius": "4px",
+      "fontBody": "Inter",
+      "fontDisplay": "DM Sans",
+      "fontMono": "JetBrains Mono"
+    }
+  },
+  "modules": [
+    "hero",
+    "fitFilter",
+    "products",
+    "offers",
+    "proof",
+    "intel",
+    "conversion",
+    "footer"
+  ],
+  "founders": [
+    {
+      "id": "founder-jose",
+      "avatar": "/images/consultancy/jde-pro.webp",
+      "avatarAlt": "Jose Daniel Espinosa - Restaurant Operations Expert",
+      "socials": {
+        "linkedin": "https://linkedin.com/in/jose-espinosa"
+      },
+      "featured": true
+    }
+  ],
+  "media": {
+    "heroImage": "/images/consultancy/hero-grid.jpg",
+    "heroImageAlt": "NYC restaurant operations workspace",
+    "ogImage": "/images/consultancy/og-jose-espinosa.jpg",
+    "favicon": "/favicon.ico"
+  },
+  "pricing": {
+    "currency": "USD",
+    "tiers": [
+      {
+        "id": "playbook-single",
+        "priceUsd": 49
+      },
+      {
+        "id": "playbook-bundle",
+        "priceUsd": 349
+      },
+      {
+        "id": "labor-templates",
+        "priceUsd": 149
+      },
+      {
+        "id": "career-kit",
+        "priceUsd": 199
+      },
+      {
+        "id": "diagnostic-tool",
+        "priceUsd": 79
+      },
+      {
+        "id": "training-system",
+        "priceUsd": 299
+      },
+      {
+        "id": "investor-kit",
+        "priceUsd": 499
+      }
+    ]
+  },
+  "integrations": {
+    "stripeProductIds": {
+      "playbook-single": "price_playbook_single",
+      "playbook-bundle": "price_playbook_bundle",
+      "labor-templates": "price_labor_templates",
+      "career-kit": "price_career_kit",
+      "diagnostic-tool": "price_diagnostic_tool",
+      "training-system": "price_training_system",
+      "investor-kit": "price_investor_kit"
+    },
+    "analytics": {
+      "gaId": "G-XXXXXXXXXX"
+    }
+  }
+}

@@ -1,0 +1,143 @@
+---
+/**
+ * Products Module (Engine Default)
+ * 
+ * Displays digital products/services with pricing.
+ */
+
+import type { Operator } from '@/types/operator';
+
+interface Props {
+  operator: Operator;
+  variant?: string;
+}
+
+const { operator, variant = 'products-grid' } = Astro.props;
+const products = (operator as any).products || [];
+const pricing = (operator as any).pricing || {};
+
+const lang = (operator as any).lang || operator._meta?.lang || 'en';
+const labels: Record<string, { title: string; from: string }> = {
+  en: { title: 'Products & Services', from: 'From' },
+  es: { title: 'Productos y Servicios', from: 'Desde' },
+};
+const t = labels[lang] || labels.en;
+
+// Format currency
+function formatPrice(amount: number, currency: string = 'USD'): string {
+  return new Intl.NumberFormat(lang === 'es' ? 'es-CO' : 'en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+  }).format(amount);
+}
+---
+
+{products && products.length > 0 && (
+  <div class="products">
+    <div class="container">
+      <h2 class="section-title">{t.title}</h2>
+      
+      <div class="products-grid">
+        {products.map((product: any) => (
+          <div class="product-card">
+            <div class="product-content">
+              <h3 class="product-name">{product.name}</h3>
+              <p class="product-description">{product.description}</p>
+            </div>
+            {product.priceUsd && (
+              <div class="product-price">
+                <span class="price-label">{t.from}</span>
+                <span class="price-value">
+                  {formatPrice(product.priceUsd, pricing.currency)}
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  .products {
+    padding: 5rem 2rem;
+    background: var(--color-bg-surface);
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .section-title {
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 3rem;
+    color: var(--color-text-primary);
+  }
+  
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .product-card {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .product-card:hover {
+    border-color: var(--color-accent);
+  }
+  
+  .product-content {
+    flex: 1;
+  }
+  
+  .product-name {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 0.5rem;
+  }
+  
+  .product-description {
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  
+  .product-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+  }
+  
+  .price-label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .price-value {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-accent);
+  }
+</style>

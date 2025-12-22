@@ -1,0 +1,102 @@
+---
+/**
+ * Conversion Module - Consultancy Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.conversion, operator.ui.labels.conversion
+ * - Skin defaults: consultancyDefaults.labels.conversion, consultancyDefaults.cta
+ * 
+ * TOKEN DEPENDENCIES:
+ * - --color-bg-base, --color-bg-offset, --color-bg-inverse
+ * - --color-text-primary, --color-text-secondary, --color-text-muted, --color-text-inverse
+ * - --color-border, --color-border-strong
+ * - --color-success (urgency dot)
+ * 
+ * VISUAL METAPHOR: Next Step / Clarity
+ * Intake / Application CTA section with strong visual hierarchy.
+ */
+
+import { consultancyDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const conversion = operator.conversion ?? {};
+
+// === LABELS (operator.ui.labels.conversion → skin defaults) ===
+const sectionLabel = operator.ui?.labels?.conversion?.section ?? consultancyDefaults.labels.conversion.section;
+
+// === CONTENT (from operator.conversion) ===
+const headline = conversion.headline ?? consultancyDefaults.labels.conversion.title;
+const subhead = conversion.subhead ?? '';
+const ctaPrimary = conversion.cta ?? operator.ui?.cta?.bookCall ?? consultancyDefaults.cta.bookCall;
+const ctaSecondary = conversion.ctaSecondary ?? operator.ui?.cta?.learnMore ?? consultancyDefaults.cta.learnMore;
+const urgency = conversion.urgency;
+
+// CTA links
+const primaryHref = conversion.primaryHref ?? conversion.formUrl ?? '#';
+const secondaryHref = conversion.secondaryHref ?? conversion.applyUrl ?? '#products';
+---
+
+<section id="conversion" class="py-2 relative overflow-hidden">
+  {/* Subtle background texture */}
+  <div class="absolute inset-0 engine-grid opacity-20"></div>
+  
+  <div class="max-w-[700px] mx-auto px-6 lg:px-10 text-center relative z-10">
+    <div class="stagger-children">
+      <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-3">
+        {sectionLabel}
+      </p>
+      
+      <h2 class="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-[1.1] mb-4 text-balance text-[var(--color-text-primary)]">
+        {headline}
+      </h2>
+      
+      {subhead && (
+        <p class="text-base md:text-lg text-[var(--color-text-secondary)] leading-relaxed max-w-lg mx-auto mb-8">
+          {subhead}
+        </p>
+      )}
+      
+      <div class="flex flex-col sm:flex-row justify-center gap-3 mb-4">
+        <a 
+          href={primaryHref}
+          class="inline-flex items-center justify-center gap-2 bg-[var(--color-bg-inverse)] text-[var(--color-text-inverse)] px-6 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] hover:opacity-90 transition-all duration-200 group"
+        >
+          {ctaPrimary}
+          <svg class="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </a>
+        
+        <a 
+          href={secondaryHref}
+          class="inline-flex items-center justify-center border border-[var(--color-border-strong)] text-[var(--color-text-primary)] px-6 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] hover:border-[var(--color-bg-inverse)] hover:bg-[var(--color-bg-offset)] transition-all duration-200"
+        >
+          {ctaSecondary}
+        </a>
+      </div>
+      
+      {urgency && (
+        <p class="inline-flex items-center gap-2 text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-[0.1em]">
+          <span class="w-2 h-2 bg-[var(--color-success)] rounded-full animate-pulse"></span>
+          {urgency}
+        </p>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .engine-grid {
+    background-image:
+      linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+    background-size: 80px 80px;
+    opacity: 0.3;
+  }
+</style>

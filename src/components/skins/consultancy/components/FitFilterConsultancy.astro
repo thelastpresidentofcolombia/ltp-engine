@@ -1,0 +1,197 @@
+---
+/**
+ * FitFilter Module - Consultancy Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.fitFilter, operator.ui.labels.fitFilter, operator.vibe.moduleVariants.fitFilter
+ * - Skin defaults: consultancyDefaults.labels.fitFilter
+ * 
+ * TOKEN DEPENDENCIES:
+ * - --color-bg-base, --color-bg-offset
+ * - --color-text-primary, --color-text-secondary, --color-text-muted
+ * - --color-border, --color-border-strong
+ * - --color-success (for compatible checkmarks)
+ * 
+ * VARIANTS:
+ * - "default" / undefined: Two-column grid layout (demo style)
+ * - "compact": Single card with side-by-side columns (more compact)
+ * - "stacked": Full-width stacked cards (emphasis on each)
+ */
+
+import { consultancyDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator, variant } = Astro.props;
+
+const fitFilter = operator.fitFilter ?? {};
+const displayVariant = variant ?? 'default';
+
+// === LABELS (operator.ui.labels.fitFilter → operator.fitFilter headings → skin defaults) ===
+const sectionLabel = operator.ui?.labels?.fitFilter?.section ?? consultancyDefaults.labels.fitFilter.section;
+const sectionTitle = fitFilter.title ?? operator.ui?.labels?.fitFilter?.title;
+const compatibleHeading = fitFilter.compatible?.heading ?? operator.ui?.labels?.fitFilter?.compatible ?? consultancyDefaults.labels.fitFilter.compatible;
+const incompatibleHeading = fitFilter.incompatible?.heading ?? operator.ui?.labels?.fitFilter?.incompatible ?? consultancyDefaults.labels.fitFilter.incompatible;
+
+// === PROFILES (from operator.fitFilter) ===
+const compatibleProfiles: string[] = fitFilter.compatible?.profiles ?? [];
+const incompatibleProfiles: string[] = fitFilter.incompatible?.profiles ?? [];
+---
+
+{/* VARIANT: DEFAULT - Two column grid (original) */}
+{displayVariant === 'default' && (
+  <section class="pt-0 pb-2">
+    <div class="max-w-[1100px] mx-auto px-4 lg:px-10">
+      <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2">
+        {sectionLabel}
+      </p>
+      
+      <div class="grid md:grid-cols-2 gap-4 lg:gap-8">
+        <!-- Compatible Column -->
+        <div class="stagger-children">
+          <h3 class="font-mono text-xs font-bold tracking-wide text-[var(--color-text-primary)] mb-3 pb-2 border-b-2 border-[var(--color-bg-inverse)]">
+            {compatibleHeading}
+          </h3>
+          <ul class="space-y-2">
+            {compatibleProfiles.map((profile: string) => (
+              <li class="flex items-start gap-3 group">
+                <span class="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--color-success)]/15 text-[var(--color-success)] flex items-center justify-center text-xs font-bold mt-0.5">
+                  ✓
+                </span>
+                <span class="text-[var(--color-text-primary)] text-sm leading-relaxed">
+                  {profile}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <!-- Incompatible Column -->
+        <div class="stagger-children opacity-70">
+          <h3 class="font-mono text-xs font-bold tracking-wide text-[var(--color-text-muted)] mb-3 pb-2 border-b border-[var(--color-border)]">
+            {incompatibleHeading}
+          </h3>
+          <ul class="space-y-2">
+            {incompatibleProfiles.map((profile: string) => (
+              <li class="flex items-start gap-3">
+                <span class="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--color-bg-offset)] text-[var(--color-text-muted)] flex items-center justify-center text-xs font-medium mt-0.5">
+                  ✗
+                </span>
+                <span class="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                  {profile}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+)}
+
+{/* VARIANT: COMPACT - Single card with both columns inside */}
+{displayVariant === 'compact' && (
+  <section class="pt-0 pb-2">
+    <div class="max-w-[900px] mx-auto px-4 lg:px-10">
+      <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2">
+        {sectionLabel}
+      </p>
+      
+      {sectionTitle && (
+        <h2 class="text-xl font-bold text-[var(--color-text-primary)] mb-4">{sectionTitle}</h2>
+      )}
+      
+      <div class="border border-[var(--color-border)] bg-[var(--color-bg-base)] p-6 lg:p-8">
+        <div class="grid md:grid-cols-2 gap-6 lg:gap-10">
+          <!-- Compatible Side -->
+          <div>
+            <h3 class="text-sm font-bold text-[var(--color-success)] mb-4 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[var(--color-success)]/15 flex items-center justify-center text-xs">✓</span>
+              {compatibleHeading}
+            </h3>
+            <ul class="space-y-3">
+              {compatibleProfiles.map((profile: string) => (
+                <li class="text-[var(--color-text-primary)] text-sm leading-relaxed pl-8 relative before:content-['✓'] before:absolute before:left-0 before:text-[var(--color-success)] before:font-bold">
+                  {profile}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <!-- Incompatible Side -->
+          <div class="border-t md:border-t-0 md:border-l border-[var(--color-border)] pt-6 md:pt-0 md:pl-10">
+            <h3 class="text-sm font-bold text-[var(--color-text-muted)] mb-4 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[var(--color-bg-offset)] flex items-center justify-center text-xs text-[var(--color-text-muted)]">✗</span>
+              {incompatibleHeading}
+            </h3>
+            <ul class="space-y-3">
+              {incompatibleProfiles.map((profile: string) => (
+                <li class="text-[var(--color-text-muted)] text-sm leading-relaxed pl-8 relative before:content-['✗'] before:absolute before:left-0 before:opacity-50">
+                  {profile}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+)}
+
+{/* VARIANT: STACKED - Full width cards stacked */}
+{displayVariant === 'stacked' && (
+  <section class="pt-0 pb-2">
+    <div class="max-w-[800px] mx-auto px-4 lg:px-10">
+      <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2">
+        {sectionLabel}
+      </p>
+      
+      {sectionTitle && (
+        <h2 class="text-xl font-bold text-[var(--color-text-primary)] mb-4">{sectionTitle}</h2>
+      )}
+      
+      <div class="space-y-4">
+        <!-- Compatible Card -->
+        <div class="border-2 border-[var(--color-success)]/30 bg-[var(--color-success)]/5 p-6 lg:p-8">
+          <h3 class="text-base font-bold text-[var(--color-success)] mb-4">
+            {compatibleHeading}
+          </h3>
+          <div class="grid sm:grid-cols-2 gap-3">
+            {compatibleProfiles.map((profile: string) => (
+              <div class="flex items-start gap-3">
+                <span class="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--color-success)]/20 text-[var(--color-success)] flex items-center justify-center text-xs font-bold mt-0.5">
+                  ✓
+                </span>
+                <span class="text-[var(--color-text-primary)] text-sm leading-relaxed">
+                  {profile}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Incompatible Card -->
+        <div class="border border-[var(--color-border)] bg-[var(--color-bg-offset)] p-6 lg:p-8 opacity-75">
+          <h3 class="text-base font-bold text-[var(--color-text-muted)] mb-4">
+            {incompatibleHeading}
+          </h3>
+          <div class="grid sm:grid-cols-2 gap-3">
+            {incompatibleProfiles.map((profile: string) => (
+              <div class="flex items-start gap-3">
+                <span class="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--color-bg-base)] text-[var(--color-text-muted)] flex items-center justify-center text-xs mt-0.5">
+                  ✗
+                </span>
+                <span class="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                  {profile}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+)}

@@ -1,0 +1,118 @@
+---
+/**
+ * Offers Module - Consultancy Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.offers, operator.ui.labels.offers
+ * - Skin defaults: consultancyDefaults.labels.offers
+ * 
+ * TOKEN DEPENDENCIES:
+ * - --color-bg-base, --color-bg-inverse
+ * - --color-text-primary, --color-text-secondary, --color-text-muted, --color-text-inverse
+ * - --color-border, --color-border-strong
+ * 
+ * VISUAL METAPHOR: Systems Architecture / Entry Points
+ * Premium card layout with strong visual hierarchy.
+ */
+
+import { consultancyDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const offers: any[] = operator.offers ?? [];
+
+// === LABELS (operator.ui.labels.offers → skin defaults) ===
+const sectionLabel = operator.ui?.labels?.offers?.section ?? consultancyDefaults.labels.offers.section;
+const sectionTitle = operator.ui?.labels?.offers?.title ?? consultancyDefaults.labels.offers.title;
+---
+
+<section id="offers" class="py-2">
+  <div class="max-w-[1100px] mx-auto px-4 lg:px-10">
+    <div class="mb-2">
+      <p class="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2">
+        {sectionLabel}
+      </p>
+      <h2 class="text-2xl md:text-3xl font-black tracking-tight text-[var(--color-text-primary)]">
+        {sectionTitle}
+      </h2>
+    </div>
+
+    {offers.length > 0 ? (
+      <div class="grid md:grid-cols-2 gap-4">
+        {offers.map((offer: any) => (
+          <div 
+            class:list={[
+              'group relative p-6 lg:p-8 flex flex-col border transition-all duration-300',
+              offer.highlight 
+                ? 'bg-[var(--color-bg-inverse)] text-[var(--color-text-inverse)] border-[var(--color-bg-inverse)]' 
+                : 'bg-[var(--color-bg-base)] border-[var(--color-border)] hover:border-[var(--color-border-strong)]',
+            ]}
+          >
+            {/* Featured tag */}
+            {offer.highlight && (
+              <div class="absolute -top-2.5 left-6">
+                <span class="inline-block bg-[var(--color-bg-base)] text-[var(--color-text-primary)] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em]">
+                  Recommended
+                </span>
+              </div>
+            )}
+            
+            {offer.badge && (
+              <p class:list={[
+                'font-mono text-[9px] uppercase tracking-[0.12em] mb-2',
+                offer.highlight ? 'text-[var(--color-text-inverse)]/60' : 'text-[var(--color-text-muted)]',
+              ]}>
+                {offer.badge}
+              </p>
+            )}
+            
+            <h3 class="text-xl lg:text-2xl font-bold mb-3 tracking-tight">{offer.title}</h3>
+            
+            {offer.description && (
+              <p class:list={[
+                'text-sm leading-relaxed mb-6 flex-grow',
+                offer.highlight ? 'text-[var(--color-text-inverse)]/70' : 'text-[var(--color-text-secondary)]',
+              ]}>
+                {offer.description}
+              </p>
+            )}
+            
+            <div class="mt-auto space-y-4">
+              {offer.price && (
+                <p class="text-2xl font-black tracking-tight">
+                  {offer.price}
+                </p>
+              )}
+              
+              {offer.cta && (
+                <a 
+                  href={offer.href ?? '#conversion'}
+                  class:list={[
+                    'inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] font-bold transition-all duration-200 group/btn',
+                    offer.highlight 
+                      ? 'text-[var(--color-text-inverse)] hover:opacity-80' 
+                      : 'text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)]',
+                  ]}
+                >
+                  {offer.cta}
+                  <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div class="border border-[var(--color-border)] p-10 text-[var(--color-text-muted)]">
+        Add offers in <code class="font-mono bg-[var(--color-bg-offset)] px-1.5 py-0.5 text-xs">offers[]</code> array.
+      </div>
+    )}
+  </div>
+</section>

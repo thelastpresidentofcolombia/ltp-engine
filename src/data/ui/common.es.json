@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "description": "Centralized UI strings for engine defaults. Components use these as fallbacks when operator data is missing.",
+    "language": "es"
+  },
+  "accessibility": {
+    "skipToContent": "Ir al contenido",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "loading": "Cargando...",
+    "expand": "Expandir",
+    "collapse": "Contraer",
+    "previousSlide": "Anterior",
+    "nextSlide": "Siguiente",
+    "searchInput": "Buscar",
+    "clearSearch": "Borrar búsqueda"
+  },
+  "legal": {
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio",
+    "cookies": "Política de Cookies",
+    "copyright": "© {year} {operatorName}. Todos los derechos reservados."
+  },
+  "actions": {
+    "learnMore": "Saber Más",
+    "getStarted": "Comenzar",
+    "viewAll": "Ver Todo",
+    "readMore": "Leer Más",
+    "submit": "Enviar",
+    "send": "Enviar",
+    "apply": "Aplicar",
+    "book": "Reservar",
+    "contact": "Contactar"
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "invalidEmail": "Por favor ingrese un email válido",
+    "invalidPhone": "Por favor ingrese un teléfono válido"
+  },
+  "status": {
+    "available": "Disponible",
+    "soldOut": "Agotado",
+    "comingSoon": "Próximamente",
+    "limited": "Disponibilidad Limitada"
+  }
+}

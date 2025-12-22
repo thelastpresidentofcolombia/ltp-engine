@@ -1,0 +1,93 @@
+{
+  "id": "fitness-demo",
+  "vertical": "fitness",
+  "contact": {
+    "email": "transform@apex-performance.co",
+    "whatsapp": "+573009876543",
+    "calendlyUrl": "https://calendly.com/apex-performance/assessment"
+  },
+  "location": {
+    "city": "medellin",
+    "country": "CO",
+    "timezone": "America/Bogota"
+  },
+  "vibe": {
+    "vibeId": "fitness-power",
+    "nomenclatureSetId": "fitness-performance",
+    "presentationSetId": "glass-luxury",
+    "tokens": {
+      "bgDeep": "#050505",
+      "bgSurface": "#080808",
+      "glassSurface": "rgba(255,255,255,0.03)",
+      "glassBorder": "rgba(255,255,255,0.08)",
+      "textPrimary": "#ffffff",
+      "textSecondary": "#888888",
+      "textMuted": "#6b7280",
+      "accent": "#ccff00",
+      "accent2": "#00ff88",
+      "fontBody": "General Sans",
+      "fontDisplay": "Clash Display"
+    }
+  },
+  "modules": [
+    "hero",
+    "fitFilter",
+    "offers",
+    "products",
+    "proof",
+    "intel",
+    "conversion",
+    "footer"
+  ],
+  "media": {
+    "heroImage": "/images/fitness/hero-training.jpg",
+    "heroImageAlt": "Elite performance training session",
+    "ogImage": "/images/fitness/og-demo.jpg",
+    "favicon": "/favicon.ico"
+  },
+  "diagnostic": {
+    "enabled": true,
+    "fields": [
+      {
+        "id": "goal",
+        "type": "select",
+        "label": "Primary Goal",
+        "options": ["Shred", "Build", "Perform"]
+      },
+      {
+        "id": "experience",
+        "type": "slider",
+        "label": "Training Experience",
+        "badge": "Intermediate"
+      }
+    ]
+  },
+  "pricing": {
+    "currency": "USD",
+    "tiers": [
+      {
+        "id": "tier-foundation",
+        "priceUsd": 199
+      },
+      {
+        "id": "tier-elite",
+        "priceUsd": 399
+      },
+      {
+        "id": "tier-apex",
+        "priceUsd": 699
+      }
+    ]
+  },
+  "integrations": {
+    "stripeProductIds": {
+      "tier-foundation": "price_foundation_xxx",
+      "tier-elite": "price_elite_xxx",
+      "tier-apex": "price_apex_xxx"
+    },
+    "analytics": {
+      "gaId": "G-YYYYYYYYYY",
+      "gtmId": "GTM-YYYYYYY"
+    }
+  }
+}

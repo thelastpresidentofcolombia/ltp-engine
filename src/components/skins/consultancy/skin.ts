@@ -54,6 +54,10 @@ export const consultancyDefaults = {
       title: 'Installable Systems',
       tools: 'Free Diagnostics',
       toolsSection: 'Zero-Risk Entry Points',
+      // Modal labels (engine contract: no hardcoded strings)
+      detailsLabel: 'Details',
+      modalCta: 'Get Now',
+      checkoutPending: 'Checkout is not live yet. Coming soon!',
     },
     proof: {
       section: 'Verified Results',

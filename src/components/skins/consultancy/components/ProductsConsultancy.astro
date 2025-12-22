@@ -49,14 +49,28 @@ const productsTitle = operator.ui?.labels?.products?.title ?? consultancyDefault
 const toolsLabel = operator.ui?.labels?.products?.toolsSection ?? consultancyDefaults.labels.products.toolsSection;
 const toolsTitle = operator.ui?.labels?.products?.tools ?? consultancyDefaults.labels.products.tools;
 
+// === MODAL LABELS (operator.ui.labels.products → skin defaults) ===
+const detailsLabel = operator.ui?.labels?.products?.detailsLabel ?? consultancyDefaults.labels.products.detailsLabel;
+const modalCtaLabel = operator.ui?.labels?.products?.modalCta ?? consultancyDefaults.labels.products.modalCta;
+const checkoutPendingMsg = operator.ui?.labels?.products?.checkoutPending ?? consultancyDefaults.labels.products.checkoutPending;
+
 // Serialize products for client-side script (strip functions, keep data)
+// Include checkoutUrl if product has one (bypass API pattern)
 const productsForClient = coreProducts.map(p => ({
   id: p.id,
   title: p.title ?? (p as any).name,
   tagline: p.tagline ?? (p as any).outcome,
   bullets: p.bullets ?? (p as any).includes ?? [],
   details: (p as any).details ?? [],
+  checkoutUrl: (p as any).checkoutUrl ?? null,
+  cta: p.cta ?? 'Get',
 }));
+
+// Labels for client script (no hardcoded strings in JS)
+const clientLabels = {
+  checkoutPending: checkoutPendingMsg,
+  modalCta: modalCtaLabel,
+};
 ---
 
 <!-- DIGITAL PRODUCTS SECTION -->
@@ -84,7 +98,7 @@ const productsForClient = coreProducts.map(p => ({
           const productPrice = product.price ?? (product as any).priceUsd;
           const productCurrency = product.currency ?? 'USD';
           const productCta = product.cta ?? 'Get';
-          const productDetailsLabel = product.detailsLabel ?? 'Details';
+          const productDetailsLabel = product.detailsLabel ?? detailsLabel;
           
           return (
             <article 
@@ -240,16 +254,17 @@ const productsForClient = coreProducts.map(p => ({
         data-action="checkout"
         data-product-id=""
       >
-        Get Now
+        {modalCtaLabel}
       </button>
     </div>
   </div>
 </dialog>
 
 <!-- ENGINE-FIRST CLIENT SCRIPT -->
-<script define:vars={{ productsForClient }}>
+<script define:vars={{ productsForClient, clientLabels }}>
   // Product data passed from server (serialized at build time)
   const PRODUCTS = productsForClient;
+  const LABELS = clientLabels;
 
   /**
    * Scroll to target element
@@ -264,13 +279,26 @@ const productsForClient = coreProducts.map(p => ({
   }
 
   /**
-   * Start checkout flow
-   * POST /api/checkout → expects { url } → redirect
-   * Stubbed until Stripe is wired.
+   * Start checkout flow (checkoutUrl-first pattern)
+   * 
+   * Priority:
+   * 1. If product has checkoutUrl → redirect directly (bypass API)
+   * 2. Else → POST /api/checkout → expects { url } → redirect
+   * 
+   * This keeps Stripe wiring optional and avoids fake API dependencies.
    */
   async function startCheckout(productId) {
+    const product = PRODUCTS.find(p => p.id === productId);
     console.log(`[Engine] Checkout requested for product: ${productId}`);
     
+    // Pattern A: Direct checkout URL (Gumroad, Teachable, pre-built Stripe link, etc.)
+    if (product?.checkoutUrl) {
+      console.log(`[Engine] Using direct checkoutUrl`);
+      window.location.href = product.checkoutUrl;
+      return;
+    }
+    
+    // Pattern B: API-based checkout (Stripe Checkout Sessions)
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
@@ -292,8 +320,8 @@ const productsForClient = coreProducts.map(p => ({
       }
     } catch (e) {
       console.error('[Engine] Checkout error:', e);
-      // Graceful fallback until Stripe is live
-      alert('Checkout is not live yet. Coming soon!');
+      // Graceful fallback - uses operator label, not hardcoded string
+      alert(LABELS.checkoutPending);
     }
   }
 
@@ -327,9 +355,12 @@ const productsForClient = coreProducts.map(p => ({
       </li>
     `).join('');
 
-    // Wire modal CTA to checkout
+    // Wire modal CTA to checkout (use product's CTA if available)
     if (ctaBtn) {
       ctaBtn.setAttribute('data-product-id', productId);
+      if (product.cta) {
+        ctaBtn.textContent = product.cta;
+      }
     }
 
     // Close handlers

@@ -110,6 +110,8 @@ export interface OperatorCore {
     presentationSetId: string;
     /** Per-module variant overrides (e.g., fitFilter: 'compact' | 'quiz') */
     moduleVariants?: Partial<Record<ModuleId, string>>;
+    /** CSS custom property tokens for theming */
+    tokens?: Record<string, string>;
   };
   
   // Module ordering (which modules to render and in what order)

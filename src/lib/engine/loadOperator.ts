@@ -6,6 +6,7 @@
 
 import type { Operator, OperatorCore, OperatorLang, SupportedLang, SupportedVertical } from '../../types/operator';
 import { SUPPORTED_LANGS } from '../../config/seo';
+import { mergeById } from './mergeById';
 
 // Static glob patterns with eager loading - Vite can analyze these at build time
 const coreFiles = import.meta.glob<{ default: OperatorCore }>(
@@ -61,16 +62,13 @@ export function loadOperator(
   const langData = langModule.default;
 
   // Merge founders from core (images, socials) + lang (name, title, bio)
-  let founders = undefined;
-  if (coreData.founders && coreData.founders.length > 0) {
-    founders = coreData.founders.map((founderCore: any) => {
-      const founderLang = langData.founders?.find((f: any) => f.id === founderCore.id) ?? {};
-      return {
-        ...founderCore,
-        ...founderLang,
-      };
-    });
-  }
+  const founders = mergeById(coreData.founders || [], langData.founders || []);
+
+  // Merge products from core (pricing, stripe) + lang (copy, bullets)
+  const products = mergeById(coreData.products || [], langData.products || []);
+
+  // Merge offers from core (pricing) + lang (copy)
+  const offers = mergeById(coreData.offers || [], langData.offers || []);
 
   // Merge core + lang into full Operator by spreading both objects
   // Core data comes first (language-agnostic), then lang data overlays (translated content)
@@ -78,14 +76,43 @@ export function loadOperator(
   const operator = {
     ...coreData,  // All core fields: id, vertical, slug, status, skin, vibe, modules, contact, media, integrations, etc.
     ...langData,  // All lang fields: lang, brand, seo, hero, fitFilter, offers, products, proof, intel, pricing, conversion, footer
-    // Merged founders (core images + lang text)
-    founders,
+    // Merged arrays (core + lang by ID)
+    founders: founders.length > 0 ? founders : undefined,
+    products,
+    offers,
     // Runtime metadata
     _meta: {
       lang,
       loadedAt: new Date().toISOString(),
     },
   } as unknown as Operator;
+
+  // =========================================================================
+  // TRANSITIONAL COMPATIBILITY (Remove after JSON migration is complete)
+  // Supports old product format that lived entirely in lang.json
+  // =========================================================================
+  operator.products = (operator.products || []).map((p: any) => {
+    // Map old field names to new contract
+    if (p.title == null && p.name != null) p.title = p.name;
+    if (p.tagline == null && p.description != null) p.tagline = p.description;
+    if (p.tagline == null && p.outcome != null) p.tagline = p.outcome;
+    if (p.bullets == null && p.includes != null) p.bullets = p.includes;
+    
+    // Map old pricing fields
+    if (p.price == null && p.priceUsd != null) p.price = Number(p.priceUsd);
+    if (p.currency == null) p.currency = 'USD';
+
+    // Map old stripe field
+    if (!p.stripe) p.stripe = {};
+    if (!p.stripe.priceId && p.stripePriceId) p.stripe.priceId = p.stripePriceId;
+
+    // Set defaults for required fields
+    if (!p.type) p.type = 'digital';
+    if (!p.delivery) p.delivery = 'download';
+    if (!p.action) p.action = { primary: 'checkout' };
+
+    return p;
+  });
 
   return operator;
 }

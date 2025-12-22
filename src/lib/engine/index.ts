@@ -6,6 +6,8 @@
  * - resolveSkin: Determine visual skin for operator
  * - resolveModules: Determine which modules to render
  * - applyThemeVars: Generate CSS custom properties from vibe config
+ * - resolveProductAction: Determine CTA behavior for products
+ * - mergeById: Merge core + lang arrays by ID
  */
 
 // Operator Loading
@@ -15,6 +17,17 @@ export {
   loadOperatorsByVertical,
   operatorExists,
 } from './loadOperator';
+
+// Product Actions (Engine-first behavior)
+export {
+  resolveProductAction,
+  hasStripeIntegration,
+  getStripePriceId,
+  type ProductAction,
+} from './resolveProductAction';
+
+// Merge Utilities
+export { mergeById } from './mergeById';
 
 // Skin Resolution
 export {

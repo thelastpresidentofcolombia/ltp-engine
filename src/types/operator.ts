@@ -5,7 +5,7 @@
 
 import type { ProofItem } from './proof';
 import type { IntelEntry, FAQ } from './intel';
-import type { Product } from './products';
+import type { Product, ProductCore, ProductLang } from './products';
 import type { Offer, PricingTier } from './offers';
 
 // =============================================================================
@@ -132,6 +132,14 @@ export interface OperatorCore {
   
   // Founders/Team (images and social links are language-agnostic)
   founders?: FounderCore[];
+  
+  // Products (pricing, stripe refs - language-agnostic invariants)
+  // Copy lives in lang.json, merged by ID at load time
+  products?: ProductCore[];
+  
+  // Offers (pricing - language-agnostic invariants)
+  // Copy lives in lang.json, merged by ID at load time
+  offers?: Array<{ id: string; price?: number; currency?: string; stripe?: { priceId?: string } }>;
   
   // Pricing (numbers don't translate)
   pricing: {

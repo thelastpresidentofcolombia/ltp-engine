@@ -1,0 +1,235 @@
+{
+  "lang": "es",
+  "location": {
+    "cityName": "Nueva York",
+    "countryName": "EE.UU."
+  },
+  "brand": {
+    "name": "Jose Espinosa",
+    "tagline": "Operaciones de Restaurantes Que Funcionan",
+    "shortName": "JDE",
+    "systemTag": "OPS"
+  },
+  "seo": {
+    "title": "Jose Espinosa // Playbooks de Operaciones para Restaurantes NYC",
+    "description": "Playbooks probados en batalla por un Gerente de Distrito que maneja 8 restaurantes en NYC y más de $18M en ventas anuales. Deja de perder en mano de obra. Empieza a operar como un profesional.",
+    "keywords": ["operaciones de restaurantes", "playbooks GM NYC", "gestión de mano de obra", "sistemas de entrenamiento", "Le Pain Quotidien"]
+  },
+  "hero": {
+    "badge": "17 Años en Restaurantes NYC",
+    "headline": "Deja de Perder",
+    "headlineAccent": "Mano de Obra y Efectivo.",
+    "subhead": "No eres malo en esto — simplemente no tienes los sistemas todavía. He pasado 17 años manejando pisos de restaurantes en NYC, desde barista hasta Gerente de Distrito. Ahora comparto los playbooks exactos que manejan 8 ubicaciones y $18M en ventas.",
+    "stats": [
+      { "value": "8", "label": "Restaurantes Manejados" },
+      { "value": "$18M+", "label": "Ventas Anuales" },
+      { "value": "35+", "label": "Gerentes Entrenados" }
+    ],
+    "cta": {
+      "primary": "Obtén los Playbooks",
+      "secondary": "Auditoría de Mano de Obra Gratis"
+    }
+  },
+  "founders": [
+    {
+      "id": "founder-jose",
+      "name": "Jose Daniel Espinosa",
+      "title": "Gerente de Distrito • Le Pain Quotidien",
+      "shortBio": "De barista en el Bronx a manejar 8 restaurantes en NYC. Sé lo que falla y lo que escala.",
+      "credentials": ["Gerente de Distrito @ LPQ", "$18M+ Responsabilidad P&L", "35+ Gerentes Desarrollados"]
+    }
+  ],
+  "fitFilter": {
+    "title": "¿Es Para Ti?",
+    "compatible": {
+      "heading": "✓ Hecho Para Ti Si",
+      "profiles": [
+        "Eres un GM ahogándote en incendios diarios sin SOPs",
+        "Eres un dueño viendo los costos de mano de obra comerse tus márgenes",
+        "Estás promoviendo gerentes que nunca han sido entrenados",
+        "Manejas 2-10 ubicaciones en NYC y necesitas sistemas reales"
+      ]
+    },
+    "incompatible": {
+      "heading": "✗ No Es Para Ti Si",
+      "profiles": [
+        "Quieres teoría y frameworks, no playbooks ejecutables",
+        "Estás fuera de NYC y no lidias con nuestras leyes laborales",
+        "Buscas soluciones mágicas sin implementación",
+        "Crees que tu 'vibra' puede reemplazar procesos documentados"
+      ]
+    }
+  },
+  "products": [
+    {
+      "id": "product-gm-playbooks",
+      "badge": "Más Vendido",
+      "name": "Bundle de Playbooks para GM de Restaurantes NYC",
+      "description": "El kit completo de operador que uso para manejar 8 restaurantes. No son cursos en video — son PDFs reales, hojas de cálculo y checklists que puedes implementar el lunes por la mañana.",
+      "outcome": "Maneja tu piso como un operador a nivel distrito",
+      "includes": [
+        "Ritmo Operativo Semanal del GM",
+        "Checklist de Ejecución Diaria del Piso",
+        "Playbook de Gerente de Apertura/Cierre",
+        "SOP de Control de Mano de Obra (NYC-Específico)",
+        "Plantilla de Revisión de Varianzas",
+        "Framework de Revisión de P&L"
+      ],
+      "priceUsd": 349,
+      "originalPrice": 596,
+      "stripePriceId": "price_playbook_bundle"
+    },
+    {
+      "id": "product-labor-templates",
+      "badge": "Solución al Dolor",
+      "name": "Plantillas de Mano de Obra y Programación NYC",
+      "description": "La mano de obra es el asesino #1 en restaurantes de NYC. Estas plantillas consideran salario mínimo, reglas de OT, turnos divididos y cobertura de gerentes — lo que las herramientas genéricas ignoran.",
+      "outcome": "Reduce costos de mano de obra sin reducir calidad",
+      "includes": [
+        "Modelo de Pronóstico de Mano de Obra",
+        "Calculadora de Ratio Ventas-a-Mano de Obra",
+        "Constructor de Horarios Compatible con NYC",
+        "Rastreador de OT y Turnos Divididos",
+        "Reporte de Varianza Semanal",
+        "Videos Cortos de Explicación"
+      ],
+      "priceUsd": 149,
+      "stripePriceId": "price_labor_templates"
+    },
+    {
+      "id": "product-career-kit",
+      "badge": "Movimiento de Carrera",
+      "name": "Kit de Carrera GM a Gerente de Distrito",
+      "description": "El salto invisible de operaciones de tienda a liderazgo multi-unidad. Yo lo hice. Este kit te muestra exactamente cómo pensar, presentar y posicionarte para la promoción.",
+      "outcome": "Obtén la promoción o consigue trabajo en el siguiente nivel",
+      "includes": [
+        "Guía de Cambio de Mentalidad de Liderazgo",
+        "KPIs Que Importan Sobre el Nivel de Tienda",
+        "Cómo Presentar Números a los Dueños",
+        "Framework de Operador Multi-Unidad",
+        "Playbook de Posicionamiento para Promoción",
+        "Preparación de Entrevistas para Roles de DM"
+      ],
+      "priceUsd": 199,
+      "stripePriceId": "price_career_kit"
+    }
+  ],
+  "offers": [
+    {
+      "id": "offer-starter-bundle",
+      "badge": "Más Popular",
+      "title": "Bundle de Inicio para Operadores",
+      "description": "Playbooks de GM + Plantillas de Mano de Obra. Los dos sistemas que detienen el sangrado y te dan control de tu piso. Mejor valor para nuevos operadores.",
+      "price": "$449",
+      "originalPrice": "$498",
+      "cta": "Obtén el Bundle",
+      "highlight": true,
+      "includes": ["Bundle de Playbooks GM", "Plantillas de Mano de Obra y Programación", "Soporte Prioritario por Email"]
+    },
+    {
+      "id": "offer-consultation",
+      "badge": "Soporte 1:1",
+      "title": "Inmersión Profunda en Operaciones",
+      "description": "Videollamada de 90 minutos donde revisamos tu operación específica. Identificaré tus 3 prioridades principales y te daré un plan de acción.",
+      "price": "$350",
+      "cta": "Reserva Tu Sesión",
+      "includes": ["Videollamada de 90 Min", "Grabación + Notas", "Plan de Acción Personalizado", "Seguimiento por Email 30 Días"]
+    }
+  ],
+  "proof": [
+    {
+      "type": "metric",
+      "value": "$18M+",
+      "label": "Ventas Anuales Bajo Gestión",
+      "context": "En 8 ubicaciones de Le Pain Quotidien en NYC"
+    },
+    {
+      "type": "metric",
+      "value": "35+",
+      "label": "Gerentes Entrenados",
+      "context": "De mesero a GM, AM a Gerente de Distrito"
+    },
+    {
+      "type": "metric",
+      "value": "+18%",
+      "label": "Ganancias en Eficiencia",
+      "context": "Aumento de productividad en el último trimestre a través de sistemas"
+    }
+  ],
+  "intel": {
+    "title": "Preguntas Frecuentes",
+    "searchPlaceholder": "Buscar preguntas...",
+    "faq": [
+      {
+        "question": "¿Estos playbooks son específicos de NYC o puedo usarlos en otro lugar?",
+        "answer": "Las plantillas de mano de obra están construidas específicamente para las leyes de salario de NYC, reglas de OT y regulaciones de turnos divididos. Los playbooks de GM y sistemas de entrenamiento funcionan en cualquier lugar, pero las matemáticas de mano de obra están calibradas para NYC.",
+        "category": "general"
+      },
+      {
+        "question": "Soy un GM nuevo sin entrenamiento formal. ¿Me ayudarán?",
+        "answer": "Estos playbooks fueron construidos exactamente para ti. La mayoría de los GMs son promovidos basándose en su esfuerzo, luego dejados a descifrar las cosas. Cada playbook es inmediatamente ejecutable — sin teoría, sin relleno.",
+        "category": "audiencia"
+      },
+      {
+        "question": "¿Por qué PDF y hojas de cálculo en vez de software?",
+        "answer": "Porque los operadores odian iniciar sesión en otra plataforma. Necesitas herramientas que funcionen en medio de un rush, que puedas imprimir y entregar a un gerente, que no requieran wifi.",
+        "category": "formato"
+      },
+      {
+        "question": "¿Ofrecen reembolsos?",
+        "answer": "Si implementas un playbook y no funciona para tu operación, envíame un email dentro de 30 días. Te ayudaré a adaptarlo o te reembolsaré. No quiero tu dinero si no puedes usar el trabajo.",
+        "category": "garantía"
+      }
+    ]
+  },
+  "conversion": {
+    "headline": "Tu Piso No Se Va a Arreglar Solo.",
+    "subhead": "Cada día sin sistemas es otro día de desperdicio de mano de obra, agotamiento de gerentes e incendios prevenibles. Obtén los playbooks que manejan $18M en restaurantes de NYC.",
+    "cta": "Obtén los Playbooks Ahora",
+    "ctaSecondary": "Reserva una Llamada Gratis",
+    "urgency": "Los mismos playbooks que uso hoy en Le Pain Quotidien"
+  },
+  "footer": {
+    "tagline": "Operaciones de restaurantes que funcionan.",
+    "copyright": "© 2025 Jose Espinosa. Todos los derechos reservados.",
+    "location": "Nueva York, NY",
+    "links": [
+      { "label": "Playbooks", "href": "#products" },
+      { "label": "FAQ", "href": "#intel" },
+      { "label": "Reservar Llamada", "href": "#conversion" }
+    ],
+    "social": [
+      { "platform": "linkedin", "url": "https://linkedin.com/in/jose-espinosa" }
+    ],
+    "legal": [
+      { "label": "Privacidad", "href": "/privacy" },
+      { "label": "Términos", "href": "/terms" }
+    ]
+  },
+  "ui": {
+    "nav": [
+      { "label": "Playbooks", "href": "#products" },
+      { "label": "Bundles", "href": "#offers" },
+      { "label": "FAQ", "href": "#intel" }
+    ],
+    "labels": {
+      "hero": { "metrics": "Los Números" },
+      "fitFilter": { "section": "Verificación de Ajuste" },
+      "offers": { "section": "Bundles", "title": "Mejor Valor" },
+      "products": { "section": "Playbooks Digitales", "title": "Sistemas de Grado Operador" },
+      "proof": { "section": "Historial", "title": "17 Años de Resultados" },
+      "intel": { "section": "¿Tienes Preguntas?" },
+      "conversion": { "section": "Empieza" },
+      "footer": { "nav": "Enlaces Rápidos", "social": "Conectar" }
+    },
+    "cta": {
+      "startHere": "Empieza Aquí",
+      "learnMore": "Saber Más",
+      "bookCall": "Reservar Llamada"
+    }
+  },
+  "_meta": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-12-22"
+  }
+}

@@ -1,17 +1,11 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
-import vercel from '@astrojs/vercel/serverless';
 
 // https://astro.build/config
 export default defineConfig({
-  // Hybrid allows SSR for future geo-logic while keeping most pages static
-  // v1 will be static-only, but this keeps options open
-  output: 'hybrid',
-  adapter: vercel({
-    // Node.js 18 is deprecated on Vercel - use 20.x
-    // See: https://vercel.com/docs/functions/runtimes
-    maxDuration: 10,
-  }),
+  // Static output - all pages are pre-rendered at build time
+  // No serverless functions needed = no Node runtime issues
+  output: 'static',
   
   // i18n configuration for multilingual support
   i18n: {

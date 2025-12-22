@@ -30,11 +30,20 @@
 - Module variants system
 - Static output deployment to Vercel
 
+### Known Gaps (Transparency)
+
+| Gap | Status | Notes |
+|-----|--------|-------|
+| **Offers not engine-first** | 🔴 Next priority | Products done; Offers need `resolveOfferAction()` or shared resolver |
+| **Schema.org FAQPage** | 🔄 Planned | JSON-LD injection not yet in EngineLayout |
+| **Stripe Connect** | 🔄 Planned | Current: checkoutUrl-first; Target: split payouts + webhooks |
+| **Zod runtime validation** | 🔄 Planned | Build-time validation exists via scripts |
+
 ---
 
 ## 📍 Purpose Statement
 
-The **LTP Engine** is a **multi-vertical static site factory** that generates high-converting, single-page operator businesses from JSON configuration files. Each site is fully localized, SEO-optimized, and deployed to edge infrastructure.
+The **LTP Engine** is a **multi-vertical static site factory** that generates high-converting, single-page operator businesses from JSON configuration files. Each site is fully localized, SEO-optimized, and served globally via Vercel CDN.
 
 **Core Philosophy:**  
 > "The engine does the thinking. Operators provide the data. Skins provide the look."
@@ -50,7 +59,7 @@ The **LTP Engine** is a **multi-vertical static site factory** that generates hi
 | **Multi-Vertical** | Same engine powers consultancy, fitness, tours, nightlife with vertical-specific skins. |
 | **Multi-Language** | Full i18n via split JSON: `core.json` (invariant) + `en.json`/`es.json` (translatable). |
 | **Zero Hardcoding** | No hardcoded colors, text, or URLs in components. Everything flows from operator data or CSS variables. |
-| **Static-First** | Static output (SSG) deployed globally via Vercel's CDN; edge runtime used only for dynamic endpoints (checkout, webhooks). |
+| **Static-First** | Pages are pre-rendered (SSG) and served globally via Vercel CDN. Astro is configured as `output: 'static'`. When API routes are needed (checkout, webhooks), config will be changed to `'hybrid'` with SSR isolated to those routes. |
 
 ---
 
@@ -169,11 +178,11 @@ interface ModuleContractV1 {
 
 ### Contract Enforcement
 
-| Layer | Mechanism | When |
-|-------|-----------|------|
-| **Compile-time** | TypeScript interfaces | `npm run type-check` |
-| **Load-time** | Zod validation (TODO) | `loadOperator()` fails fast |
-| **Runtime** | Graceful degradation | Components handle missing optional data |
+| Layer | Mechanism | Status |
+|-------|-----------|--------|
+| **Build-time** | TypeScript interfaces + validation scripts | ✅ Implemented (`npm run validate`) |
+| **Load-time** | Zod schema validation | 🔄 Planned (for runtime safety + clearer errors) |
+| **Runtime** | Graceful degradation | ✅ Implemented (components handle missing optional data) |
 
 ### Breaking Change Rules
 
@@ -438,18 +447,20 @@ Components use var(--color-accent), var(--color-bg-base), etc.
 
 ## 🧩 Module System
 
-### The 8 Mandatory Modules
+### The 8 Engine Module Primitives
 
-| # | Module | Purpose | Required |
-|---|--------|---------|----------|
-| 1 | `hero` | Above-the-fold identity + primary CTA | ✅ Yes |
-| 2 | `fitFilter` | Qualify/disqualify visitors | No |
-| 3 | `offers` | Packages, bundles, promotions | No |
-| 4 | `products` | Individual products/services | No |
-| 5 | `proof` | Testimonials, metrics, logos | No |
-| 6 | `intel` | FAQ, knowledge base | No |
-| 7 | `conversion` | Final CTA zone | ✅ Yes |
-| 8 | `footer` | Legal, links, contact | ✅ Yes |
+> **Note:** All 8 modules are **engine primitives** (skins must implement them). Individual operators may omit optional modules from their `modules[]` array, but production-grade operators (L3+) must include minimum modules per readiness level.
+
+| # | Module | Purpose | Required Per Operator |
+|---|--------|---------|----------------------|
+| 1 | `hero` | Above-the-fold identity + primary CTA | ✅ Yes (always) |
+| 2 | `fitFilter` | Qualify/disqualify visitors | Optional (recommended) |
+| 3 | `offers` | Packages, bundles, promotions | Optional (L3+ recommended) |
+| 4 | `products` | Individual products/services | Optional (L3+ recommended) |
+| 5 | `proof` | Testimonials, metrics, logos | Optional (L2+ required) |
+| 6 | `intel` | FAQ, knowledge base | Optional (L2+ required) |
+| 7 | `conversion` | Final CTA zone | ✅ Yes (always) |
+| 8 | `footer` | Legal, links, contact | ✅ Yes (always) |
 
 ### Module Resolution
 
@@ -506,7 +517,7 @@ const modules = resolveModules(operator);
     └── Hero{SkinName}.astro
     └── ... (all 8 modules)
 
-// 2. Register in skin.ts
+// 2. Export skin config in skin.ts
 export const mySkin: SkinContractV1 = {
   id: 'consultancy-minimal',
   name: 'Minimal',
@@ -515,9 +526,10 @@ export const mySkin: SkinContractV1 = {
   defaults: { ... },
 };
 
-// 3. Register with engine
-import { registerSkin } from '@/lib/engine';
-registerSkin(mySkin);
+// 3. Import in resolveSkin.ts registry
+// Skins are registered via static imports in src/lib/engine/resolveSkin.ts
+import { mySkin } from '@/components/skins/consultancy/minimal/skin';
+const SKIN_REGISTRY = { ...existingSkins, [mySkin.id]: mySkin };
 ```
 
 ---
@@ -620,10 +632,12 @@ Hero (via footer nav)
 
 **Rule:** Every CTA must link to an internal anchor. External links only in footer social icons.
 
-### Structured Data (Auto-Generated)
+### Structured Data (Planned)
+
+> **Status:** 🔄 Planned — JSON-LD injection will be added to EngineLayout
 
 ```json
-// Injected by EngineLayout when operator has required fields
+// Will be injected by EngineLayout when operator has required fields
 {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",      // or vertical-specific type
@@ -691,9 +705,12 @@ Sitemap: https://ltp-engine.vercel.app/sitemap.xml
 
 ---
 
-## 💳 Stripe Economics (Engine-Enforced)
+## 💳 Stripe Economics (Target State)
 
-> **The economic primitive: Engine takes commission first, passes remainder to operator.**
+> **Current:** `checkoutUrl`-first pattern + `/api/checkout` placeholder (graceful fallback)  
+> **Target:** Stripe Connect split payouts + webhook fulfillment + transaction ledger
+
+**The economic primitive: Engine takes commission first, passes remainder to operator.**
 
 ### Commission Model
 
@@ -801,6 +818,19 @@ Operator receives: $91.80
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### UI Defaults Source of Truth
+
+| Level | Location | Purpose |
+|-------|----------|---------|
+| **Engine Defaults** | `src/config/engine.ts` | Universal constants (verticals, module IDs) |
+| **Skin Defaults** | `src/components/skins/{vertical}/skin.ts` | Vertical-specific labels, CTAs, nomenclature |
+| **Operator Overrides** | `operator.ui.*` in JSON | Per-operator customization |
+
+**The canonical editing locations:**
+- To change consultancy labels → edit `src/components/skins/consultancy/skin.ts` → `consultancyDefaults`
+- To add a new label → add to skin defaults first, then components can consume it
+- Future: `src/data/ui/common.{lang}.json` for cross-vertical shared UI strings
 
 **Location of defaults:**
 - Engine defaults: `src/config/engine.ts`

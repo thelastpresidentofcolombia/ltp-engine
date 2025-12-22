@@ -1,8 +1,27 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.0.0  
+> **Version:** 1.1.0  
 > **Last Updated:** December 22, 2025  
-> **Status:** Engine-First Architecture ✓ VERIFIED
+> **Status:** Engine-First Architecture ✓ VERIFIED | Products Architecture ✓ IMPLEMENTED
+
+---
+
+## 📋 Changelog
+
+### v1.1.0 (December 22, 2025)
+- **NEW:** `mergeById()` — Merges core + lang arrays by ID
+- **NEW:** `resolveProductAction()` — Centralizes CTA behavior (checkout/scroll/details)
+- **NEW:** `ProductCore` + `ProductLang` types — Engine-first product contract
+- **UPDATED:** `loadOperator()` — Now uses mergeById for products, founders, offers
+- **ADDED:** Compatibility layer for legacy JSON format (no breaking changes)
+- **DEPLOYED:** Jose Espinosa operator (consultancy vertical)
+
+### v1.0.0 (December 2025)
+- Initial engine architecture
+- Multi-vertical support (consultancy, fitness, tours)
+- Multi-language support (en, es)
+- Module variants system
+- Static output deployment to Vercel
 
 ---
 
@@ -271,6 +290,31 @@ The engine library is the **brain** of the system. All business logic lives here
 | `resolveSkin()` | `resolveSkin.ts` | Determines which skin (component set) to use |
 | `resolveModules()` | `resolveModules.ts` | Determines module render order |
 | `applyThemeVars()` | `applyThemeVars.ts` | Converts vibe tokens to CSS custom properties |
+| `mergeById()` | `mergeById.ts` | Merges core + lang arrays by ID (products, founders, offers) |
+| `resolveProductAction()` | `resolveProductAction.ts` | Determines CTA behavior (checkout/scroll/details) |
+| `hasStripeIntegration()` | `resolveProductAction.ts` | Checks if product has Stripe config |
+| `getStripePriceId()` | `resolveProductAction.ts` | Gets Stripe price ID for checkout |
+
+### Product Action Resolver (Engine-First Commerce)
+
+The engine centralizes CTA behavior. Components don't decide what happens — the engine does.
+
+```typescript
+import { resolveProductAction } from '@/lib/engine';
+
+const action = resolveProductAction(product);
+
+// action.type can be:
+// - 'checkout' → trigger Stripe checkout with action.productId
+// - 'scroll' → scroll to #${action.target} (e.g., intel section)
+// - 'details' → open modal/expand for action.productId
+```
+
+Products are defined in JSON:
+- `core.json`: pricing, currency, delivery, stripe refs, action defaults
+- `{lang}.json`: title, tagline, bullets, badge, CTA labels
+
+The `mergeById()` function combines them at load time. A compatibility layer maps legacy JSON formats.
 
 ### Usage in Routes
 
@@ -905,7 +949,32 @@ npm run type-check
 
 ---
 
-## 📐 Route Pattern
+## � Roadmap & Next Steps
+
+### Immediate (Next Session)
+| Task | Description | Priority |
+|------|-------------|----------|
+| Wire Product CTAs | Update Products components to use `resolveProductAction()` | 🔴 High |
+| `/api/checkout` | Create Stripe checkout endpoint | 🔴 High |
+| Stripe Price IDs | Add real `stripe.priceId` to Jose's products | 🟡 Medium |
+
+### Short-Term (This Week)
+| Task | Description | Priority |
+|------|-------------|----------|
+| Webhook Handler | `/api/webhook` for Stripe checkout.session.completed | 🟡 Medium |
+| Email Fulfillment | Send download links via Resend/SendGrid | 🟡 Medium |
+| More Operators | Create 2-3 more operators to stress-test engine | 🟡 Medium |
+
+### Future (Backlog)
+| Task | Description | Priority |
+|------|-------------|----------|
+| JSON Migration | Move product prices to core.json (compat layer handles for now) | 🟢 Low |
+| Firestore | Add if gated downloads/customer portal needed | 🟢 Low |
+| Admin Dashboard | Operator management UI | 🟢 Low |
+
+---
+
+## �📐 Route Pattern
 
 ```
 /{lang}/v/{vertical}/{slug}

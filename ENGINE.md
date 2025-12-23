@@ -1,34 +1,48 @@
-﻿# LTP Engine â€” Multi-Vertical Static Business Factory
+# LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.2.0  
+> **Version:** 1.3.0  
 > **Last Updated:** December 23, 2025  
-> **Status:** Engine-First Architecture âœ“ | Stripe Checkout âœ“ | FAQPage JSON-LD âœ“
+> **Status:** Engine-First Architecture �" | Astro 5 �" | Stripe Checkout �"
 
 ---
 
-## ðŸ“‹ Changelog
+## 📋 Changelog
+
+### v1.3.0 (December 23, 2025)
+- **BREAKING:** Upgraded to **Astro 5** + `@astrojs/vercel@9.x`
+- **FIX:** Vercel deployment - Node 18 runtime deprecated, now emits `nodejs20.x`
+- **UPDATED:** `astro.config.mjs` - `output: 'static'` (Astro 5 supports per-page SSR with static output)
+- **UPDATED:** Import path `@astrojs/vercel/serverless` -> `@astrojs/vercel`
+- **UPDATED:** API routes now require explicit `export const prerender = false`
+
+#### Migration Notes (Astro 4 -> 5)
+| Change | Before | After |
+|--------|--------|-------|
+| Adapter import | `@astrojs/vercel/serverless` | `@astrojs/vercel` |
+| Output mode | `output: 'hybrid'` | `output: 'static'` |
+| API routes | Implicit SSR in hybrid | Explicit `prerender = false` |
+| Runtime | `nodejs18.x` (deprecated) | `nodejs20.x` |
 
 ### v1.2.0 (December 23, 2025)
-- **NEW:** `/api/checkout` â€” Stripe Checkout Session endpoint (Vercel serverless)
-- **NEW:** `buildFaqJsonLd.ts` â€” Pure function for FAQPage JSON-LD schema
+- **NEW:** `/api/checkout` — Stripe Checkout Session endpoint (Vercel serverless)
+- **NEW:** `buildFaqJsonLd.ts` — Pure function for FAQPage JSON-LD schema
 - **NEW:** FAQPage structured data injection in `EngineLayout.astro` (min 3 FAQs required)
-- **UPDATED:** `astro.config.mjs` â€” Changed to `output: 'hybrid'` with Vercel adapter for API routes
-- **UPDATED:** `OffersConsultancy.astro` â€” Full engine-first wiring with `resolveOfferAction()`
-- **UPDATED:** `ProductsConsultancy.astro` â€” Passes operatorId to checkout API
+- **UPDATED:** `OffersConsultancy.astro` — Full engine-first wiring with `resolveOfferAction()`
+- **UPDATED:** `ProductsConsultancy.astro` — Passes operatorId to checkout API
 - **FIX:** Suppressed Tailwind JIT verbose logging in dev mode
 
 ### v1.1.1 (December 23, 2025)
-- **FIX:** checkoutUrl-first pattern â€” Products can bypass `/api/checkout` with direct URLs
-- **FIX:** No hardcoded modal labels â€” All strings from `operator.ui.labels.products.*`
-- **FIX:** Standardized module anchor IDs â€” `hero`, `fit`, `offers`, `products`, `tools`, `proof`, `intel`, `conversion`, `footer`
-- **UPDATED:** `ProductsConsultancy.astro` â€” Full engine-first CTA wiring with modal
-- **UPDATED:** `consultancyDefaults` â€” Added `detailsLabel`, `modalCta`, `checkoutPending` labels
+- **FIX:** checkoutUrl-first pattern — Products can bypass `/api/checkout` with direct URLs
+- **FIX:** No hardcoded modal labels — All strings from `operator.ui.labels.products.*`
+- **FIX:** Standardized module anchor IDs — `hero`, `fit`, `offers`, `products`, `tools`, `proof`, `intel`, `conversion`, `footer`
+- **UPDATED:** `ProductsConsultancy.astro` — Full engine-first CTA wiring with modal
+- **UPDATED:** `consultancyDefaults` — Added `detailsLabel`, `modalCta`, `checkoutPending` labels
 
 ### v1.1.0 (December 22, 2025)
-- **NEW:** `mergeById()` â€” Merges core + lang arrays by ID
-- **NEW:** `resolveProductAction()` â€” Centralizes CTA behavior (checkout/scroll/details)
-- **NEW:** `ProductCore` + `ProductLang` types â€” Engine-first product contract
-- **UPDATED:** `loadOperator()` â€” Now uses mergeById for products, founders, offers
+- **NEW:** `mergeById()` — Merges core + lang arrays by ID
+- **NEW:** `resolveProductAction()` — Centralizes CTA behavior (checkout/scroll/details)
+- **NEW:** `ProductCore` + `ProductLang` types — Engine-first product contract
+- **UPDATED:** `loadOperator()` — Now uses mergeById for products, founders, offers
 - **ADDED:** Compatibility layer for legacy JSON format (no breaking changes)
 - **DEPLOYED:** Jose Espinosa operator (consultancy vertical)
 
@@ -45,12 +59,12 @@
 |-----|--------|-------|
 | **Offers not engine-first** |  Complete | `resolveOfferAction()` + OffersConsultancy.astro wired |
 | **Schema.org FAQPage** |  Complete | `buildFaqJsonLd.ts` + EngineLayout injection |
-| **Stripe Connect** | ðŸ”„ Planned | Current: checkoutUrl-first; Target: split payouts + webhooks |
-| **Zod runtime validation** | ðŸ”„ Planned | Build-time validation exists via scripts |
+| **Stripe Connect** | 🔄 Planned | Current: checkoutUrl-first; Target: split payouts + webhooks |
+| **Zod runtime validation** | 🔄 Planned | Build-time validation exists via scripts |
 
 ---
 
-## ðŸ“ Purpose Statement
+## 📍 Purpose Statement
 
 The **LTP Engine** is a **multi-vertical static site factory** that generates high-converting, single-page operator businesses from JSON configuration files. Each site is fully localized, SEO-optimized, and served globally via Vercel CDN.
 
@@ -59,7 +73,7 @@ The **LTP Engine** is a **multi-vertical static site factory** that generates hi
 
 ---
 
-## ðŸŽ¯ Design Goals
+## 🎯 Design Goals
 
 | Goal | Description |
 |------|-------------|
@@ -72,38 +86,38 @@ The **LTP Engine** is a **multi-vertical static site factory** that generates hi
 
 ---
 
-## ðŸ—ï¸ Architecture Overview
+## 🏗️ Architecture Overview
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                              LTP ENGINE                                      â”‚
-â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-â”‚                                                                             â”‚
-â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                â”‚
-â”‚   â”‚   OPERATOR  â”‚ â”€â”€â”€â–¶ â”‚   ENGINE    â”‚ â”€â”€â”€â–¶ â”‚    SKIN     â”‚                â”‚
-â”‚   â”‚   (JSON)    â”‚      â”‚   (Logic)   â”‚      â”‚ (Components)â”‚                â”‚
-â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                â”‚
-â”‚         â”‚                    â”‚                     â”‚                        â”‚
-â”‚         â–¼                    â–¼                     â–¼                        â”‚
-â”‚   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                 â”‚
-â”‚   â”‚                   RENDERED PAGE                       â”‚                 â”‚
-â”‚   â”‚  /en/v/consultancy/demo â†’ Static HTML + CSS          â”‚                 â”‚
-â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                 â”‚
-â”‚                                                                             â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              LTP ENGINE                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────┐      ┌─────────────┐      ┌─────────────┐                │
+│   │   OPERATOR  │ ───▶ │   ENGINE    │ ───▶ │    SKIN     │                │
+│   │   (JSON)    │      │   (Logic)   │      │ (Components)│                │
+│   └─────────────┘      └─────────────┘      └─────────────┘                │
+│         │                    │                     │                        │
+│         ▼                    ▼                     ▼                        │
+│   ┌──────────────────────────────────────────────────────┐                 │
+│   │                   RENDERED PAGE                       │                 │
+│   │  /en/v/consultancy/demo → Static HTML + CSS          │                 │
+│   └──────────────────────────────────────────────────────┘                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
 
-1. **Operator JSON** â†’ `loadOperator()` â†’ Merged `Operator` object
-2. **Operator** â†’ `resolveSkin()` â†’ `SkinConfig` (which components to render)
-3. **Operator** â†’ `resolveModules()` â†’ Ordered module list
-4. **Operator.vibe** â†’ `applyThemeVars()` â†’ CSS custom properties
-5. **Everything** â†’ `ModuleRenderer` â†’ Rendered page
+1. **Operator JSON** → `loadOperator()` → Merged `Operator` object
+2. **Operator** → `resolveSkin()` → `SkinConfig` (which components to render)
+3. **Operator** → `resolveModules()` → Ordered module list
+4. **Operator.vibe** → `applyThemeVars()` → CSS custom properties
+5. **Everything** → `ModuleRenderer` → Rendered page
 
 ---
 
-## ðŸ“œ Engine Contracts (v1)
+## 📜 Engine Contracts (v1)
 
 > **CRITICAL:** These contracts are enforceable. Breaking changes require version bump.
 
@@ -189,9 +203,9 @@ interface ModuleContractV1 {
 
 | Layer | Mechanism | Status |
 |-------|-----------|--------|
-| **Build-time** | TypeScript interfaces + validation scripts | âœ… Implemented (`npm run validate`) |
-| **Load-time** | Zod schema validation | ðŸ”„ Planned (for runtime safety + clearer errors) |
-| **Runtime** | Graceful degradation | âœ… Implemented (components handle missing optional data) |
+| **Build-time** | TypeScript interfaces + validation scripts | ✅ Implemented (`npm run validate`) |
+| **Load-time** | Zod schema validation | 🔄 Planned (for runtime safety + clearer errors) |
+| **Runtime** | Graceful degradation | ✅ Implemented (components handle missing optional data) |
 
 ### Breaking Change Rules
 
@@ -209,100 +223,100 @@ A change is **non-breaking** if it:
 
 ---
 
-## ðŸ“ Folder Structure
+## 📁 Folder Structure
 
 ```
 engine/
-â”œâ”€â”€ src/
-â”‚   â”œâ”€â”€ components/
-â”‚   â”‚   â”œâ”€â”€ engine/                    # Core rendering components
-â”‚   â”‚   â”‚   â”œâ”€â”€ ModuleRenderer.astro   # Renders modules in order
-â”‚   â”‚   â”‚   â””â”€â”€ modules/               # Default/fallback module implementations
-â”‚   â”‚   â”‚       â”œâ”€â”€ Hero.astro
-â”‚   â”‚   â”‚       â”œâ”€â”€ FitFilter.astro
-â”‚   â”‚   â”‚       â”œâ”€â”€ Offers.astro
-â”‚   â”‚   â”‚       â”œâ”€â”€ Products.astro
-â”‚   â”‚   â”‚       â”œâ”€â”€ Proof.astro
-â”‚   â”‚   â”‚       â”œâ”€â”€ Intel.astro
-â”‚   â”‚   â”‚       â”œâ”€â”€ Conversion.astro
-â”‚   â”‚   â”‚       â””â”€â”€ Footer.astro
-â”‚   â”‚   â”‚
-â”‚   â”‚   â””â”€â”€ skins/                     # Vertical-specific skins
-â”‚   â”‚       â””â”€â”€ consultancy/
-â”‚   â”‚           â”œâ”€â”€ skin.ts            # Skin config + defaults
-â”‚   â”‚           â””â”€â”€ components/        # Consultancy-specific components
-â”‚   â”‚               â”œâ”€â”€ HeroConsultancy.astro
-â”‚   â”‚               â”œâ”€â”€ FitFilterConsultancy.astro
-â”‚   â”‚               â”œâ”€â”€ OffersConsultancy.astro
-â”‚   â”‚               â”œâ”€â”€ ProductsConsultancy.astro
-â”‚   â”‚               â”œâ”€â”€ ProofConsultancy.astro
-â”‚   â”‚               â”œâ”€â”€ IntelConsultancy.astro
-â”‚   â”‚               â”œâ”€â”€ ConversionConsultancy.astro
-â”‚   â”‚               â””â”€â”€ FooterConsultancy.astro
-â”‚   â”‚
-â”‚   â”œâ”€â”€ config/
-â”‚   â”‚   â”œâ”€â”€ engine.ts                  # Engine constants (modules, verticals)
-â”‚   â”‚   â”œâ”€â”€ seo.ts                     # SEO config (languages, URLs)
-â”‚   â”‚   â””â”€â”€ stripe.ts                  # Stripe integration config
-â”‚   â”‚
-â”‚   â”œâ”€â”€ data/
-â”‚   â”‚   â”œâ”€â”€ operators/                 # OPERATOR DATA LIVES HERE
-â”‚   â”‚   â”‚   â”œâ”€â”€ consultancy/
-â”‚   â”‚   â”‚   â”‚   â””â”€â”€ demo/
-â”‚   â”‚   â”‚   â”‚       â”œâ”€â”€ core.json      # Language-agnostic data
-â”‚   â”‚   â”‚   â”‚       â”œâ”€â”€ en.json        # English content
-â”‚   â”‚   â”‚   â”‚       â””â”€â”€ es.json        # Spanish content
-â”‚   â”‚   â”‚   â”œâ”€â”€ fitness/
-â”‚   â”‚   â”‚   â”‚   â””â”€â”€ demo/
-â”‚   â”‚   â”‚   â””â”€â”€ tours/
-â”‚   â”‚   â”‚       â””â”€â”€ demo/
-â”‚   â”‚   â””â”€â”€ ui/                        # Shared UI data (nomenclature, etc.)
-â”‚   â”‚
-â”‚   â”œâ”€â”€ layouts/
-â”‚   â”‚   â””â”€â”€ EngineLayout.astro         # Base HTML layout (vibe tokens injected here)
-â”‚   â”‚
-â”‚   â”œâ”€â”€ lib/
-â”‚   â”‚   â””â”€â”€ engine/                    # ðŸ”¥ ENGINE CORE LIBRARY
-â”‚   â”‚       â”œâ”€â”€ index.ts               # Main exports
-â”‚   â”‚       â”œâ”€â”€ loadOperator.ts        # Load & merge operator JSON
-â”‚   â”‚       â”œâ”€â”€ resolveSkin.ts         # Determine skin for operator
-â”‚   â”‚       â”œâ”€â”€ resolveModules.ts      # Determine module order
-â”‚   â”‚       â””â”€â”€ applyThemeVars.ts      # Generate CSS vars from vibe
-â”‚   â”‚
-â”‚   â”œâ”€â”€ pages/
-â”‚   â”‚   â”œâ”€â”€ index.astro                # Root redirect
-â”‚   â”‚   â”œâ”€â”€ 404.astro                  # Error page
-â”‚   â”‚   â””â”€â”€ [lang]/
-â”‚   â”‚       â”œâ”€â”€ index.astro            # Language index
-â”‚   â”‚       â””â”€â”€ v/
-â”‚   â”‚           â””â”€â”€ [vertical]/
-â”‚   â”‚               â””â”€â”€ [slug].astro   # THE MAIN ROUTE
-â”‚   â”‚
-â”‚   â”œâ”€â”€ styles/
-â”‚   â”‚   â””â”€â”€ global.css                 # Tailwind + CSS variables + base styles
-â”‚   â”‚
-â”‚   â””â”€â”€ types/
-â”‚       â”œâ”€â”€ index.ts                   # Type exports
-â”‚       â”œâ”€â”€ operator.ts                # ðŸ”¥ OPERATOR TYPE DEFINITIONS
-â”‚       â”œâ”€â”€ vibe.ts                    # Vibe/theme types
-â”‚       â”œâ”€â”€ modules.ts                 # Module type definitions
-â”‚       â”œâ”€â”€ products.ts                # Product types
-â”‚       â”œâ”€â”€ offers.ts                  # Offer/pricing types
-â”‚       â”œâ”€â”€ proof.ts                   # Testimonial/proof types
-â”‚       â””â”€â”€ intel.ts                   # FAQ/intel types
-â”‚
-â”œâ”€â”€ public/
-â”‚   â””â”€â”€ images/                        # Static assets
-â”‚
-â”œâ”€â”€ astro.config.mjs                   # Astro configuration
-â”œâ”€â”€ tailwind.config.cjs                # Tailwind configuration
-â”œâ”€â”€ tsconfig.json                      # TypeScript configuration
-â””â”€â”€ package.json                       # Dependencies
+├── src/
+│   ├── components/
+│   │   ├── engine/                    # Core rendering components
+│   │   │   ├── ModuleRenderer.astro   # Renders modules in order
+│   │   │   └── modules/               # Default/fallback module implementations
+│   │   │       ├── Hero.astro
+│   │   │       ├── FitFilter.astro
+│   │   │       ├── Offers.astro
+│   │   │       ├── Products.astro
+│   │   │       ├── Proof.astro
+│   │   │       ├── Intel.astro
+│   │   │       ├── Conversion.astro
+│   │   │       └── Footer.astro
+│   │   │
+│   │   └── skins/                     # Vertical-specific skins
+│   │       └── consultancy/
+│   │           ├── skin.ts            # Skin config + defaults
+│   │           └── components/        # Consultancy-specific components
+│   │               ├── HeroConsultancy.astro
+│   │               ├── FitFilterConsultancy.astro
+│   │               ├── OffersConsultancy.astro
+│   │               ├── ProductsConsultancy.astro
+│   │               ├── ProofConsultancy.astro
+│   │               ├── IntelConsultancy.astro
+│   │               ├── ConversionConsultancy.astro
+│   │               └── FooterConsultancy.astro
+│   │
+│   ├── config/
+│   │   ├── engine.ts                  # Engine constants (modules, verticals)
+│   │   ├── seo.ts                     # SEO config (languages, URLs)
+│   │   └── stripe.ts                  # Stripe integration config
+│   │
+│   ├── data/
+│   │   ├── operators/                 # OPERATOR DATA LIVES HERE
+│   │   │   ├── consultancy/
+│   │   │   │   └── demo/
+│   │   │   │       ├── core.json      # Language-agnostic data
+│   │   │   │       ├── en.json        # English content
+│   │   │   │       └── es.json        # Spanish content
+│   │   │   ├── fitness/
+│   │   │   │   └── demo/
+│   │   │   └── tours/
+│   │   │       └── demo/
+│   │   └── ui/                        # Shared UI data (nomenclature, etc.)
+│   │
+│   ├── layouts/
+│   │   └── EngineLayout.astro         # Base HTML layout (vibe tokens injected here)
+│   │
+│   ├── lib/
+│   │   └── engine/                    # 🔥 ENGINE CORE LIBRARY
+│   │       ├── index.ts               # Main exports
+│   │       ├── loadOperator.ts        # Load & merge operator JSON
+│   │       ├── resolveSkin.ts         # Determine skin for operator
+│   │       ├── resolveModules.ts      # Determine module order
+│   │       └── applyThemeVars.ts      # Generate CSS vars from vibe
+│   │
+│   ├── pages/
+│   │   ├── index.astro                # Root redirect
+│   │   ├── 404.astro                  # Error page
+│   │   └── [lang]/
+│   │       ├── index.astro            # Language index
+│   │       └── v/
+│   │           └── [vertical]/
+│   │               └── [slug].astro   # THE MAIN ROUTE
+│   │
+│   ├── styles/
+│   │   └── global.css                 # Tailwind + CSS variables + base styles
+│   │
+│   └── types/
+│       ├── index.ts                   # Type exports
+│       ├── operator.ts                # 🔥 OPERATOR TYPE DEFINITIONS
+│       ├── vibe.ts                    # Vibe/theme types
+│       ├── modules.ts                 # Module type definitions
+│       ├── products.ts                # Product types
+│       ├── offers.ts                  # Offer/pricing types
+│       ├── proof.ts                   # Testimonial/proof types
+│       └── intel.ts                   # FAQ/intel types
+│
+├── public/
+│   └── images/                        # Static assets
+│
+├── astro.config.mjs                   # Astro configuration
+├── tailwind.config.cjs                # Tailwind configuration
+├── tsconfig.json                      # TypeScript configuration
+└── package.json                       # Dependencies
 ```
 
 ---
 
-## ðŸ”§ Engine Library (`/src/lib/engine/`)
+## 🔧 Engine Library (`/src/lib/engine/`)
 
 The engine library is the **brain** of the system. All business logic lives here.
 
@@ -323,7 +337,7 @@ The engine library is the **brain** of the system. All business logic lives here
 
 ### Product Action Resolver (Engine-First Commerce)
 
-The engine centralizes CTA behavior. Components don't decide what happens â€” the engine does.
+The engine centralizes CTA behavior. Components don't decide what happens — the engine does.
 
 ```typescript
 import { resolveProductAction } from '@/lib/engine';
@@ -331,9 +345,9 @@ import { resolveProductAction } from '@/lib/engine';
 const action = resolveProductAction(product);
 
 // action.type can be:
-// - 'checkout' â†’ trigger Stripe checkout with action.productId
-// - 'scroll' â†’ scroll to #${action.target} (e.g., intel section)
-// - 'details' â†’ open modal/expand for action.productId
+// - 'checkout' → trigger Stripe checkout with action.productId
+// - 'scroll' → scroll to #${action.target} (e.g., intel section)
+// - 'details' → open modal/expand for action.productId
 ```
 
 Products are defined in JSON:
@@ -356,7 +370,7 @@ const { styleString } = applyThemeVars(operator);
 
 ---
 
-## ðŸ“Š Operator Data Structure
+## 📊 Operator Data Structure
 
 ### Core + Lang Split
 
@@ -406,7 +420,7 @@ interface Operator extends OperatorCore, OperatorLang {
 
 ---
 
-## ðŸŽ¨ Vibe Token System
+## 🎨 Vibe Token System
 
 The vibe system controls all visual styling via CSS custom properties.
 
@@ -414,11 +428,11 @@ The vibe system controls all visual styling via CSS custom properties.
 
 ```
 operator.vibe.tokens (core.json)
-        â†“
+        ↓
 EngineLayout.astro (injects into <style>)
-        â†“
+        ↓
 CSS Variables (--color-*, --font-*, etc.)
-        â†“
+        ↓
 Components use var(--color-accent), var(--color-bg-base), etc.
 ```
 
@@ -455,7 +469,7 @@ Components use var(--color-accent), var(--color-bg-base), etc.
 
 ---
 
-## ðŸ§© Module System
+## 🧩 Module System
 
 ### The 8 Engine Module Primitives
 
@@ -463,14 +477,14 @@ Components use var(--color-accent), var(--color-bg-base), etc.
 
 | # | Module | Purpose | Required Per Operator |
 |---|--------|---------|----------------------|
-| 1 | `hero` | Above-the-fold identity + primary CTA | âœ… Yes (always) |
+| 1 | `hero` | Above-the-fold identity + primary CTA | ✅ Yes (always) |
 | 2 | `fitFilter` | Qualify/disqualify visitors | Optional (recommended) |
 | 3 | `offers` | Packages, bundles, promotions | Optional (L3+ recommended) |
 | 4 | `products` | Individual products/services | Optional (L3+ recommended) |
 | 5 | `proof` | Testimonials, metrics, logos | Optional (L2+ required) |
 | 6 | `intel` | FAQ, knowledge base | Optional (L2+ required) |
-| 7 | `conversion` | Final CTA zone | âœ… Yes (always) |
-| 8 | `footer` | Legal, links, contact | âœ… Yes (always) |
+| 7 | `conversion` | Final CTA zone | ✅ Yes (always) |
+| 8 | `footer` | Legal, links, contact | ✅ Yes (always) |
 
 ### Module Resolution
 
@@ -480,12 +494,12 @@ Components use var(--color-accent), var(--color-bg-base), etc.
 
 // resolveModules() validates and returns the final list
 const modules = resolveModules(operator);
-// â†’ ['hero', 'fitFilter', 'offers', 'products', 'proof', 'intel', 'conversion', 'footer']
+// → ['hero', 'fitFilter', 'offers', 'products', 'proof', 'intel', 'conversion', 'footer']
 ```
 
 ---
 
-## ðŸŽ­ Vertical vs Skin (Critical Distinction)
+## 🎭 Vertical vs Skin (Critical Distinction)
 
 > **Vertical** = Business domain (consultancy, fitness, tours, nightlife)  
 > **Skin** = Visual grammar + module implementations (multiple per vertical allowed)
@@ -502,30 +516,30 @@ const modules = resolveModules(operator);
 ### Skin Resolution Order
 
 ```
-1. operator.vibe.skinId â†’ Look up custom skin
-2. Not found? â†’ Use vertical default skin
-3. No vertical default? â†’ Fall back to consultancy-canonical
+1. operator.vibe.skinId → Look up custom skin
+2. Not found? → Use vertical default skin
+3. No vertical default? → Fall back to consultancy-canonical
 ```
 
 ### Current Skin Registry
 
 | Vertical | Skin ID | Status |
 |----------|---------|--------|
-| `consultancy` | `consultancy-canonical` | âœ… Complete |
-| `consultancy` | `consultancy-minimal` | ðŸ”„ Planned |
-| `fitness` | `fitness-energetic` | ðŸ”„ Pending |
-| `tours` | `tours-adventurous` | ðŸ”„ Pending |
-| `nightlife` | `nightlife-bold` | ðŸ”„ Pending |
+| `consultancy` | `consultancy-canonical` | ✅ Complete |
+| `consultancy` | `consultancy-minimal` | 🔄 Planned |
+| `fitness` | `fitness-energetic` | 🔄 Pending |
+| `tours` | `tours-adventurous` | 🔄 Pending |
+| `nightlife` | `nightlife-bold` | 🔄 Pending |
 
 ### Adding a New Skin
 
 ```typescript
 // 1. Create skin folder
 /skins/{vertical}/{skinName}/
-â”œâ”€â”€ skin.ts
-â””â”€â”€ components/
-    â””â”€â”€ Hero{SkinName}.astro
-    â””â”€â”€ ... (all 8 modules)
+├── skin.ts
+└── components/
+    └── Hero{SkinName}.astro
+    └── ... (all 8 modules)
 
 // 2. Export skin config in skin.ts
 export const mySkin: SkinContractV1 = {
@@ -544,7 +558,7 @@ const SKIN_REGISTRY = { ...existingSkins, [mySkin.id]: mySkin };
 
 ---
 
-## ðŸŽ­ Skin System (Implementation)
+## 🎭 Skin System (Implementation)
 
 Skins provide vertical-specific visual implementations of modules.
 
@@ -552,11 +566,11 @@ Skins provide vertical-specific visual implementations of modules.
 
 ```
 /skins/{vertical}/
-â”œâ”€â”€ skin.ts                    # Skin configuration + defaults
-â””â”€â”€ components/
-    â”œâ”€â”€ Hero{Vertical}.astro
-    â”œâ”€â”€ FitFilter{Vertical}.astro
-    â””â”€â”€ ... (one per module)
+├── skin.ts                    # Skin configuration + defaults
+└── components/
+    ├── Hero{Vertical}.astro
+    ├── FitFilter{Vertical}.astro
+    └── ... (one per module)
 ```
 
 ### Skin Config
@@ -592,16 +606,16 @@ export const consultancySkin = {
 
 ```
 ModuleRenderer receives module list
-        â†“
+        ↓
 For each module ID, check skin.components[moduleId]
-        â†“
-If skin has component â†’ use it
-Else â†’ use default from /engine/modules/
+        ↓
+If skin has component → use it
+Else → use default from /engine/modules/
 ```
 
 ---
 
-## ï¿½ Authority Layer (SEO + Intel Rules)
+## � Authority Layer (SEO + Intel Rules)
 
 > **Engine-enforced quality gates for search visibility and trust.**
 
@@ -609,34 +623,34 @@ Else â†’ use default from /engine/modules/
 
 | Field | Location | Constraint | Enforced |
 |-------|----------|------------|----------|
-| `seo.title` | `{lang}.json` | Max 60 chars | âœ… Type |
-| `seo.description` | `{lang}.json` | Max 160 chars | âœ… Type |
-| `canonical` | Auto-generated | `/{lang}/v/{vertical}/{slug}` | âœ… Engine |
-| `hreflang` | Auto-generated | All supported languages | âœ… Engine |
-| `og:image` | `core.json` or auto | 1200x630 recommended | âš ï¸ Warn |
+| `seo.title` | `{lang}.json` | Max 60 chars | ✅ Type |
+| `seo.description` | `{lang}.json` | Max 160 chars | ✅ Type |
+| `canonical` | Auto-generated | `/{lang}/v/{vertical}/{slug}` | ✅ Engine |
+| `hreflang` | Auto-generated | All supported languages | ✅ Engine |
+| `og:image` | `core.json` or auto | 1200x630 recommended | ⚠️ Warn |
 
 ### Intel Requirements (Per Vertical)
 
 | Vertical | Min FAQ Count | Searchable | Schema.org FAQ |
 |----------|--------------|------------|----------------|
-| `consultancy` | 5 | âœ… Required | âœ… Auto |
-| `fitness` | 3 | âœ… Required | âœ… Auto |
-| `tours` | 5 | âœ… Required | âœ… Auto |
-| `nightlife` | 3 | Optional | âœ… Auto |
+| `consultancy` | 5 | ✅ Required | ✅ Auto |
+| `fitness` | 3 | ✅ Required | ✅ Auto |
+| `tours` | 5 | ✅ Required | ✅ Auto |
+| `nightlife` | 3 | Optional | ✅ Auto |
 
 ### Internal Authority Loop
 
 ```
 Hero (identity)
-    â†“ links to
+    ↓ links to
 Offers/Products (value)
-    â†“ links to
+    ↓ links to
 Proof (trust)
-    â†“ links to
+    ↓ links to
 Intel/FAQ (education)
-    â†“ links to
+    ↓ links to
 Conversion (action)
-    â†“ backlinks to
+    ↓ backlinks to
 Hero (via footer nav)
 ```
 
@@ -644,7 +658,7 @@ Hero (via footer nav)
 
 ### Structured Data (Planned)
 
-> **Status:** ðŸ”„ Planned â€” JSON-LD injection will be added to EngineLayout
+> **Status:** 🔄 Planned — JSON-LD injection will be added to EngineLayout
 
 ```json
 // Will be injected by EngineLayout when operator has required fields
@@ -662,7 +676,7 @@ Hero (via footer nav)
 
 ---
 
-## ðŸŒ Deployment + URL Canonical Rules
+## 🌐 Deployment + URL Canonical Rules
 
 ### Environment URL Resolution
 
@@ -695,10 +709,10 @@ Hero (via footer nav)
 
 | Content | Included | Priority |
 |---------|----------|----------|
-| Operator pages | âœ… Yes | 1.0 |
-| Language variants | âœ… Yes | 0.9 |
-| Index pages | âœ… Yes | 0.8 |
-| 404 | âŒ No | â€” |
+| Operator pages | ✅ Yes | 1.0 |
+| Language variants | ✅ Yes | 0.9 |
+| Index pages | ✅ Yes | 0.8 |
+| 404 | ❌ No | — |
 
 ### Robots.txt Rules
 
@@ -715,7 +729,7 @@ Sitemap: https://ltp-engine.vercel.app/sitemap.xml
 
 ---
 
-## ðŸ’³ Stripe Economics (Target State)
+## 💳 Stripe Economics (Target State)
 
 > **Current:** `checkoutUrl`-first pattern + `/api/checkout` placeholder (graceful fallback)  
 > **Target:** Stripe Connect split payouts + webhook fulfillment + transaction ledger
@@ -726,11 +740,11 @@ Sitemap: https://ltp-engine.vercel.app/sitemap.xml
 
 ```
 Customer pays $100
-    â†“
+    ↓
 Stripe fees: ~$3.20 (3.2%)
-    â†“
+    ↓
 Engine commission: $5.00 (5% of net)
-    â†“
+    ↓
 Operator receives: $91.80
 ```
 
@@ -747,21 +761,21 @@ Operator receives: $91.80
 
 | Vertical | Products | Subscriptions | Donations |
 |----------|----------|---------------|-----------|
-| `consultancy` | âœ… | âœ… | âŒ |
-| `fitness` | âœ… | âœ… | âŒ |
-| `tours` | âœ… | âŒ | âŒ |
-| `nightlife` | âœ… | âŒ | âœ… |
+| `consultancy` | ✅ | ✅ | ❌ |
+| `fitness` | ✅ | ✅ | ❌ |
+| `tours` | ✅ | ❌ | ❌ |
+| `nightlife` | ✅ | ❌ | ✅ |
 
 ### Checkout Flow (Engine-Controlled)
 
 ```
-1. User clicks CTA â†’ /api/checkout?priceId=xxx&operatorId=xxx
+1. User clicks CTA → /api/checkout?priceId=xxx&operatorId=xxx
 2. Engine validates operator owns this price
 3. Engine creates CheckoutSession with:
    - application_fee_amount (engine commission)
    - transfer_data.destination (operator's connected account)
 4. Redirect to Stripe Checkout
-5. Webhook confirms â†’ Engine logs transaction
+5. Webhook confirms → Engine logs transaction
 ```
 
 ### Required Operator Stripe Setup
@@ -781,21 +795,21 @@ Operator receives: $91.80
 
 ---
 
-## ï¿½ðŸš¦ Engine-Grade Standards
+## �🚦 Engine-Grade Standards
 
-### âœ… DO
+### ✅ DO
 
 - Use CSS variables for ALL colors: `var(--color-accent)`, `var(--color-text-primary)`
 - Read data from `operator` prop, not hardcoded values
-- Use the fallback chain: `operator.ui?.* â†’ skin.defaults.* â†’ engine defaults`
-- Keep components dumbâ€”logic lives in engine functions
+- Use the fallback chain: `operator.ui?.* → skin.defaults.* → engine defaults`
+- Keep components dumb—logic lives in engine functions
 - Split core/lang data properly (images in core, text in lang)
 - Engine defaults live in `src/config/engine.ts` (never in components)
 
-### âŒ DON'T
+### ❌ DON'T
 
-- Hardcode hex colors: ~~`#1e3a5f`~~ â†’ `var(--color-accent)`
-- Hardcode text: ~~`"Contact Us"`~~ â†’ `{operator.hero.ctaPrimary}`
+- Hardcode hex colors: ~~`#1e3a5f`~~ → `var(--color-accent)`
+- Hardcode text: ~~`"Contact Us"`~~ → `{operator.hero.ctaPrimary}`
 - Put business logic in components
 - Mix language-specific data into core.json
 - Use `text-black` or `text-white` without semantic meaning
@@ -814,19 +828,19 @@ Operator receives: $91.80
 ### Fallback Chain (Authoritative)
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                     FALLBACK CHAIN                          â”‚
-â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-â”‚                                                             â”‚
-â”‚   1. operator.ui?.labels?.hero         (Operator override)  â”‚
-â”‚              â†“ not found?                                   â”‚
-â”‚   2. skin.defaults.labels.hero         (Skin default)       â”‚
-â”‚              â†“ not found?                                   â”‚
-â”‚   3. ENGINE_DEFAULTS.labels.hero       (Engine default)     â”‚
-â”‚              â†“ not found?                                   â”‚
-â”‚   4. FAIL (missing required field)     (Contract violation) â”‚
-â”‚                                                             â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌─────────────────────────────────────────────────────────────┐
+│                     FALLBACK CHAIN                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   1. operator.ui?.labels?.hero         (Operator override)  │
+│              ↓ not found?                                   │
+│   2. skin.defaults.labels.hero         (Skin default)       │
+│              ↓ not found?                                   │
+│   3. ENGINE_DEFAULTS.labels.hero       (Engine default)     │
+│              ↓ not found?                                   │
+│   4. FAIL (missing required field)     (Contract violation) │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### UI Defaults Source of Truth
@@ -838,8 +852,8 @@ Operator receives: $91.80
 | **Operator Overrides** | `operator.ui.*` in JSON | Per-operator customization |
 
 **The canonical editing locations:**
-- To change consultancy labels â†’ edit `src/components/skins/consultancy/skin.ts` â†’ `consultancyDefaults`
-- To add a new label â†’ add to skin defaults first, then components can consume it
+- To change consultancy labels → edit `src/components/skins/consultancy/skin.ts` → `consultancyDefaults`
+- To add a new label → add to skin defaults first, then components can consume it
 - Future: `src/data/ui/common.{lang}.json` for cross-vertical shared UI strings
 
 **Location of defaults:**
@@ -849,7 +863,7 @@ Operator receives: $91.80
 
 ---
 
-## ï¿½ Operator Readiness Levels
+## � Operator Readiness Levels
 
 > **Quality gates for scaling across hundreds of operators.**
 
@@ -857,10 +871,10 @@ Operator receives: $91.80
 |-------|------|--------------|-------------|
 | **L0** | Skeleton | Valid JSON, renders without errors | Dev only |
 | **L1** | SEO-Ready | `seo.title`, `seo.description`, `og:image` present | Staging |
-| **L2** | Trust-Ready | `proof[]` has â‰¥1 item, `intel.faq[]` has â‰¥3 items | Staging |
+| **L2** | Trust-Ready | `proof[]` has ≥1 item, `intel.faq[]` has ≥3 items | Staging |
 | **L3** | Commerce-Ready | `products[]` or `offers[]` present, Stripe mapping valid | Production |
 | **L4** | Analytics-Ready | GA/GTM IDs configured, conversion events defined | Production |
-| **L5** | Authority-Ready | â‰¥5 FAQs, proof includes hard metrics, internal links complete | Production (Featured) |
+| **L5** | Authority-Ready | ≥5 FAQs, proof includes hard metrics, internal links complete | Production (Featured) |
 
 ### Level Validation (Planned)
 
@@ -875,7 +889,7 @@ if (level < 3 && process.env.NODE_ENV === 'production') {
 
 ---
 
-## ðŸŽ¯ Non-Negotiable UX Primitives
+## 🎯 Non-Negotiable UX Primitives
 
 > **Every page must satisfy these constraints. No exceptions.**
 
@@ -883,10 +897,10 @@ if (level < 3 && process.env.NODE_ENV === 'production') {
 
 | Element | Required | Constraint |
 |---------|----------|------------|
-| **Identity** | âœ… | Brand name or logo visible |
-| **Credibility** | âœ… | At least ONE of: metric, credential, logo strip |
-| **Primary CTA** | âœ… | Visible without scrolling (mobile + desktop) |
-| **Value prop** | âœ… | Headline communicates transformation |
+| **Identity** | ✅ | Brand name or logo visible |
+| **Credibility** | ✅ | At least ONE of: metric, credential, logo strip |
+| **Primary CTA** | ✅ | Visible without scrolling (mobile + desktop) |
+| **Value prop** | ✅ | Headline communicates transformation |
 
 ### Scroll Position Rules
 
@@ -904,13 +918,13 @@ if (level < 3 && process.env.NODE_ENV === 'production') {
 
 At least ONE of:
 - Hard metric (number + label, e.g., "127+ systems installed")
-- Logo strip (â‰¥3 recognizable logos)
+- Logo strip (≥3 recognizable logos)
 - Testimonial with schema.org markup
 - Video testimonial embed
 
 ### Intel Module Minimums
 
-- â‰¥3 FAQs (â‰¥5 for SEO-focused operators)
+- ≥3 FAQs (≥5 for SEO-focused operators)
 - Searchable/filterable interface
 - Schema.org FAQPage markup (auto-generated)
 
@@ -918,22 +932,22 @@ At least ONE of:
 
 | Constraint | Value |
 |------------|-------|
-| Touch target minimum | 44Ã—44px |
+| Touch target minimum | 44×44px |
 | Font size minimum | 16px body, 14px captions |
-| CTA button width | â‰¥80% container on mobile |
+| CTA button width | ≥80% container on mobile |
 | Section spacing | 24px minimum (gap: 1.5rem) |
 
 ---
 
-## ï¿½ðŸ”„ Adding a New Operator
+## �🔄 Adding a New Operator
 
 ### 1. Create Folder Structure
 
 ```
 /data/operators/{vertical}/{slug}/
-â”œâ”€â”€ core.json
-â”œâ”€â”€ en.json
-â””â”€â”€ es.json
+├── core.json
+├── en.json
+└── es.json
 ```
 
 ### 2. Populate core.json
@@ -978,7 +992,7 @@ No code changes required. The engine discovers operators via `import.meta.glob()
 
 ---
 
-## ðŸš€ Development Commands
+## 🚀 Development Commands
 
 ```bash
 # Development server
@@ -996,49 +1010,49 @@ npm run type-check
 
 ---
 
-## ï¿½ Roadmap & Next Steps
+## � Roadmap & Next Steps
 
-### âœ… Completed (v1.1.1)
+### ✅ Completed (v1.1.1)
 | Task | Description | Status |
 |------|-------------|--------|
-| Wire Product CTAs | Products components use `resolveProductAction()` | âœ… Done |
-| checkoutUrl-first | Products can bypass API with direct checkout URLs | âœ… Done |
-| No hardcoded labels | Modal strings from `operator.ui.labels` | âœ… Done |
-| Module anchor IDs | All modules have standardized `id` attributes | âœ… Done |
+| Wire Product CTAs | Products components use `resolveProductAction()` | ✅ Done |
+| checkoutUrl-first | Products can bypass API with direct checkout URLs | ✅ Done |
+| No hardcoded labels | Modal strings from `operator.ui.labels` | ✅ Done |
+| Module anchor IDs | All modules have standardized `id` attributes | ✅ Done |
 
 ### Immediate (Next Session)
 | Task | Description | Priority |
 |------|-------------|----------|
-| Wire OffersConsultancy | Refactor `OffersConsultancy.astro` to use `resolveOfferAction()` | ðŸ”´ High |
-| `/api/checkout` | Create Stripe checkout endpoint (stubbed, returns `{ url }`) | ðŸ”´ High |
-| Stripe Price IDs | Add real `stripe.priceId` to Jose's products | ðŸŸ¡ Medium |
+| Wire OffersConsultancy | Refactor `OffersConsultancy.astro` to use `resolveOfferAction()` | 🔴 High |
+| `/api/checkout` | Create Stripe checkout endpoint (stubbed, returns `{ url }`) | 🔴 High |
+| Stripe Price IDs | Add real `stripe.priceId` to Jose's products | 🟡 Medium |
 
 ### Short-Term (This Week)
 | Task | Description | Priority |
 |------|-------------|----------|
-| Webhook Handler | `/api/webhook` for Stripe checkout.session.completed | ðŸŸ¡ Medium |
-| Email Fulfillment | Send download links via Resend/SendGrid | ðŸŸ¡ Medium |
-| More Operators | Create 2-3 more operators to stress-test engine | ðŸŸ¡ Medium |
+| Webhook Handler | `/api/webhook` for Stripe checkout.session.completed | 🟡 Medium |
+| Email Fulfillment | Send download links via Resend/SendGrid | 🟡 Medium |
+| More Operators | Create 2-3 more operators to stress-test engine | 🟡 Medium |
 
 ### Future (Backlog)
 | Task | Description | Priority |
 |------|-------------|----------|
-| JSON Migration | Move product prices to core.json (compat layer handles for now) | ðŸŸ¢ Low |
-| Firestore | Add if gated downloads/customer portal needed | ðŸŸ¢ Low |
-| Admin Dashboard | Operator management UI | ðŸŸ¢ Low |
+| JSON Migration | Move product prices to core.json (compat layer handles for now) | 🟢 Low |
+| Firestore | Add if gated downloads/customer portal needed | 🟢 Low |
+| Admin Dashboard | Operator management UI | 🟢 Low |
 
 ---
 
-## ï¿½ðŸ“ Route Pattern
+## �📐 Route Pattern
 
 ```
 /{lang}/v/{vertical}/{slug}
 
 Examples:
-/en/v/consultancy/demo     â†’ English consultancy demo
-/es/v/consultancy/demo     â†’ Spanish consultancy demo
-/en/v/fitness/demo         â†’ English fitness demo
-/en/v/tours/demo           â†’ English tours demo
+/en/v/consultancy/demo     → English consultancy demo
+/es/v/consultancy/demo     → Spanish consultancy demo
+/en/v/fitness/demo         → English fitness demo
+/en/v/tours/demo           → English tours demo
 ```
 
 ### Static Path Generation
@@ -1053,14 +1067,14 @@ export const getStaticPaths = async () => {
 
 ---
 
-## âœ… Engine Compliance Checklist
+## ✅ Engine Compliance Checklist
 
 Before committing any component changes, verify:
 
 - [ ] No hardcoded hex colors (use `var(--color-*)`)
 - [ ] No hardcoded text (use operator data or skin defaults)
 - [ ] Component reads from `operator` prop
-- [ ] Fallback chain: `operator.ui?.* â†’ skin.defaults.* â†’ engine defaults`
+- [ ] Fallback chain: `operator.ui?.* → skin.defaults.* → engine defaults`
 - [ ] Engine defaults live in `src/config/engine.ts`, not component literals
 - [ ] Images reference URLs from `operator.media` or `operator.founders[].avatar`
 - [ ] CSS classes use semantic tokens, not raw Tailwind colors
@@ -1068,21 +1082,21 @@ Before committing any component changes, verify:
 
 ---
 
-## ðŸ”® Future Roadmap
+## 🔮 Future Roadmap
 
 | Phase | Feature | Status |
 |-------|---------|--------|
-| âœ… Phase 1 | Consultancy vertical | Complete |
-| ðŸ”„ Phase 2 | Fitness vertical skin | Pending |
-| ðŸ”„ Phase 3 | Tours vertical skin | Pending |
-| ðŸ”„ Phase 4 | Nightlife vertical skin | Pending |
-| ðŸ”„ Phase 5 | Admin dashboard | Planned |
-| ðŸ”„ Phase 6 | Stripe checkout integration | Planned |
-| ðŸ”„ Phase 7 | Analytics dashboard | Planned |
+| ✅ Phase 1 | Consultancy vertical | Complete |
+| 🔄 Phase 2 | Fitness vertical skin | Pending |
+| 🔄 Phase 3 | Tours vertical skin | Pending |
+| 🔄 Phase 4 | Nightlife vertical skin | Pending |
+| 🔄 Phase 5 | Admin dashboard | Planned |
+| 🔄 Phase 6 | Stripe checkout integration | Planned |
+| 🔄 Phase 7 | Analytics dashboard | Planned |
 
 ---
 
-## ðŸ“š Key Files Reference
+## 📚 Key Files Reference
 
 | File | Purpose |
 |------|---------|
@@ -1097,13 +1111,13 @@ Before committing any component changes, verify:
 
 ---
 
-## ðŸ¤ Contributing
+## 🤝 Contributing
 
 1. **Read this document** before making any changes
 2. **Verify engine compliance** using the checklist above
 3. **Test across languages** (en + es)
 4. **Test with demo operator** before creating new operators
-5. **Keep components dumb**â€”business logic goes in `/lib/engine/`
+5. **Keep components dumb**—business logic goes in `/lib/engine/`
 
 ---
 

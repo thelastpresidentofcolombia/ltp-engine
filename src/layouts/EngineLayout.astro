@@ -15,6 +15,7 @@
 import type { SupportedLanguage, Operator } from '@/types/operator';
 import type { HreflangLink } from '@config/seo';
 import { seoConfig, buildOgImageUrl } from '@config/seo';
+import { buildFaqJsonLd, serializeJsonLd } from '@/lib/seo/buildFaqJsonLd';
 
 // Global styles with Tailwind
 import '@/styles/global.css';
@@ -53,6 +54,13 @@ const resolvedOgImage = ogImage
 
 // Extract vibe tokens for CSS variable injection
 const vibeTokens = operator?.vibe?.tokens ?? {};
+
+// Build FAQPage JSON-LD (only if operator has sufficient FAQs)
+// Supports both intel.faq and intel.faqs field names (JSON variation)
+const operatorFaqs = operator?.intel?.faq ?? (operator?.intel as any)?.faqs ?? [];
+const faqJsonLd = operatorFaqs.length > 0 
+  ? buildFaqJsonLd({ faqs: operatorFaqs, minFaqCount: 3 })
+  : null;
 ---
 
 <!DOCTYPE html>
@@ -202,7 +210,7 @@ const vibeTokens = operator?.vibe?.tokens ?? {};
     <slot />
   </main>
   
-  <!-- Structured Data -->
+  <!-- Structured Data: LocalBusiness -->
   {operator && (
     <script type="application/ld+json" set:html={JSON.stringify({
       '@context': 'https://schema.org',
@@ -222,6 +230,11 @@ const vibeTokens = operator?.vibe?.tokens ?? {};
         telephone: operator.contact.whatsapp || operator.contact.phone,
       },
     })} />
+  )}
+  
+  <!-- Structured Data: FAQPage (if operator has ≥3 valid FAQs) -->
+  {faqJsonLd && (
+    <script type="application/ld+json" set:html={serializeJsonLd(faqJsonLd)} />
   )}
   
   <!-- Screen reader only utility -->

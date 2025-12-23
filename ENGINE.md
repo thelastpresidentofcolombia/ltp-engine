@@ -737,7 +737,51 @@ Sitemap: https://ltp-engine.vercel.app/sitemap.xml
 
 ---
 
-## 💳 Stripe Economics (Target State)
+## � Deployment Invariants (Don't Break These)
+
+> **Critical rules that prevent deployment failures. Learned the hard way.**
+
+### Astro 5 + Vercel SSR Rules
+
+| Invariant | Value | Why It Matters |
+|-----------|-------|----------------|
+| **Astro config** | `output: 'static'` | Pages pre-rendered, SSR opt-in only |
+| **SSR opt-in** | `export const prerender = false` | Required for any route needing server-side execution |
+| **Applies to** | `/api/*`, webhooks, anything using secrets | These MUST have prerender = false |
+| **Runtime** | `nodejs20.x` | Node 18 deprecated by Vercel (Dec 2024) |
+| **Adapter** | `@astrojs/vercel` (not `/serverless`) | Astro 5 changed import path |
+
+### Build Output Verification
+
+After `npm run build`, verify these exist:
+
+```
+.vercel/output/
+├── config.json
+├── static/                    # Pre-rendered pages
+└── functions/
+    └── _render.func/          # Serverless function for SSR routes
+        └── .vc-config.json    # Must contain "runtime": "nodejs20.x"
+```
+
+### Quick Sanity Check
+
+```bash
+# After build, check runtime is correct
+cat .vercel/output/functions/_render.func/.vc-config.json
+# Should show: "runtime": "nodejs20.x"
+```
+
+### If Deployment Fails with "invalid runtime"
+
+1. Check `@astrojs/vercel` version (must be v9.x for Astro 5)
+2. Check `.vc-config.json` runtime value
+3. Delete `node_modules`, reinstall, rebuild
+4. Ensure no old adapter cache in `.astro/` or `node_modules/.astro/`
+
+---
+
+## �💳 Stripe Economics (Target State)
 
 > **Current:** `checkoutUrl`-first pattern + `/api/checkout` placeholder (graceful fallback)  
 > **Target:** Stripe Connect split payouts + webhook fulfillment + transaction ledger

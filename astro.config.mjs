@@ -7,7 +7,10 @@ export default defineConfig({
   // Hybrid output - static pages + API routes
   // Pages are pre-rendered, API routes run as serverless functions
   output: 'hybrid',
-  adapter: vercel(),
+  adapter: vercel({
+    // Vercel dropped nodejs18.x support - use Node 20
+    runtime: 'nodejs20.x',
+  }),
   
   // i18n configuration for multilingual support
   i18n: {

@@ -1,12 +1,18 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.3.0  
+> **Version:** 1.3.1  
 > **Last Updated:** December 23, 2025  
-> **Status:** Engine-First Architecture �" | Astro 5 �" | Stripe Checkout �"
+> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅
 
 ---
 
 ## 📋 Changelog
+
+### v1.3.1 (December 23, 2025)
+- **NEW:** `/api/webhook` — Stripe webhook handler with Resend email fulfillment
+- **NEW:** `.env` + `.env.example` — Local development environment template
+- **UPDATED:** Vercel env vars documentation (Production vs Preview)
+- **FIX:** Webhook signature validation working in production
 
 ### v1.3.0 (December 23, 2025)
 - **BREAKING:** Upgraded to **Astro 5** + `@astrojs/vercel@9.x`
@@ -781,10 +787,39 @@ cat .vercel/output/functions/_render.func/.vc-config.json
 
 ---
 
-## �💳 Stripe Commerce (Current State)
+## 💳 Stripe Commerce (Current State)
 
-> **Status:**  Checkout + Webhook Fulfillment Live
+> **Status:** ✅ Checkout + Webhook Fulfillment Live  
 > **Pattern:** checkoutUrl-first + /api/checkout + /api/webhook
+
+### Environment Variables (Vercel)
+
+| Variable | Required | Where to Get |
+|----------|----------|--------------|
+| `STRIPE_SECRET_KEY` | ✅ | Stripe Dashboard → Developers → API keys |
+| `STRIPE_WEBHOOK_SECRET` | ✅ | Stripe Dashboard → Webhooks → Signing secret |
+| `RESEND_API_KEY` | ✅ | Resend Dashboard → API Keys |
+| `FULFILLMENT_FROM_EMAIL` | ✅ | Verified sender in Resend (e.g., `hello@domain.com`) |
+| `FULFILLMENT_BCC_EMAIL` | ❌ | Optional internal ledger copy |
+
+> **⚠️ CRITICAL:** Env vars must be enabled for **Production** environment in Vercel, not just Preview!
+
+### Endpoints
+
+| Endpoint | Method | Status | Purpose |
+|----------|--------|--------|---------|
+| `/api/checkout` | POST | ✅ Live | Creates Stripe Checkout Session |
+| `/api/webhook` | POST | ✅ Live | Handles `checkout.session.completed`, sends email |
+
+### Webhook Response Codes
+
+| Response | Meaning |
+|----------|---------|
+| `200 OK` | Event processed successfully |
+| `400 Missing Stripe signature` | Request not from Stripe (no `stripe-signature` header) |
+| `400 Invalid signature` | Signature verification failed |
+| `500 Stripe not configured` | Missing `STRIPE_SECRET_KEY` env var |
+| `500 Email send failed` | Resend API error (triggers Stripe retry) |
 
 **The economic primitive: Engine takes commission first, passes remainder to operator.**
 
@@ -1062,9 +1097,9 @@ npm run type-check
 
 ---
 
-## � Roadmap & Next Steps
+## 🗺️ Roadmap & Next Steps
 
-### ✅ Completed (v1.3.0)
+### ✅ Completed (v1.3.1)
 | Task | Description | Status |
 |------|-------------|--------|
 | Wire Product CTAs | Products components use `resolveProductAction()` | ✅ Done |
@@ -1076,24 +1111,29 @@ npm run type-check
 | No hardcoded labels | Modal strings from `operator.ui.labels` | ✅ Done |
 | Module anchor IDs | All modules have standardized `id` attributes | ✅ Done |
 | Astro 5 Migration | Upgraded to Astro 5 + @astrojs/vercel@9.x (nodejs20.x) | ✅ Done |
+| Vercel Env Vars | STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY configured | ✅ Done |
+| Webhook Validation | Production endpoint validates Stripe signatures correctly | ✅ Done |
 
-### Immediate (Next Session)
+### 🔴 Immediate (Next Session)
 | Task | Description | Priority |
 |------|-------------|----------|
-| Stripe Price IDs | Add real `stripe.priceId` to Jose's products | 🔴 High |
-| Configure Vercel Env | Set STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, FULFILLMENT_FROM_EMAIL | 🔴 High |
-| Test End-to-End | Complete checkout → webhook → email flow in production | 🔴 High |
+| Add FULFILLMENT_FROM_EMAIL | Verify sender email in Resend, add to Vercel | 🔴 High |
+| Stripe Price IDs | Add real `stripe.priceId` to Jose's products in Stripe Dashboard | 🔴 High |
+| End-to-End Test | Complete checkout → webhook → email flow in production | 🔴 High |
+| Fulfillment Email Template | Design proper email HTML with download links | 🔴 High |
 
-### Short-Term (This Week)
+### 🟡 Short-Term (This Week)
 | Task | Description | Priority |
 |------|-------------|----------|
 | Operator Email Lookup | Add `getOperatorContactEmail(operatorId)` to webhook | 🟡 Medium |
 | More Operators | Create 2-3 more operators to stress-test engine | 🟡 Medium |
+| Success/Cancel Pages | Create branded post-checkout pages | 🟡 Medium |
 | ProfessionalService Schema | Add Organization/ProfessionalService JSON-LD | 🟢 Low |
 
-### Future (Backlog)
+### 🟢 Future (Backlog)
 | Task | Description | Priority |
 |------|-------------|----------|
+| Stripe Connect | Split payouts to operators (acct_xxx) | 🟢 Low |
 | JSON Migration | Move product prices to core.json (compat layer handles for now) | 🟢 Low |
 | Firestore | Add if gated downloads/customer portal needed | 🟢 Low |
 | Admin Dashboard | Operator management UI | 🟢 Low |

@@ -2,7 +2,7 @@
 
 > **Version:** 1.3.0  
 > **Last Updated:** December 23, 2025  
-> **Status:** Engine-First Architecture �" | Astro 5 �" | Stripe Checkout �"
+> **Status:** Engine-First Architecture �" | Astro 5 �" | Stripe Checkout �"
 
 ---
 
@@ -19,9 +19,11 @@
 | Change | Before | After |
 |--------|--------|-------|
 | Adapter import | `@astrojs/vercel/serverless` | `@astrojs/vercel` |
-| Output mode | `output: 'hybrid'` | `output: 'static'` |
-| API routes | Implicit SSR in hybrid | Explicit `prerender = false` |
+| Output mode | `output: 'hybrid'` | `output: 'static'` (with per-route SSR) |
+| API routes | Implicit SSR in hybrid | Explicit `prerender = false` required |
 | Runtime | `nodejs18.x` (deprecated) | `nodejs20.x` |
+
+> **Key Insight:** Astro 5 `output: 'static'` still supports serverless functions. Routes with `export const prerender = false` become Vercel functions. This is cleaner than `hybrid` because SSR is explicit, not implicit.
 
 ### v1.2.0 (December 23, 2025)
 - **NEW:** `/api/checkout` — Stripe Checkout Session endpoint (Vercel serverless)
@@ -82,7 +84,7 @@ The **LTP Engine** is a **multi-vertical static site factory** that generates hi
 | **Multi-Vertical** | Same engine powers consultancy, fitness, tours, nightlife with vertical-specific skins. |
 | **Multi-Language** | Full i18n via split JSON: `core.json` (invariant) + `en.json`/`es.json` (translatable). |
 | **Zero Hardcoding** | No hardcoded colors, text, or URLs in components. Everything flows from operator data or CSS variables. |
-| **Static-First** | Pages are pre-rendered (SSG) and served globally via Vercel CDN. Astro is configured as `output: 'static'`. When API routes are needed (checkout, webhooks), config will be changed to `'hybrid'` with SSR isolated to those routes. |
+| **Static-First** | Pages are pre-rendered (SSG) and served globally via Vercel CDN. Astro 5 is configured as `output: 'static'` with per-route SSR opt-in via `export const prerender = false`. API routes (`/api/checkout`) are serverless functions. |
 
 ---
 
@@ -656,23 +658,29 @@ Hero (via footer nav)
 
 **Rule:** Every CTA must link to an internal anchor. External links only in footer social icons.
 
-### Structured Data (Planned)
+### Structured Data (Implemented)
 
-> **Status:** 🔄 Planned — JSON-LD injection will be added to EngineLayout
+> **Status:** ✅ Complete — FAQPage JSON-LD injected in EngineLayout via `buildFaqJsonLd.ts`
 
 ```json
-// Will be injected by EngineLayout when operator has required fields
+// Injected by EngineLayout when operator has ≥3 FAQs
 {
   "@context": "https://schema.org",
-  "@type": "ProfessionalService",      // or vertical-specific type
-  "name": "{operator.brand.name}",
-  "description": "{operator.seo.description}",
-  "url": "{canonical}",
-  "image": "{og:image}",
-  "priceRange": "{derived from pricing}",
-  "faq": [/* from intel.faq */]
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "{faq.question}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{faq.answer}"
+      }
+    }
+  ]
 }
 ```
+
+**Future:** ProfessionalService schema with priceRange, aggregateRating (requires more operator data).
 
 ---
 
@@ -1012,27 +1020,31 @@ npm run type-check
 
 ## � Roadmap & Next Steps
 
-### ✅ Completed (v1.1.1)
+### ✅ Completed (v1.3.0)
 | Task | Description | Status |
 |------|-------------|--------|
 | Wire Product CTAs | Products components use `resolveProductAction()` | ✅ Done |
-| checkoutUrl-first | Products can bypass API with direct checkout URLs | ✅ Done |
+| Wire Offer CTAs | Offers components use `resolveOfferAction()` | ✅ Done |
+| `/api/checkout` | Stripe Checkout Session endpoint (Vercel serverless) | ✅ Done |
+| FAQPage JSON-LD | `buildFaqJsonLd.ts` + EngineLayout injection | ✅ Done |
+| checkoutUrl-first | Products/Offers can bypass API with direct checkout URLs | ✅ Done |
 | No hardcoded labels | Modal strings from `operator.ui.labels` | ✅ Done |
 | Module anchor IDs | All modules have standardized `id` attributes | ✅ Done |
+| Astro 5 Migration | Upgraded to Astro 5 + @astrojs/vercel@9.x (nodejs20.x) | ✅ Done |
 
 ### Immediate (Next Session)
 | Task | Description | Priority |
 |------|-------------|----------|
-| Wire OffersConsultancy | Refactor `OffersConsultancy.astro` to use `resolveOfferAction()` | 🔴 High |
-| `/api/checkout` | Create Stripe checkout endpoint (stubbed, returns `{ url }`) | 🔴 High |
-| Stripe Price IDs | Add real `stripe.priceId` to Jose's products | 🟡 Medium |
+| Stripe Price IDs | Add real `stripe.priceId` to Jose's products | 🔴 High |
+| Test Checkout Flow | Verify /api/checkout creates Stripe sessions in production | 🔴 High |
+| Webhook Handler | `/api/webhook` for Stripe checkout.session.completed | 🟡 Medium |
 
 ### Short-Term (This Week)
 | Task | Description | Priority |
 |------|-------------|----------|
-| Webhook Handler | `/api/webhook` for Stripe checkout.session.completed | 🟡 Medium |
 | Email Fulfillment | Send download links via Resend/SendGrid | 🟡 Medium |
 | More Operators | Create 2-3 more operators to stress-test engine | 🟡 Medium |
+| ProfessionalService Schema | Add Organization/ProfessionalService JSON-LD | 🟢 Low |
 
 ### Future (Backlog)
 | Task | Description | Priority |

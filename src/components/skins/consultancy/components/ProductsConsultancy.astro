@@ -71,6 +71,9 @@ const clientLabels = {
   checkoutPending: checkoutPendingMsg,
   modalCta: modalCtaLabel,
 };
+
+// Operator ID for checkout API
+const operatorId = operator.meta?.slug ?? operator.slug ?? '';
 ---
 
 <!-- DIGITAL PRODUCTS SECTION -->
@@ -261,10 +264,11 @@ const clientLabels = {
 </dialog>
 
 <!-- ENGINE-FIRST CLIENT SCRIPT -->
-<script define:vars={{ productsForClient, clientLabels }}>
+<script define:vars={{ productsForClient, clientLabels, operatorId }}>
   // Product data passed from server (serialized at build time)
   const PRODUCTS = productsForClient;
   const LABELS = clientLabels;
+  const OPERATOR_ID = operatorId;
 
   /**
    * Scroll to target element
@@ -303,7 +307,7 @@ const clientLabels = {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId }),
+        body: JSON.stringify({ operatorId: OPERATOR_ID, productId }),
       });
 
       if (!res.ok) {

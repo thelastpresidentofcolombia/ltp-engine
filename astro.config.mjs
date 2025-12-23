@@ -1,12 +1,12 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
-import vercel from '@astrojs/vercel/serverless';
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
-  // Hybrid output - static pages + API routes
-  // Pages are pre-rendered, API routes run as serverless functions
-  output: 'hybrid',
+  // Astro 5: static output now supports on-demand rendering per-page
+  // API routes and pages with export const prerender = false will be serverless
+  output: 'static',
   adapter: vercel(),
   
   // i18n configuration for multilingual support

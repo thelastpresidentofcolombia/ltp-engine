@@ -19,6 +19,9 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 
+// Astro 5: API routes must explicitly opt out of prerendering
+export const prerender = false;
+
 // Initialize Stripe (will fail gracefully if key missing)
 const stripeSecretKey = import.meta.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;

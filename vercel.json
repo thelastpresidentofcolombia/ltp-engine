@@ -1,9 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "astro",
-  "build": {
-    "env": {
-      "NODE_VERSION": "20"
-    }
-  }
+  "framework": "astro"
 }

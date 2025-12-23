@@ -1,15 +1,21 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.3.1  
+> **Version:** 1.3.2  
 > **Last Updated:** December 23, 2025  
-> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅
+> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Brevo Email ✅
 
 ---
 
 ## 📋 Changelog
 
+### v1.3.2 (December 23, 2025)
+- **SWITCH:** Email provider from Resend → **Brevo** (already configured for `@lovethisplace.co`)
+- **UPDATED:** `/api/webhook` now uses Brevo API for fulfillment emails
+- **UPDATED:** Vercel env vars: `BREVO_API_KEY`, `FULFILLMENT_FROM_EMAIL=bookings@lovethisplace.co`
+- **REMOVED:** `RESEND_API_KEY` dependency (can delete from Vercel)
+
 ### v1.3.1 (December 23, 2025)
-- **NEW:** `/api/webhook` — Stripe webhook handler with Resend email fulfillment
+- **NEW:** `/api/webhook` — Stripe webhook handler with email fulfillment
 - **NEW:** `.env` + `.env.example` — Local development environment template
 - **UPDATED:** Vercel env vars documentation (Production vs Preview)
 - **FIX:** Webhook signature validation working in production
@@ -791,6 +797,7 @@ cat .vercel/output/functions/_render.func/.vc-config.json
 
 > **Status:** ✅ Checkout + Webhook Fulfillment Live  
 > **Pattern:** checkoutUrl-first + /api/checkout + /api/webhook
+> **Email:** Brevo (lovethisplace.co DKIM verified)
 
 ### Environment Variables (Vercel)
 
@@ -798,8 +805,8 @@ cat .vercel/output/functions/_render.func/.vc-config.json
 |----------|----------|--------------|
 | `STRIPE_SECRET_KEY` | ✅ | Stripe Dashboard → Developers → API keys |
 | `STRIPE_WEBHOOK_SECRET` | ✅ | Stripe Dashboard → Webhooks → Signing secret |
-| `RESEND_API_KEY` | ✅ | Resend Dashboard → API Keys |
-| `FULFILLMENT_FROM_EMAIL` | ✅ | Verified sender in Resend (e.g., `hello@domain.com`) |
+| `BREVO_API_KEY` | ✅ | Brevo → SMTP & API → API keys tab |
+| `FULFILLMENT_FROM_EMAIL` | ✅ | Verified sender in Brevo (`bookings@lovethisplace.co`) |
 | `FULFILLMENT_BCC_EMAIL` | ❌ | Optional internal ledger copy |
 
 > **⚠️ CRITICAL:** Env vars must be enabled for **Production** environment in Vercel, not just Preview!
@@ -809,7 +816,7 @@ cat .vercel/output/functions/_render.func/.vc-config.json
 | Endpoint | Method | Status | Purpose |
 |----------|--------|--------|---------|
 | `/api/checkout` | POST | ✅ Live | Creates Stripe Checkout Session |
-| `/api/webhook` | POST | ✅ Live | Handles `checkout.session.completed`, sends email |
+| `/api/webhook` | POST | ✅ Live | Handles `checkout.session.completed`, sends email via Brevo |
 
 ### Webhook Response Codes
 
@@ -819,7 +826,7 @@ cat .vercel/output/functions/_render.func/.vc-config.json
 | `400 Missing Stripe signature` | Request not from Stripe (no `stripe-signature` header) |
 | `400 Invalid signature` | Signature verification failed |
 | `500 Stripe not configured` | Missing `STRIPE_SECRET_KEY` env var |
-| `500 Email send failed` | Resend API error (triggers Stripe retry) |
+| `500 Email send failed` | Brevo API error (triggers Stripe retry) |
 
 **The economic primitive: Engine takes commission first, passes remainder to operator.**
 
@@ -1099,35 +1106,35 @@ npm run type-check
 
 ## 🗺️ Roadmap & Next Steps
 
-### ✅ Completed (v1.3.1)
+### ✅ Completed (v1.3.2)
 | Task | Description | Status |
 |------|-------------|--------|
 | Wire Product CTAs | Products components use `resolveProductAction()` | ✅ Done |
 | Wire Offer CTAs | Offers components use `resolveOfferAction()` | ✅ Done |
 | `/api/checkout` | Stripe Checkout Session endpoint (Vercel serverless) | ✅ Done |
-| `/api/webhook` | Stripe webhook handler with Resend email fulfillment | ✅ Done |
+| `/api/webhook` | Stripe webhook handler with Brevo email fulfillment | ✅ Done |
 | FAQPage JSON-LD | `buildFaqJsonLd.ts` + EngineLayout injection | ✅ Done |
 | checkoutUrl-first | Products/Offers can bypass API with direct checkout URLs | ✅ Done |
 | No hardcoded labels | Modal strings from `operator.ui.labels` | ✅ Done |
 | Module anchor IDs | All modules have standardized `id` attributes | ✅ Done |
 | Astro 5 Migration | Upgraded to Astro 5 + @astrojs/vercel@9.x (nodejs20.x) | ✅ Done |
-| Vercel Env Vars | STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY configured | ✅ Done |
+| Vercel Env Vars | STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, BREVO_API_KEY configured | ✅ Done |
 | Webhook Validation | Production endpoint validates Stripe signatures correctly | ✅ Done |
+| FULFILLMENT_FROM_EMAIL | `bookings@lovethisplace.co` configured in Vercel | ✅ Done |
 
-### 🔴 Immediate (Next Session)
+### 🔴 Immediate (Next Steps)
 | Task | Description | Priority |
 |------|-------------|----------|
-| Add FULFILLMENT_FROM_EMAIL | Verify sender email in Resend, add to Vercel | 🔴 High |
-| Stripe Price IDs | Add real `stripe.priceId` to Jose's products in Stripe Dashboard | 🔴 High |
 | End-to-End Test | Complete checkout → webhook → email flow in production | 🔴 High |
-| Fulfillment Email Template | Design proper email HTML with download links | 🔴 High |
+| Stripe Price IDs | Add real `stripe.priceId` to Jose's products in Stripe Dashboard | 🔴 High |
+| Fulfillment Email Template | Design proper email HTML with download links | 🟡 Medium |
 
 ### 🟡 Short-Term (This Week)
 | Task | Description | Priority |
 |------|-------------|----------|
+| Success/Cancel Pages | Create branded post-checkout pages | 🟡 Medium |
 | Operator Email Lookup | Add `getOperatorContactEmail(operatorId)` to webhook | 🟡 Medium |
 | More Operators | Create 2-3 more operators to stress-test engine | 🟡 Medium |
-| Success/Cancel Pages | Create branded post-checkout pages | 🟡 Medium |
 | ProfessionalService Schema | Add Organization/ProfessionalService JSON-LD | 🟢 Low |
 
 ### 🟢 Future (Backlog)

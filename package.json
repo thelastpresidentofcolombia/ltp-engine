@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Multi-vertical static business factory engine",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "set DEBUG= && astro dev",
+    "dev:verbose": "astro dev",
     "start": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",

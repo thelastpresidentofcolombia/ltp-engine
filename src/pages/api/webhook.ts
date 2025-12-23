@@ -5,14 +5,14 @@
  * - Verifies Stripe signature (STRIPE_WEBHOOK_SECRET)
  * - Handles checkout.session.completed events
  * - Extracts { operatorId, productId?, offerId? } from session metadata
- * - Sends fulfillment email via Resend
+ * - Sends fulfillment email via Brevo (Sendinblue)
  * - Returns 500 on fulfillment failure (triggers Stripe retry)
  * 
  * REQUIRED ENV VARS:
  * - STRIPE_SECRET_KEY
  * - STRIPE_WEBHOOK_SECRET (from Stripe webhook endpoint config)
- * - RESEND_API_KEY
- * - FULFILLMENT_FROM_EMAIL (verified Resend sender)
+ * - BREVO_API_KEY (from Brevo SMTP & API settings)
+ * - FULFILLMENT_FROM_EMAIL (verified Brevo sender, e.g., bookings@lovethisplace.co)
  * - FULFILLMENT_BCC_EMAIL (optional, internal ledger)
  */
 
@@ -27,41 +27,42 @@ const stripeSecretKey = import.meta.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 // ============================================================
-// RESEND EMAIL HELPER (no SDK required)
+// BREVO EMAIL HELPER (no SDK required)
 // ============================================================
 
 interface EmailParams {
-  from: string;
-  to: string | string[];
+  from: { name: string; email: string };
+  to: { email: string }[];
   subject: string;
-  html: string;
-  bcc?: string | string[];
+  htmlContent: string;
+  bcc?: { email: string }[];
 }
 
-async function sendEmailResend(params: EmailParams): Promise<void> {
-  const apiKey = import.meta.env.RESEND_API_KEY;
+async function sendEmailBrevo(params: EmailParams): Promise<void> {
+  const apiKey = import.meta.env.BREVO_API_KEY;
   if (!apiKey) {
-    throw new Error('RESEND_API_KEY not configured');
+    throw new Error('BREVO_API_KEY not configured');
   }
 
-  const res = await fetch('https://api.resend.com/emails', {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'api-key': apiKey,
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     },
     body: JSON.stringify({
-      from: params.from,
+      sender: params.from,
       to: params.to,
       subject: params.subject,
-      html: params.html,
+      htmlContent: params.htmlContent,
       bcc: params.bcc,
     }),
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Resend error (${res.status}): ${text}`);
+    throw new Error(`Brevo error (${res.status}): ${text}`);
   }
 }
 
@@ -155,12 +156,12 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     if (customerEmail) {
       // Send confirmation to customer
-      await sendEmailResend({
-        from,
-        to: customerEmail,
+      await sendEmailBrevo({
+        from: { name: 'LoveThisPlace', email: from },
+        to: [{ email: customerEmail }],
         subject: 'Your purchase is confirmed ✅',
-        bcc,
-        html: `
+        bcc: bcc ? [{ email: bcc }] : undefined,
+        htmlContent: `
           <div style="font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;line-height:1.6;max-width:600px;margin:0 auto;padding:24px">
             <h2 style="color:#1a1a1a;margin-bottom:16px">Payment received ✅</h2>
             <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:16px">
@@ -180,11 +181,11 @@ export const POST: APIRoute = async ({ request }) => {
     } else {
       // No customer email — send internal notification only
       if (bcc) {
-        await sendEmailResend({
-          from,
-          to: bcc,
+        await sendEmailBrevo({
+          from: { name: 'LTP Engine', email: from },
+          to: [{ email: bcc }],
           subject: `LTP Engine — Checkout completed (${operatorId})`,
-          html: `
+          htmlContent: `
             <div style="font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;line-height:1.6;max-width:600px;margin:0 auto;padding:24px">
               <h2 style="color:#1a1a1a;margin-bottom:16px">Checkout completed ✅</h2>
               <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:16px">

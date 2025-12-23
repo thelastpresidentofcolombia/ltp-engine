@@ -153,11 +153,14 @@ export const POST: APIRoute = async ({ request }) => {
       success_url: `${origin}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}?checkout=cancelled`,
       
-      // Metadata for webhooks and analytics
+      // Collect customer email for fulfillment
+      customer_email: undefined, // Stripe Checkout will collect this
+      
+      // Metadata for webhooks and fulfillment (REQUIRED for /api/webhook)
       metadata: {
         operatorId,
-        itemType,
-        itemId: productId || offerId || '',
+        ...(productId ? { productId } : {}),
+        ...(offerId ? { offerId } : {}),
         itemName: item.name || item.title || '',
       },
 

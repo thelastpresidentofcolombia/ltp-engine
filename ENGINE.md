@@ -781,10 +781,10 @@ cat .vercel/output/functions/_render.func/.vc-config.json
 
 ---
 
-## �💳 Stripe Economics (Target State)
+## �💳 Stripe Commerce (Current State)
 
-> **Current:** `checkoutUrl`-first pattern + `/api/checkout` placeholder (graceful fallback)  
-> **Target:** Stripe Connect split payouts + webhook fulfillment + transaction ledger
+> **Status:**  Checkout + Webhook Fulfillment Live
+> **Pattern:** checkoutUrl-first + /api/checkout + /api/webhook
 
 **The economic primitive: Engine takes commission first, passes remainder to operator.**
 
@@ -1070,6 +1070,7 @@ npm run type-check
 | Wire Product CTAs | Products components use `resolveProductAction()` | ✅ Done |
 | Wire Offer CTAs | Offers components use `resolveOfferAction()` | ✅ Done |
 | `/api/checkout` | Stripe Checkout Session endpoint (Vercel serverless) | ✅ Done |
+| `/api/webhook` | Stripe webhook handler with Resend email fulfillment | ✅ Done |
 | FAQPage JSON-LD | `buildFaqJsonLd.ts` + EngineLayout injection | ✅ Done |
 | checkoutUrl-first | Products/Offers can bypass API with direct checkout URLs | ✅ Done |
 | No hardcoded labels | Modal strings from `operator.ui.labels` | ✅ Done |
@@ -1080,13 +1081,13 @@ npm run type-check
 | Task | Description | Priority |
 |------|-------------|----------|
 | Stripe Price IDs | Add real `stripe.priceId` to Jose's products | 🔴 High |
-| Test Checkout Flow | Verify /api/checkout creates Stripe sessions in production | 🔴 High |
-| Webhook Handler | `/api/webhook` for Stripe checkout.session.completed | 🟡 Medium |
+| Configure Vercel Env | Set STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, FULFILLMENT_FROM_EMAIL | 🔴 High |
+| Test End-to-End | Complete checkout → webhook → email flow in production | 🔴 High |
 
 ### Short-Term (This Week)
 | Task | Description | Priority |
 |------|-------------|----------|
-| Email Fulfillment | Send download links via Resend/SendGrid | 🟡 Medium |
+| Operator Email Lookup | Add `getOperatorContactEmail(operatorId)` to webhook | 🟡 Medium |
 | More Operators | Create 2-3 more operators to stress-test engine | 🟡 Medium |
 | ProfessionalService Schema | Add Organization/ProfessionalService JSON-LD | 🟢 Low |
 

@@ -30,6 +30,14 @@ const checkoutPending = labels.checkoutPending ?? 'Coming soon!';
 // === PRODUCTS ===
 const products = operator.products ?? [];
 
+// === CHECKOUT URL BUILDER ===
+const operatorId = operator.meta?.slug ?? operator.slug ?? operator.id ?? '';
+const vertical = operator.vertical ?? 'fitness';
+
+function buildCheckoutUrl(productId: string): string {
+  return `/api/checkout?operator=${operatorId}&vertical=${vertical}&product=${productId}`;
+}
+
 // Format price helper
 function formatPrice(product: any): string {
   const price = product.priceUsd ?? product.price;
@@ -184,7 +192,7 @@ function formatPrice(product: any): string {
               {/* CTAs */}
               <div class="flex gap-3">
                 <a 
-                  href={product.stripePriceId ? `/api/checkout?product=${product.id}` : '#contact'}
+                  href={product.stripePriceId ? buildCheckoutUrl(product.id) : '#contact'}
                   class:list={[
                     "flex-1 text-center py-3.5 rounded-xl text-sm",
                     isFeatured ? "btn-primary" : "btn-ghost"

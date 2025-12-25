@@ -2,10 +2,11 @@
  * /api/checkout - Stripe Checkout Session Creator
  * 
  * ENGINE CONTRACT:
- * - POST { operatorId, productId?, offerId? }
- * - Validates item exists and has stripe.priceId
- * - Creates Stripe Checkout Session
- * - Returns { url } for redirect
+ * - GET  /api/checkout?operator=X&product=Y  → Redirect to Stripe
+ * - POST { operatorId, productId?, offerId? } → JSON { url }
+ * - Validates item exists and has stripe.priceId OR stripePriceId
+ * - Creates Stripe Checkout Session with engine metadata
+ * - Returns redirect (GET) or JSON (POST)
  * 
  * CHECKOUT-URL-FIRST PATTERN:
  * Client scripts check for checkoutUrl first and redirect directly.
@@ -26,122 +27,65 @@ export const prerender = false;
 const stripeSecretKey = import.meta.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
-interface CheckoutRequest {
-  operatorId?: string;
+// Engine version for metadata tracking
+const ENGINE_VERSION = '1.0.0';
+
+interface CheckoutParams {
+  operatorId: string;
+  vertical: string;
   productId?: string;
   offerId?: string;
 }
 
-export const POST: APIRoute = async ({ request }) => {
-  // === GUARD: Stripe not configured ===
-  if (!stripe) {
-    console.error('[Checkout] STRIPE_SECRET_KEY not configured');
-    return new Response(
-      JSON.stringify({ error: 'Payment processing not configured' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  // === PARSE REQUEST ===
-  let body: CheckoutRequest;
-  try {
-    body = await request.json();
-  } catch {
-    return new Response(
-      JSON.stringify({ error: 'Invalid JSON body' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  const { operatorId, productId, offerId } = body;
-
-  // === VALIDATE: Need operator and item ID ===
-  if (!operatorId) {
-    return new Response(
-      JSON.stringify({ error: 'operatorId is required' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  if (!productId && !offerId) {
-    return new Response(
-      JSON.stringify({ error: 'productId or offerId is required' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+/**
+ * Shared checkout logic for both GET and POST
+ */
+async function createCheckoutSession(
+  params: CheckoutParams,
+  origin: string
+): Promise<{ url: string } | { error: string; status: number }> {
+  
+  const { operatorId, vertical, productId, offerId } = params;
 
   // === LOAD OPERATOR DATA ===
-  // We need to dynamically import the operator's JSON to find the item
-  // This is safe because operatorId is validated against actual files
   let operatorData: any;
   try {
-    // Try to find operator by scanning known verticals
-    const verticals = ['consultancy', 'fitness', 'tours', 'nightlife'];
-    let found = false;
-    
-    for (const vertical of verticals) {
-      try {
-        // Dynamic import of operator JSON (Astro handles this at runtime)
-        const module = await import(`../../content/operators/${vertical}/${operatorId}/en.json`);
-        operatorData = module.default;
-        found = true;
-        break;
-      } catch {
-        // Not in this vertical, try next
-        continue;
-      }
-    }
-
-    if (!found) {
-      return new Response(
-        JSON.stringify({ error: 'Operator not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+    // Dynamic import of operator JSON
+    const module = await import(`../../data/operators/${vertical}/${operatorId}/en.json`);
+    operatorData = module.default;
   } catch (e) {
     console.error('[Checkout] Failed to load operator:', e);
-    return new Response(
-      JSON.stringify({ error: 'Failed to load operator data' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return { error: 'Operator not found', status: 404 };
   }
 
   // === FIND ITEM (product or offer) ===
   let item: any;
-  let itemType: 'product' | 'offer';
+  let itemType: 'product' | 'offer' = 'product';
+  const itemId = productId || offerId;
 
   if (productId) {
     item = operatorData.products?.find((p: any) => p.id === productId);
     itemType = 'product';
-  } else {
+  } else if (offerId) {
     item = operatorData.offers?.find((o: any) => o.id === offerId);
     itemType = 'offer';
   }
 
   if (!item) {
-    return new Response(
-      JSON.stringify({ error: `${itemType} not found` }),
-      { status: 404, headers: { 'Content-Type': 'application/json' } }
-    );
+    return { error: `${itemType} not found`, status: 404 };
   }
 
   // === VALIDATE STRIPE PRICE ID ===
-  const priceId = item.stripe?.priceId;
+  // Support both nested stripe.priceId and flat stripePriceId
+  const priceId = item.stripe?.priceId || item.stripePriceId;
   
   if (!priceId) {
-    // Item exists but no Stripe price configured
-    // Client should show checkoutPending message
-    return new Response(
-      JSON.stringify({ error: 'Checkout not configured for this item' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
-    );
+    return { error: 'Checkout not configured for this item', status: 400 };
   }
 
   // === CREATE STRIPE CHECKOUT SESSION ===
   try {
-    const origin = request.headers.get('origin') || 'http://localhost:4321';
-    
-    const session = await stripe.checkout.sessions.create({
+    const session = await stripe!.checkout.sessions.create({
       mode: 'payment',
       line_items: [
         {
@@ -149,56 +93,70 @@ export const POST: APIRoute = async ({ request }) => {
           quantity: 1,
         },
       ],
-      // Success/cancel URLs - operator can override in future
+      // Success/cancel URLs
       success_url: `${origin}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}?checkout=cancelled`,
       
-      // Collect customer email for fulfillment
-      customer_email: undefined, // Stripe Checkout will collect this
-      
-      // Metadata for webhooks and fulfillment (REQUIRED for /api/webhook)
+      // Metadata for webhooks (REQUIRED for /api/stripe/webhook)
       metadata: {
         operatorId,
+        vertical,
+        sourceModule: itemType === 'product' ? 'products' : 'offers',
         ...(productId ? { productId } : {}),
         ...(offerId ? { offerId } : {}),
         itemName: item.name || item.title || '',
+        engineVersion: ENGINE_VERSION,
       },
-
-      // FUTURE: Stripe Connect
-      // Uncomment when implementing platform fees:
-      // payment_intent_data: {
-      //   application_fee_amount: calculateFee(item.price),
-      //   transfer_data: {
-      //     destination: operatorData.stripe?.accountId,
-      //   },
-      // },
     });
 
-    // === RETURN CHECKOUT URL ===
     if (!session.url) {
       throw new Error('Stripe did not return a checkout URL');
     }
 
-    console.log(`[Checkout] Session created for ${itemType}:${productId || offerId} -> ${session.id}`);
+    console.log(`[Checkout] Session created: ${itemType}:${itemId} operator:${operatorId} -> ${session.id}`);
 
-    return new Response(
-      JSON.stringify({ url: session.url }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return { url: session.url };
 
   } catch (e: any) {
     console.error('[Checkout] Stripe error:', e.message);
-    return new Response(
-      JSON.stringify({ error: 'Failed to create checkout session' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return { error: 'Failed to create checkout session', status: 500 };
   }
-};
+}
 
-// Reject other methods
-export const ALL: APIRoute = () => {
-  return new Response(
-    JSON.stringify({ error: 'Method not allowed' }),
-    { status: 405, headers: { 'Content-Type': 'application/json' } }
-  );
+/**
+ * GET /api/checkout?operator=X&vertical=Y&product=Z
+ * → Redirect directly to Stripe Checkout
+ */
+export const GET: APIRoute = async ({ request, url }) => {
+  // === GUARD: Stripe not configured ===
+  if (!stripe) {
+    console.error('[Checkout] STRIPE_SECRET_KEY not configured');
+    return new Response('Payment processing not configured', { status: 503 });
+  }
+
+  // === PARSE QUERY PARAMS ===
+  const operatorId = url.searchParams.get('operator');
+  const vertical = url.searchParams.get('vertical');
+  const productId = url.searchParams.get('product') || undefined;
+  const offerId = url.searchParams.get('offer') || undefined;
+
+  // === VALIDATE ===
+  if (!operatorId || !vertical) {
+    return new Response('Missing operator or vertical parameter', { status: 400 });
+  }
+
+  if (!productId && !offerId) {
+    return new Response('Missing product or offer parameter', { status: 400 });
+  }
+
+  // === CREATE SESSION ===
+  const origin = new URL(request.url).origin;
+  const result = await createCheckoutSession({ operatorId, vertical, productId, offerId }, origin);
+
+  if ('error' in result) {
+    return new Response(result.error, { status: result.status });
+  }
+
+  // === REDIRECT TO STRIPE ===
+  return Response.redirect(result.url, 303);
 };

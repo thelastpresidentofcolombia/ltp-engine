@@ -17,6 +17,9 @@ import type { HreflangLink } from '@config/seo';
 import { seoConfig, buildOgImageUrl } from '@config/seo';
 import { buildFaqJsonLd, serializeJsonLd } from '@/lib/seo/buildFaqJsonLd';
 
+// Shared components
+import WhatsAppFloat from '@/components/shared/WhatsAppFloat.astro';
+
 // Global styles with Tailwind
 import '@/styles/global.css';
 
@@ -235,6 +238,11 @@ const faqJsonLd = operatorFaqs.length > 0
   <!-- Structured Data: FAQPage (if operator has ≥3 valid FAQs) -->
   {faqJsonLd && (
     <script type="application/ld+json" set:html={serializeJsonLd(faqJsonLd)} />
+  )}
+  
+  <!-- WhatsApp Floating Button (if operator has WhatsApp) -->
+  {operator?.contact?.whatsapp && (
+    <WhatsAppFloat whatsappNumber={operator.contact.whatsapp} />
   )}
   
   <!-- Screen reader only utility -->

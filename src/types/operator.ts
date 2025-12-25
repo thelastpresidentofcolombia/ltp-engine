@@ -7,6 +7,13 @@ import type { ProofItem } from './proof';
 import type { IntelEntry, FAQ } from './intel';
 import type { Product, ProductCore, ProductLang } from './products';
 import type { Offer, PricingTier } from './offers';
+import type { 
+  TrustBarContent, 
+  GalleryItem, 
+  RouteContent, 
+  LocalIntelContent, 
+  RuleCard 
+} from './tours';
 
 // =============================================================================
 // PRIMITIVES
@@ -26,7 +33,12 @@ export type ModuleId =
   | 'proof' 
   | 'intel' 
   | 'conversion' 
-  | 'footer';
+  | 'footer'
+  | 'trustBar'
+  | 'vibe'
+  | 'route'
+  | 'localIntel'
+  | 'rules';
 
 export interface OperatorContact {
   whatsapp?: string;
@@ -303,13 +315,23 @@ export interface OperatorLang {
   };
   
   // Route/Itinerary copy
-  route?: {
-    title?: string;
-    steps: Array<{
-      title: string;
-      desc: string;
-    }>;
-  };
+  route?: RouteContent;
+  
+  // ==========================================================================
+  // TOURS/NIGHTLIFE VERTICAL EXTENSIONS
+  // ==========================================================================
+  
+  /** Trust bar signals (tours/nightlife vertical) */
+  trust?: TrustBarContent;
+  
+  /** Gallery images for vibe module (tours/nightlife vertical) */
+  gallery?: GalleryItem[];
+  
+  /** Local intel blocks (tours/nightlife vertical) */
+  localIntel?: LocalIntelContent;
+  
+  /** Rules of engagement (tours/nightlife vertical) */
+  rules?: RuleCard[];
   
   // Conversion CTA
   conversion: {
@@ -389,15 +411,23 @@ export interface Operator {
   intel: OperatorLang['intel'];
   
   diagnostic?: OperatorLang['diagnostic'];
-  route?: {
-    title?: string;
-    steps: Array<{
-      time: string;
-      title: string;
-      desc: string;
-      tag?: string;
-    }>;
-  };
+  route?: RouteContent;
+  
+  // ==========================================================================
+  // TOURS/NIGHTLIFE VERTICAL EXTENSIONS
+  // ==========================================================================
+  
+  /** Trust bar signals (tours/nightlife vertical) */
+  trust?: TrustBarContent;
+  
+  /** Gallery images for vibe module (tours/nightlife vertical) */
+  gallery?: GalleryItem[];
+  
+  /** Local intel blocks (tours/nightlife vertical) */
+  localIntel?: LocalIntelContent;
+  
+  /** Rules of engagement (tours/nightlife vertical) */
+  rules?: RuleCard[];
   
   // Metadata
   _meta: {

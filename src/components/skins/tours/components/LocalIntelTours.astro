@@ -1,0 +1,82 @@
+---
+/**
+ * LocalIntel Module - Tours (Nightlife) Skin
+ * "Sector Intel" - Neighborhood info, safety, logistics (per SOP Section 1.1)
+ * Separate from FAQ - this is curated local knowledge
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.intel.summaryBlocks, operator.location
+ * 
+ * DESIGN: Two-column layout with text + "Operating Zone" card
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// Intel blocks from operator or defaults
+const intelBlocks = operator.intel?.summaryBlocks ?? [
+  { label: 'The Vibe', text: 'Upscale nightlife district with open-air rooftops and mixed crowd.' },
+  { label: 'Transport', text: 'Uber/Didi recommended. Taxis safe when called from venue. Our bus handles crawl transfers.' },
+  { label: 'Safety Protocol', text: 'Stick with the group. Keep valuables low-profile. Guides stay with you through the end.' },
+];
+
+// Location data
+const district = operator.location?.district ?? 'El Poblado';
+const zones = operator.location?.zones ?? ['Provenza', 'Parque Lleras'];
+const zoneName = zones.length > 0 ? zones.join(' / ').toUpperCase() : district.toUpperCase();
+
+const sectionLabel = 'Local Intel';
+const sectionTitle = `Sector: ${district}`;
+---
+
+<section id="local-intel" class="py-20 bg-engine-bg-offset border-t border-white/5">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <!-- Text content -->
+      <div>
+        <h3 class="text-[var(--color-accent)] text-xs tracking-widest mb-2">// {sectionLabel}</h3>
+        <h2 class="text-3xl font-bold uppercase text-white mb-6">{sectionTitle}</h2>
+        <div class="space-y-4 text-sm font-mono text-[var(--color-text-muted)]">
+          {intelBlocks.map((block: any) => (
+            <p>
+              <strong class="text-white">{block.label}:</strong> {block.text}
+            </p>
+          ))}
+        </div>
+      </div>
+
+      <!-- Operating Zone Card -->
+      <div class="bg-engine-bg-surface p-8 border border-white/10 relative overflow-hidden">
+        <!-- Grid overlay -->
+        <div class="absolute inset-0 opacity-20">
+          <svg width="100%" height="100%">
+            <pattern id="grid-intel" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="0.5"/>
+            </pattern>
+            <rect width="100%" height="100%" fill="url(#grid-intel)" />
+          </svg>
+        </div>
+
+        <div class="relative z-10 text-center">
+          <!-- Shield icon -->
+          <svg class="w-12 h-12 text-[var(--color-accent)] mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          
+          <p class="text-white font-bold uppercase tracking-widest text-lg">Operating Zone</p>
+          <p class="text-[var(--color-accent)] text-sm mt-1">{zoneName}</p>
+          
+          <div class="h-px w-full bg-white/20 my-6"></div>
+          
+          <p class="text-[var(--color-text-muted)] text-xs">STATUS: 100% ESCORTED & GUIDED</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

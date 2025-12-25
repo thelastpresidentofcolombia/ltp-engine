@@ -1,0 +1,63 @@
+---
+/**
+ * Offers Module - Tours (Nightlife) Skin
+ * Displays time-sensitive offers (next crawl, private groups)
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const offers = operator.offers ?? [];
+const sectionLabel = operator.ui?.labels?.offers?.section ?? toursDefaults.labels.offers.section;
+const sectionTitle = operator.ui?.labels?.offers?.title ?? toursDefaults.labels.offers.title;
+---
+
+<section id="offers" class="py-20 bg-engine-bg border-t border-white/10">
+  <div class="max-w-5xl mx-auto px-4">
+    <p class="text-[var(--color-accent)] text-xs font-mono uppercase tracking-widest mb-2">
+      // {sectionLabel}
+    </p>
+    <h2 class="text-3xl md:text-4xl font-bold text-white mb-8">
+      {sectionTitle}
+    </h2>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      {offers.map((offer: any) => (
+        <div class={`relative bg-white/5 border ${offer.highlight ? 'border-[var(--color-accent)]' : 'border-white/10'} p-6 rounded-lg`}>
+          {offer.badge && (
+            <span class={`absolute top-4 right-4 text-[10px] uppercase tracking-wider px-3 py-1 rounded-full ${offer.highlight ? 'bg-[var(--color-accent)] text-black' : 'bg-white/10 text-white'}`}>
+              {offer.badge}
+            </span>
+          )}
+          
+          <h3 class="text-xl font-bold text-white mb-2">{offer.title}</h3>
+          <p class="text-[var(--color-text-muted)] text-sm mb-4">{offer.description}</p>
+          
+          <div class="flex items-center justify-between">
+            <span class="text-[var(--color-accent)] font-bold">{offer.price}</span>
+            {offer.urgency && (
+              <span class="text-red-400 text-xs">{offer.urgency}</span>
+            )}
+          </div>
+          
+          <a 
+            href={offer.checkoutUrl ?? '#conversion'}
+            class={`mt-4 block w-full text-center py-3 text-xs font-bold uppercase tracking-widest transition ${
+              offer.highlight 
+                ? 'bg-[var(--color-accent)] text-black hover:opacity-90' 
+                : 'border border-white/30 text-white hover:bg-white/10'
+            }`}
+          >
+            {offer.cta ?? toursDefaults.labels.offers.primaryCta}
+          </a>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,90 @@
+---
+/**
+ * Proof Module - Tours (Nightlife) Skin
+ * "Field Notes" - Testimonials in log card format (per SOP)
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.proof (array with type, quote/content, name/author, meta/role, stars/rating, title)
+ * 
+ * DESIGN: Grid of log cards with monospace font, "field log" aesthetic
+ * Based on night-bare-bones-v1.html "Field Notes (Recent Logs)"
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const proof = operator.proof ?? [];
+const testimonials = proof.filter((p: any) => p.type === 'testimonial' || p.quote || p.content);
+const metrics = proof.filter((p: any) => p.type === 'metric');
+const sectionLabel = operator.ui?.labels?.proof?.section ?? toursDefaults.labels.proof.section;
+const sectionTitle = operator.ui?.labels?.proof?.title ?? toursDefaults.labels.proof.title;
+
+// Ensure we have at least 3 testimonials for proper grid layout
+const displayTestimonials = testimonials.length >= 3 ? testimonials : [
+  ...testimonials,
+  // Fallback testimonials if not enough provided
+  ...(testimonials.length < 1 ? [{ type: 'testimonial', author: 'Recent Crawler', role: 'Google Review', content: 'Exactly what we were looking for. Professional, fun, and worth every dollar.', rating: 5, title: 'Great Night' }] : []),
+  ...(testimonials.length < 2 ? [{ type: 'testimonial', author: 'Weekend Visitor', role: 'TripAdvisor', content: 'The guides made all the difference. Knew exactly where to go and when.', rating: 5, title: 'Perfect Route' }] : []),
+  ...(testimonials.length < 3 ? [{ type: 'testimonial', author: 'Group of Friends', role: 'Word of Mouth', content: 'We\'ve done bar crawls in 10 cities. This one actually delivers on the promise.', rating: 5, title: 'Top Tier' }] : []),
+].slice(0, 6);
+---
+
+<section id="proof" class="py-16 bg-engine-bg-offset border-t border-white/5">
+  <div class="max-w-7xl mx-auto px-4">
+    <h3 class="text-[var(--color-text-muted)] text-xs tracking-widest mb-8">
+      // {sectionLabel.toUpperCase()} (RECENT LOGS)
+    </h3>
+    
+    <!-- Testimonial Log Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {displayTestimonials.slice(0, 6).map((item: any) => {
+        const quote = item.quote ?? item.content;
+        const name = item.name ?? item.author;
+        const meta = item.meta ?? item.role ?? '';
+        const title = item.title ?? meta;
+        const stars = item.stars ?? item.rating ?? 5;
+        
+        return (
+          <div class="bg-engine-bg-surface p-6 border border-white/5 font-mono text-sm">
+            <!-- Header: Title + Stars -->
+            <div class="flex justify-between items-start mb-4 text-[var(--color-accent)] text-xs">
+              <span class="uppercase tracking-wider">{title}</span>
+              <span>{'★'.repeat(stars)}</span>
+            </div>
+            
+            <!-- Quote -->
+            <p class="text-[var(--color-text-secondary)] leading-relaxed">
+              "{quote}"
+            </p>
+            
+            <!-- Attribution -->
+            <p class="mt-4 text-xs text-[var(--color-text-muted)] uppercase">
+              — {name}{meta && `, ${meta}`}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- Metrics row (if present) -->
+    {metrics.length > 0 && (
+      <div class="flex flex-wrap justify-center gap-12 md:gap-20 mt-12 pt-10 border-t border-white/10">
+        {metrics.map((m: any) => (
+          <div class="text-center min-w-[140px]">
+            <p class="text-4xl md:text-5xl font-bold text-[var(--color-accent)]">{m.value}</p>
+            <p class="text-xs text-white uppercase tracking-widest mt-2">{m.label}</p>
+            {m.context && (
+              <p class="text-[11px] text-[var(--color-text-muted)] mt-1">{m.context}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</section>

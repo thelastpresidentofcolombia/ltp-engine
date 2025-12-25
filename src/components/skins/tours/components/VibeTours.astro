@@ -1,0 +1,87 @@
+---
+/**
+ * Vibe Module - Tours (Nightlife) Skin
+ * "Visual Evidence / No Tourist Traps" - Gallery showcase
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.vibe.gallery OR operator.media.galleryImages
+ * 
+ * DESIGN: 3-column image grid with grayscale -> color hover effect
+ * Numbered labels "01 // START", "02 // PEAK", etc.
+ * Based on reference HTML "The Vibe" section
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// Gallery images from operator data
+const gallery = operator.vibe?.gallery ?? operator.gallery ?? [
+  {
+    src: 'https://images.unsplash.com/photo-1574391884720-38528073d6c6?q=80&w=2670&auto=format&fit=crop',
+    label: 'Rooftop Warmup',
+    tag: 'START'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=2670&auto=format&fit=crop',
+    label: 'Underground Club',
+    tag: 'PEAK'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=2670&auto=format&fit=crop',
+    label: 'After Hours',
+    tag: 'LATE'
+  }
+];
+
+const sectionLabel = operator.ui?.labels?.vibe?.section ?? 'Visual Evidence';
+const sectionTitle = operator.ui?.labels?.vibe?.title ?? 'No Tourist Traps';
+const sectionDesc = operator.ui?.labels?.vibe?.description ?? "We only hit the venues where the locals actually go. Reggaeton, Techno, and Rooftops.";
+---
+
+<style>
+  .border-glow:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
+  }
+</style>
+
+<section id="vibe" class="py-24 bg-engine-bg border-t border-white/5">
+  <div class="max-w-7xl mx-auto px-4">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+      <div>
+        <h3 class="text-[var(--color-accent)] text-xs tracking-widest mb-2">// {sectionLabel.toUpperCase()}</h3>
+        <h2 class="text-4xl md:text-5xl font-bold uppercase text-white">{sectionTitle}</h2>
+      </div>
+      <div class="md:text-right">
+        <p class="text-gray-500 text-xs max-w-xs font-mono">{sectionDesc}</p>
+      </div>
+    </div>
+
+    <!-- Gallery Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {gallery.map((item: any, index: number) => (
+        <div class="group relative aspect-[3/4] overflow-hidden border border-white/10 border-glow transition-all duration-300">
+          <img 
+            src={item.src} 
+            alt={item.label}
+            class="w-full h-full object-cover transition duration-700 group-hover:scale-110 filter grayscale group-hover:grayscale-0"
+            loading="lazy"
+          />
+          <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
+            <p class="text-[var(--color-accent)] text-xs font-bold mb-1">
+              {String(index + 1).padStart(2, '0')} // {item.tag ?? ['START', 'PEAK', 'LATE'][index] ?? 'VENUE'}
+            </p>
+            <h4 class="text-xl font-bold uppercase text-white">{item.label}</h4>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

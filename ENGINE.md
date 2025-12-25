@@ -1,12 +1,104 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.3.2  
+> **Version:** 1.5.0  
 > **Last Updated:** December 23, 2025  
-> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Brevo Email ✅
+> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Brevo Email ✅ | Tours Vertical ✅ | Token-Driven Theming ✅
 
 ---
 
 ## 📋 Changelog
+
+### v1.5.0 (December 23, 2025) — Engine-First Token System
+
+#### 🎨 Token-Driven Theming (Zero Hardcoding)
+Major architectural fix: All background colors now flow from operator `vibe.tokens` through CSS variables.
+
+**The Problem:**
+- Tours skin had hardcoded hex colors (`bg-[#050505]`, `bg-[#0a0a0a]`, `bg-black`)
+- This created "template smell" — every tours site would look identical
+- CSS variables were being injected but overridden by `global.css` defaults
+
+**The Solution:**
+1. **Removed color defaults from `global.css`** — Color tokens are now ONLY injected inline by EngineLayout from operator vibe.tokens
+2. **Converted all tours components to semantic classes** — `bg-engine-bg`, `bg-engine-bg-offset`, `bg-engine-bg-surface`
+3. **Tailwind config maps semantic classes to CSS variables** — Already existed, now actually works!
+
+**Token Flow:**
+```
+core.json (DATA)           →  vibe.tokens.bgBase: "#050505"
+    ↓
+EngineLayout (INJECTION)   →  <style>:root{--color-bg-base:#050505}</style>
+    ↓
+tailwind.config.cjs (MAP)  →  'engine.bg': 'var(--color-bg-base)'
+    ↓
+Components (CLASSES)       →  <section class="bg-engine-bg">
+```
+
+**Files Changed:**
+- `src/styles/global.css` — Removed all `--color-*` defaults from `:root` (they conflicted with inline injection)
+- `src/components/skins/tours/components/*.astro` (13 files) — Converted to `bg-engine-*` classes
+- `src/data/operators/tours/demo/core.json` — Complete dark token set with `hoverBg`
+
+**Engine Semantic Color Classes:**
+| Class | CSS Variable | Purpose |
+|-------|-------------|---------|
+| `bg-engine-bg` | `--color-bg-base` | Primary page background |
+| `bg-engine-bg-offset` | `--color-bg-offset` | Alternating section background |
+| `bg-engine-bg-surface` | `--color-bg-surface` | Cards, elevated surfaces |
+| `bg-engine-bg-inverse` | `--color-bg-inverse` | Dark sections on light themes |
+| `text-engine-text` | `--color-text-primary` | Primary text color |
+| `text-engine-text-secondary` | `--color-text-secondary` | Secondary text |
+| `text-engine-text-muted` | `--color-text-muted` | Tertiary/muted text |
+
+#### 🔧 Other Fixes
+- **FIX:** Jose Espinosa operator now has `contact.whatsapp` for floating WhatsApp button
+- **FIX:** Tours demo `core.json` — Added missing `hoverBg` token
+
+### v1.4.0 (December 23, 2025) — Tours/Nightlife Vertical
+
+#### 🎉 New Vertical: Tours (Nightlife)
+Complete implementation of the tours/nightlife vertical with 11 custom modules:
+
+| Module | Component | Purpose |
+|--------|-----------|---------|
+| `hero` | `HeroTours.astro` | Full-bleed hero with animated gradient overlay |
+| `trustBar` | `TrustBarTours.astro` | Authority signals (ratings, badges, stats) |
+| `vibe` | `VibeTours.astro` | Immersive gallery with vibe keywords |
+| `proof` | `ProofTours.astro` | Field notes testimonials + metrics |
+| `route` | `RouteTours.astro` | Night route timeline with venue stops |
+| `products` | `ProductsTours.astro` | Experience tiers (Standard/VIP/Private) |
+| `rules` | `RulesTours.astro` | House rules cards with icons |
+| `localIntel` | `LocalIntelTours.astro` | Local guide + partner venues grid |
+| `intel` | `IntelTours.astro` | FAQ accordion |
+| `conversion` | `ConversionTours.astro` | Final CTA with urgency |
+| `footer` | `FooterTours.astro` | Dark footer with social links |
+
+#### 🔧 Engine Enhancements
+- **NEW:** 5 module IDs added to `MODULE_DEFINITIONS`: `trustBar`, `vibe`, `route`, `localIntel`, `rules`
+- **NEW:** TypeScript contracts in `src/types/tours.ts`:
+  - `TrustSignal`, `TrustBarContent` — Trust bar module data
+  - `GalleryItem` — Vibe gallery images with captions
+  - `RouteStop`, `RouteContent` — Night route timeline
+  - `LocalIntelContent` — Local guide + partner venues
+  - `RuleCard` — House rules with icons
+- **NEW:** Validation enforcement in `scripts/validate-operators.ts`:
+  - Tours operators require minimum counts: 3 trust signals, 3 gallery items, 3 route stops, 4 rules
+- **NEW:** `WhatsAppFloat.astro` — Engine-wide floating WhatsApp button
+  - Uses `--color-accent` automatically per operator
+  - Renders on all verticals when `contact.whatsapp` exists
+  - Pulse animation, hover effects, mobile-responsive
+
+#### 📝 Demo Data
+- **NEW:** `src/data/operators/tours/demo/` — Complete demo operator
+  - `core.json` — Brand, contact, vibe tokens, modules
+  - `en.json` — English content (trust, gallery, route, rules, localIntel, products, proof)
+  - `es.json` — Spanish translation
+
+#### 🎨 Design Fixes
+- **FIX:** `ProductsTours.astro` — Solid dark background (`#0a0a0a`) instead of semi-transparent
+- **FIX:** `ProofTours.astro` — Centered metrics using flex instead of grid
+- **FIX:** `TrustBarTours.astro` — Better contrast with darker bg and larger text
+- **FIX:** `FooterTours.astro` — Reduced mobile spacing, cleaned up layout
 
 ### v1.3.2 (December 23, 2025)
 - **SWITCH:** Email provider from Resend → **Brevo** (already configured for `@lovethisplace.co`)
@@ -71,10 +163,14 @@
 
 | Gap | Status | Notes |
 |-----|--------|-------|
-| **Offers not engine-first** |  Complete | `resolveOfferAction()` + OffersConsultancy.astro wired |
-| **Schema.org FAQPage** |  Complete | `buildFaqJsonLd.ts` + EngineLayout injection |
+| **Token-driven backgrounds** | ✅ Complete | All skins use `bg-engine-*` classes, no hardcoded colors |
+| **Offers not engine-first** | ✅ Complete | `resolveOfferAction()` + OffersConsultancy.astro wired |
+| **Schema.org FAQPage** | ✅ Complete | `buildFaqJsonLd.ts` + EngineLayout injection |
+| **Tours TypeScript contracts** | ✅ Complete | `src/types/tours.ts` + validation enforcement |
+| **WhatsApp floating button** | ✅ Complete | Engine-wide, accent-color matched |
 | **Stripe Connect** | 🔄 Planned | Current: checkoutUrl-first; Target: split payouts + webhooks |
 | **Zod runtime validation** | 🔄 Planned | Build-time validation exists via scripts |
+| **Fitness skin components** | 🔄 Partial | Uses consultancy skin as fallback |
 
 ---
 
@@ -480,6 +576,47 @@ Components use var(--color-accent), var(--color-bg-base), etc.
   }
 }
 ```
+
+---
+
+## 📸 Image Specifications (Per Vertical)
+
+All images should be optimized for web delivery. Recommended formats: WebP (primary), JPG (fallback).
+
+### Consultancy Vertical
+
+| Image Type | Location | Aspect Ratio | Recommended Size | Min Width | Notes |
+|------------|----------|--------------|------------------|-----------|-------|
+| **Founder Avatar** | `core.json` → `founders[].avatar` | 4:5 (portrait) | `800 × 1000 px` | 600px | Professional headshot, used in Hero panel |
+| **Hero Background** | `core.json` → `media.heroImage` | 16:9 | `1920 × 1080 px` | 1200px | Subtle texture/grid, Swiss design aesthetic |
+| **OG Image** | `core.json` → `media.ogImage` | ~1.91:1 | `1200 × 630 px` | 1200px | Social sharing preview (required) |
+
+**Design Notes:**
+- Consultancy uses a clean, minimal aesthetic — images should be high contrast, professional
+- Founder avatar is the primary visual element; keep it crisp
+- Background images work best as subtle textures (grids, patterns) rather than busy photos
+
+### Tours (Nightlife) Vertical
+
+| Image Type | Location | Aspect Ratio | Recommended Size | Min Width | Notes |
+|------------|----------|--------------|------------------|-----------|-------|
+| **Hero Image** | `core.json` → `media.heroImage` | 16:9 | `2560 × 1440 px` | 1920px | Full-bleed background with gradient overlay |
+| **Gallery Images** | `{lang}.json` → `gallery[].src` | **3:4 (portrait)** | `800 × 1067 px` | 600px | Vibe section grid (3 images required) |
+| **Conversion BG** | `{lang}.json` → `conversion.bgImage` | 16:9 | `2560 × 1440 px` | 1920px | Final CTA section background |
+| **OG Image** | `core.json` → `media.ogImage` | ~1.91:1 | `1200 × 630 px` | 1200px | Social sharing preview (required) |
+
+**Design Notes:**
+- Tours skin uses dark theme with neon accents — high contrast nightlife imagery works best
+- Gallery images display with grayscale filter, color on hover — choose vibrant source images
+- Hero and Conversion BG get dark overlays — bright/colorful originals recommended
+
+### Image Optimization Checklist
+
+- [ ] All images under 500KB (ideally under 200KB for gallery)
+- [ ] WebP format where possible
+- [ ] Descriptive alt text in `*Alt` fields
+- [ ] OG images include brand name/logo for social recognition
+- [ ] Hero images work well with text overlay (avoid busy center areas)
 
 ---
 

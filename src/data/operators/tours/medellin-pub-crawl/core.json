@@ -1,0 +1,95 @@
+{
+  "id": "medellin-pub-crawl",
+  "vertical": "tours",
+  "contact": {
+    "email": "info@medellinpubcrawl.com",
+    "whatsapp": "+573001234567",
+    "conciergeWhatsapp": "+573009876543"
+  },
+  "location": {
+    "city": "medellin",
+    "country": "CO",
+    "timezone": "America/Bogota",
+    "district": "El Poblado",
+    "zones": ["Provenza", "Parque Lleras", "Manila"]
+  },
+  "vibe": {
+    "vibeId": "tours-lime-dark",
+    "nomenclatureSetId": "nightlife-crawl",
+    "presentationSetId": "lime-dark",
+    "tokens": {
+      "bgBase": "#0a0a0a",
+      "bgOffset": "#121212",
+      "bgSurface": "#1a1a1a",
+      "bgInverse": "#f0f0f0",
+
+      "textMain": "#ffffff",
+      "textSecondary": "#c4c4c4",
+      "textMuted": "#888888",
+      "textInverse": "#0a0a0a",
+
+      "borderLine": "rgba(255,255,255,0.10)",
+      "borderStrong": "rgba(255,255,255,0.20)",
+
+      "accent": "#32CD32",
+      "accentHover": "#45e045",
+      "hoverBg": "rgba(50,205,50,0.08)",
+
+      "success": "#32CD32",
+      "error": "#ff4444"
+    }
+  },
+  "modules": [
+    "hero",
+    "trustBar",
+    "vibe",
+    "proof",
+    "route",
+    "products",
+    "localIntel",
+    "rules",
+    "intel",
+    "conversion",
+    "footer"
+  ],
+  "media": {
+    "logo": "/images/tours/bar-crawl-medellin/bcm-logo-transparent.png",
+    "heroImage": "/images/tours/bar-crawl-medellin/hero-pic-hero.jpg",
+    "heroImageAlt": "Bar Crawl Medellín nightlife experience",
+    "ogImage": "/images/tours/bar-crawl-medellin/day-tours-og.jpg",
+    "favicon": "/favicon.ico"
+  },
+  "liveStatus": {
+    "enabled": true,
+    "label": "En Vivo",
+    "district": "El Poblado"
+  },
+  "pricing": {
+    "currency": "USD",
+    "tiers": [
+      {
+        "id": "tier-standard",
+        "priceUsd": 49
+      },
+      {
+        "id": "tier-vip",
+        "priceUsd": 89
+      },
+      {
+        "id": "tier-private",
+        "priceUsd": 450
+      }
+    ]
+  },
+  "integrations": {
+    "stripeProductIds": {
+      "tier-standard": "price_mpc_standard",
+      "tier-vip": "price_mpc_vip",
+      "tier-private": "price_mpc_private"
+    },
+    "analytics": {
+      "gaId": "G-MPCXXXXXXX",
+      "gtmId": "GTM-MPCXXXX"
+    }
+  }
+}

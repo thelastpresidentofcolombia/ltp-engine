@@ -1,0 +1,89 @@
+---
+/**
+ * Footer Module - Tours (Nightlife) Skin
+ * Simple dark footer with brand + social links
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.brand, operator.contact, operator.location, operator.footer
+ * 
+ * DESIGN: Dark footer, centered content, brand name with year
+ */
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const brandName = operator.brand?.name ?? 'Bar Crawl';
+const systemTag = operator.brand?.systemTag ?? operator.location?.city?.toUpperCase()?.slice(0,3) ?? 'MDE';
+const brandDisplay = `${brandName.toUpperCase()} // ${systemTag}`;
+
+const email = operator.contact?.email;
+const whatsapp = operator.contact?.whatsapp;
+const instagram = operator.contact?.instagram;
+const location = operator.location;
+
+const year = new Date().getFullYear();
+const established = operator.footer?.established ?? year;
+const locationDisplay = `${location?.district ?? ''}, ${location?.cityName ?? location?.city ?? ''}`.replace(/^, /, '').replace(/, $/, '');
+---
+
+<footer id="footer" class="bg-engine-bg border-t border-white/10 py-8 md:py-12">
+  <div class="max-w-7xl mx-auto px-4">
+    <!-- Top row: Brand + Social -->
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
+      <!-- Brand -->
+      <div class="text-center md:text-left">
+        <h4 class="font-[var(--font-brand)] text-lg md:text-xl font-bold text-white">{brandDisplay}</h4>
+        <p class="text-gray-600 text-xs mt-1 font-mono">
+          EST. {established} {locationDisplay.toUpperCase()}
+        </p>
+      </div>
+
+      <!-- Social Links -->
+      <div class="flex gap-6">
+        {whatsapp && (
+          <a 
+            href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}
+            class="text-gray-500 hover:text-white transition text-sm"
+          >
+            WhatsApp
+          </a>
+        )}
+        {email && (
+          <a 
+            href={`mailto:${email}`}
+            class="text-gray-500 hover:text-white transition text-sm"
+          >
+            Email
+          </a>
+        )}
+        {instagram && (
+          <a 
+            href={instagram} 
+            target="_blank" 
+            rel="noopener"
+            class="text-gray-500 hover:text-white transition text-sm"
+          >
+            Instagram
+          </a>
+        )}
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="pt-6 md:pt-8 mt-6 md:mt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
+      <p class="text-gray-600 text-xs">
+        © {year} {brandName}. All rights reserved.
+      </p>
+      <p class="text-gray-600 text-xs">
+        Powered by <a href="https://ltpengine.com" class="text-[var(--color-accent)] hover:underline">LTP Engine</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<!-- Safe area for mobile sticky CTA bar -->
+<div class="h-16 md:h-0 bg-engine-bg"></div>

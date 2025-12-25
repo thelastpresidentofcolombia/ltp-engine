@@ -1,0 +1,323 @@
+{
+  "lang": "en",
+  "brand": {
+    "name": "Bar Crawl Medellín",
+    "tagline": "The Original Night Out Since 2018",
+    "shortName": "BAR CRAWL",
+    "systemTag": "MDE"
+  },
+  "trust": {
+    "summary": "6 years running. 500+ five-star reviews. The most trusted bar crawl in Medellín, Colombia.",
+    "signals": [
+      { "icon": "verified", "label": "Est. 2018", "sublabel": "6 Years Running" },
+      { "icon": "secure", "label": "Safe", "sublabel": "Local Guides Always" },
+      { "icon": "refund", "label": "Flexible", "sublabel": "Free Rescheduling" },
+      { "icon": "social", "label": "5,000+", "sublabel": "Happy Crawlers" }
+    ]
+  },
+  "rules": [
+    { "title": "Age 21+", "desc": "Valid ID Required" },
+    { "title": "Dress Code", "desc": "No Sandals or Tank Tops" },
+    { "title": "Zero Tolerance", "desc": "No Drugs, No Drama" },
+    { "title": "Respect", "desc": "Our Staff & Venues" }
+  ],
+  "seo": {
+    "title": "Bar Crawl Medellín — The Original Night Out Since 2018",
+    "description": "Join the most trusted bar crawl in Medellín. 4 handpicked venues, local guides, skip-the-line entry, and welcome drinks. Running every Thursday, Friday & Saturday.",
+    "keywords": ["Medellin bar crawl", "Poblado nightlife", "Medellin party", "Colombia nightlife tour", "Medellin nightlife"]
+  },
+  "hero": {
+    "badge": "Live: El Poblado",
+    "headline": "MEDELLÍN",
+    "headlineAccent": "Bar Crawl",
+    "subhead": "The original Medellín bar crawl. 4 handpicked venues, local guides who know every doorman, and the best night of your trip — guaranteed.",
+    "stats": [
+      { "label": "Venues", "value": "4 Stops" },
+      { "label": "Drinks", "value": "Included" },
+      { "label": "Duration", "value": "5+ Hours" },
+      { "label": "Next Crawl", "value": "TONIGHT" }
+    ],
+    "cta": {
+      "primary": "Book Now",
+      "secondary": "View Route"
+    }
+  },
+  "gallery": [
+    {
+      "src": "/images/tours/bar-crawl-medellin/day-tours-gallery-ntt.webp",
+      "label": "Rooftop Kickoff",
+      "tag": "START"
+    },
+    {
+      "src": "/images/tours/bar-crawl-medellin/bar-group-photo-gallery-ntt.webp",
+      "label": "The Main Event",
+      "tag": "PEAK"
+    },
+    {
+      "src": "/images/tours/bar-crawl-medellin/hero-pic-gallery-ntt.webp",
+      "label": "After Hours",
+      "tag": "FINALE"
+    }
+  ],
+  "fitFilter": {
+    "title": "Is This For You?",
+    "compatible": {
+      "heading": "Perfect For",
+      "profiles": [
+        "Solo travelers wanting to meet people",
+        "Groups looking for a hassle-free night",
+        "First-timers wanting local guidance",
+        "Anyone who hates waiting in lines"
+      ]
+    },
+    "incompatible": {
+      "heading": "Skip This If",
+      "profiles": [
+        "You're under 21",
+        "Looking for the cheapest option",
+        "Want a quiet, chill night",
+        "Have issues following basic rules"
+      ]
+    }
+  },
+  "offers": [
+    {
+      "id": "offer-tonight",
+      "badge": "Tonight",
+      "title": "This Week's Crawls",
+      "description": "Thursday, Friday & Saturday • 9 PM Start • El Poblado",
+      "price": "From $49",
+      "cta": "Reserve Spot",
+      "highlight": true,
+      "urgency": "8 spots left for Saturday"
+    },
+    {
+      "id": "offer-group",
+      "badge": "Groups 8+",
+      "title": "Private Experience",
+      "description": "Custom route, dedicated guide, flexible timing. Bachelor parties welcome.",
+      "price": "From $450",
+      "cta": "Plan Your Night",
+      "highlight": false
+    }
+  ],
+  "products": [
+    {
+      "id": "product-standard",
+      "badge": "Most Popular",
+      "name": "Classic Crawl",
+      "description": "The full Medellín Pub Crawl experience — 4 venues, local guide, and good vibes guaranteed.",
+      "outcome": "The best night of your trip",
+      "includes": [
+        "4 Handpicked Venues",
+        "Skip-the-Line Entry",
+        "Welcome Shot at Each Stop",
+        "Bilingual Local Guide",
+        "WhatsApp Support",
+        "Group Photos"
+      ],
+      "priceUsd": 49,
+      "stripePriceId": "price_mpc_standard"
+    },
+    {
+      "id": "product-vip",
+      "badge": "Upgrade",
+      "name": "VIP Crawl",
+      "description": "Everything in Classic plus reserved tables, premium drinks, and access to an exclusive 5th venue.",
+      "outcome": "Next-level night out",
+      "includes": [
+        "Everything in Classic",
+        "Reserved VIP Tables",
+        "Premium Drink Upgrades",
+        "Exclusive 5th Venue",
+        "Private Transport",
+        "Priority Support"
+      ],
+      "priceUsd": 89,
+      "stripePriceId": "price_mpc_vip"
+    },
+    {
+      "id": "product-private",
+      "badge": "Groups",
+      "name": "Private Crawl",
+      "description": "Your group, your pace, your night. Ideal for bachelor/ette parties, birthdays, or corporate events.",
+      "outcome": "Legendary group night",
+      "includes": [
+        "Custom Venue Selection",
+        "Dedicated Private Guide",
+        "Flexible Start Time",
+        "VIP Tables at All Stops",
+        "Open Bar Options",
+        "Professional Photos"
+      ],
+      "priceUsd": 450,
+      "priceLabel": "up to 15 people",
+      "stripePriceId": "price_mpc_private"
+    }
+  ],
+  "route": {
+    "title": "The Route",
+    "description": "Four legendary stops, one unforgettable night",
+    "stops": [
+      {
+        "order": 1,
+        "time": "9:00 PM",
+        "name": "Sky Lounge",
+        "type": "Rooftop Bar",
+        "description": "Start with panoramic city views and craft cocktails",
+        "vibe": "Sunset Views • Craft Cocktails • Chill Vibes"
+      },
+      {
+        "order": 2,
+        "time": "10:30 PM",
+        "name": "Hidden Gem",
+        "type": "Speakeasy",
+        "description": "A secret bar most tourists never find",
+        "vibe": "Intimate • Mixology • Good Conversation"
+      },
+      {
+        "order": 3,
+        "time": "12:00 AM",
+        "name": "Main Stage",
+        "type": "Nightclub",
+        "description": "Where the party really starts",
+        "vibe": "High Energy • Dance Floor • Live DJ"
+      },
+      {
+        "order": 4,
+        "time": "2:00 AM",
+        "name": "The Finale",
+        "type": "After Hours",
+        "description": "The spot everyone talks about",
+        "vibe": "Peak Hours • Legendary • Main Event"
+      }
+    ]
+  },
+  "localIntel": {
+    "title": "Local Intel",
+    "blocks": [
+      { "label": "The Scene", "text": "El Poblado is the upscale nightlife district. International crowd, rooftop bars, and clubs that go until sunrise." },
+      { "label": "Getting Around", "text": "Uber and Didi are safe and cheap. We handle all transport during the crawl — just show up." },
+      { "label": "Safety", "text": "Stick with your guide and group. Keep phones in front pockets. We've never had an incident in 6 years." }
+    ],
+    "operatingZone": {
+      "name": "Provenza / Lleras",
+      "description": "The heart of Poblado's nightlife — 50+ venues within walking distance."
+    }
+  },
+  "proof": [
+    {
+      "type": "testimonial",
+      "title": "Best Night Ever",
+      "author": "Jake & the Boys",
+      "role": "Bachelor Party, Austin TX",
+      "content": "Hands down the best night of our entire trip. The guide knew everyone and got us into places we'd never find alone.",
+      "rating": 5,
+      "platform": "Google"
+    },
+    {
+      "type": "testimonial",
+      "title": "Perfect for Solo Travel",
+      "author": "Amanda R.",
+      "role": "Solo Traveler, London",
+      "content": "Was nervous going alone but met the most amazing group. The guides made sure everyone was included and having fun.",
+      "rating": 5,
+      "platform": "TripAdvisor"
+    },
+    {
+      "type": "testimonial",
+      "title": "Third Time Back",
+      "author": "Marcus T.",
+      "role": "Digital Nomad",
+      "content": "This is my third time doing this crawl. Every time they switch up the route and it's always fire.",
+      "rating": 5,
+      "platform": "Google"
+    },
+    {
+      "type": "testimonial",
+      "title": "Girls Trip Approved",
+      "author": "Sophie & Crew",
+      "role": "Girls Trip, Toronto",
+      "content": "Felt completely safe the whole night. The guides were professional but fun. Exactly what we wanted.",
+      "rating": 5,
+      "platform": "WhatsApp"
+    },
+    {
+      "type": "testimonial",
+      "title": "Local Knowledge",
+      "author": "David K.",
+      "role": "Business Traveler",
+      "content": "The speakeasy they took us to was incredible. No way I would have found it on my own. Worth every penny.",
+      "rating": 5,
+      "platform": "Google"
+    },
+    {
+      "type": "testimonial",
+      "title": "Actually Delivers",
+      "author": "NYC Weekend Crew",
+      "role": "Group of 6",
+      "content": "We've done pub crawls in a dozen cities. This is one of the few that actually lives up to the hype.",
+      "rating": 5,
+      "platform": "TripAdvisor"
+    },
+    {
+      "type": "metric",
+      "value": "500+",
+      "label": "5-Star Reviews",
+      "context": "Google & TripAdvisor"
+    },
+    {
+      "type": "metric",
+      "value": "5,000+",
+      "label": "Happy Crawlers",
+      "context": "Since 2018"
+    },
+    {
+      "type": "metric",
+      "value": "6 Years",
+      "label": "Running Strong",
+      "context": "Est. 2018"
+    }
+  ],
+  "intel": [
+    {
+      "q": "What time does the crawl start and end?",
+      "a": "We meet at 9 PM and typically finish around 3-4 AM. You're welcome to leave earlier if needed — just let your guide know."
+    },
+    {
+      "q": "Is it safe?",
+      "a": "Absolutely. We've been running for 6 years with zero incidents. Our guides are trained locals who know the area, staff, and security at every venue."
+    },
+    {
+      "q": "Can I join solo?",
+      "a": "Yes! About 40% of our crawlers come solo. It's one of the best ways to meet fellow travelers. We make introductions easy."
+    },
+    {
+      "q": "What's included in the price?",
+      "a": "Entry to all 4 venues (no cover charges), a welcome drink at each stop, local bilingual guide, and WhatsApp support throughout the night."
+    },
+    {
+      "q": "What if I need to cancel?",
+      "a": "Free rescheduling with 24 hours notice. We run Thursday, Friday, and Saturday so there's flexibility."
+    },
+    {
+      "q": "What should I wear?",
+      "a": "Smart casual. No sandals, flip-flops, or tank tops for guys. Jeans and a nice shirt work great. Ladies — whatever you're comfortable dancing in."
+    },
+    {
+      "q": "Do you accept groups?",
+      "a": "Yes! Groups of 8+ can book a private crawl with a custom route and dedicated guide. Perfect for bachelor/ette parties."
+    }
+  ],
+  "conversion": {
+    "headline": "Ready?",
+    "subhead": "Join the most trusted pub crawl in Medellín. Your best night starts here.",
+    "cta": "Book Your Spot",
+    "urgency": "Next crawl: Tonight at 9 PM",
+    "bgImage": "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=2670&auto=format&fit=crop"
+  },
+  "footer": {
+    "tagline": "Medellín's Original Pub Crawl Since 2018",
+    "copyright": "© 2024 Medellín Pub Crawl. All rights reserved."
+  }
+}

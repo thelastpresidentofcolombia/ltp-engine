@@ -1,0 +1,80 @@
+---
+/**
+ * Products Module - Tours (Nightlife) Skin
+ * Experience tiers (Standard, VIP, Private)
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const products = operator.products ?? [];
+const sectionLabel = operator.ui?.labels?.products?.section ?? toursDefaults.labels.products.section;
+const sectionTitle = operator.ui?.labels?.products?.title ?? toursDefaults.labels.products.title;
+---
+
+<section id="products" class="py-20 bg-engine-bg-offset border-t border-white/5">
+  <div class="max-w-6xl mx-auto px-4">
+    <p class="text-[var(--color-accent)] text-xs font-mono uppercase tracking-widest mb-2">
+      // {sectionLabel}
+    </p>
+    <h2 class="text-3xl md:text-4xl font-bold text-white mb-8">
+      {sectionTitle}
+    </h2>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      {products.map((product: any, index: number) => (
+        <div class={`relative bg-white/5 border ${product.badge === 'Most Popular' ? 'border-[var(--color-accent)]' : 'border-white/10'} p-6 rounded-lg flex flex-col`}>
+          {product.badge && (
+            <span class={`absolute -top-3 left-4 text-[10px] uppercase tracking-wider px-3 py-1 rounded-full ${
+              product.badge === 'Most Popular' 
+                ? 'bg-[var(--color-accent)] text-black' 
+                : 'bg-white/20 text-white'
+            }`}>
+              {product.badge}
+            </span>
+          )}
+          
+          <h3 class="text-xl font-bold text-white mb-2 mt-2">{product.name}</h3>
+          <p class="text-[var(--color-text-muted)] text-sm mb-4 flex-grow">{product.description}</p>
+          
+          {product.includes && (
+            <ul class="space-y-2 mb-6">
+              {product.includes.slice(0, 5).map((item: string) => (
+                <li class="text-xs text-[var(--color-text-secondary)] flex items-center gap-2">
+                  <svg class="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
+          
+          <div class="mt-auto">
+            <div class="text-2xl font-bold text-white mb-4">
+              ${product.priceUsd ?? product.price ?? '—'}
+              <span class="text-sm font-normal text-[var(--color-text-muted)]">/person</span>
+            </div>
+            
+            <a 
+              href={product.checkoutUrl ?? product.stripePriceId ? `/api/checkout?productId=${operator.id}_${product.id}` : '#conversion'}
+              class={`block w-full text-center py-3 text-xs font-bold uppercase tracking-widest transition ${
+                product.badge === 'Most Popular'
+                  ? 'bg-[var(--color-accent)] text-black hover:opacity-90'
+                  : 'border border-white/30 text-white hover:bg-white/10'
+              }`}
+            >
+              {toursDefaults.labels.products.modalCta}
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

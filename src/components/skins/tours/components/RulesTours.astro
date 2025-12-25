@@ -1,0 +1,48 @@
+---
+/**
+ * Rules Module - Tours (Nightlife) Skin
+ * "Rules of Engagement" - Policies and etiquette (per SOP Section 1.1)
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.rules (array of {title, description})
+ * - Falls back to operator.intel.rulesOfEngagement
+ * 
+ * DESIGN: Horizontal strip with compact rule cards
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// Rules from operator data
+const rules = operator.rules ?? operator.intel?.rulesOfEngagement ?? [
+  { title: 'ID Required', desc: 'Physical Copy or Photo' },
+  { title: 'Dress Code', desc: 'Smart Casual (No Flip Flops)' },
+  { title: 'Zero Drugs', desc: 'Strict Policy' },
+  { title: 'Respect', desc: 'Staff & Locals' },
+];
+
+const sectionTitle = operator.ui?.labels?.rules?.title ?? 'Rules of Engagement';
+---
+
+<section class="py-12 bg-engine-bg border-y border-white/10">
+  <div class="max-w-4xl mx-auto px-4">
+    <h4 class="text-[var(--color-text-muted)] font-bold uppercase text-xs tracking-widest mb-6 text-center">
+      {sectionTitle}
+    </h4>
+    
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      {rules.map((rule: any) => (
+        <div class="bg-engine-bg-surface p-4 border border-white/5 rounded">
+          <p class="text-white text-xs font-bold uppercase">{rule.title}</p>
+          <p class="text-[10px] text-[var(--color-text-muted)] mt-1">{rule.desc ?? rule.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

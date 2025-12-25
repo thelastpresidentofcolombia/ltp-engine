@@ -10,33 +10,50 @@
     "city": "medellin",
     "country": "CO",
     "timezone": "America/Bogota",
-    "district": "El Poblado"
+    "district": "El Poblado",
+    "zones": ["Provenza", "Parque Lleras"]
   },
   "vibe": {
-    "vibeId": "nightlife-electric",
+    "vibeId": "tours-orange-dark",
     "nomenclatureSetId": "nightlife-crawl",
-    "presentationSetId": "neon-dark",
+    "presentationSetId": "orange-dark",
     "tokens": {
-      "bgDeep": "#050505",
-      "neonAccent": "#39ff14",
-      "textPrimary": "#ffffff",
+      "bgBase": "#050505",
+      "bgOffset": "#0a0a0a",
+      "bgSurface": "#111111",
+      "bgInverse": "#ffffff",
+
+      "textMain": "#ffffff",
+      "textSecondary": "#d1d5db",
       "textMuted": "#9ca3af",
-      "fontBrand": "Syncopate",
-      "fontBody": "Space Mono"
+      "textInverse": "#050505",
+
+      "borderLine": "rgba(255,255,255,0.12)",
+      "borderStrong": "rgba(255,255,255,0.22)",
+
+      "accent": "#f97316",
+      "accentHover": "#fb923c",
+      "hoverBg": "rgba(249,115,22,0.08)",
+
+      "success": "#22c55e",
+      "error": "#ef4444"
     }
   },
   "modules": [
     "hero",
-    "fitFilter",
-    "offers",
-    "products",
+    "trustBar",
+    "vibe",
     "proof",
+    "route",
+    "products",
+    "localIntel",
+    "rules",
     "intel",
     "conversion",
     "footer"
   ],
   "media": {
-    "heroImage": "/images/tours/hero-nightlife.jpg",
+    "heroImage": "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=2670&auto=format&fit=crop",
     "heroImageAlt": "Medellin nightlife scene",
     "heroVideoUrl": "https://videos.example.com/medellin-nightlife.mp4",
     "ogImage": "/images/tours/og-demo.jpg",

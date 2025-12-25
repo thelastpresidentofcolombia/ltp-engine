@@ -2,6 +2,13 @@
  * Validate all operator folders before build
  * Ensures each operator has core.json + en.json + es.json
  * and that all required fields are present
+ * 
+ * TOURS/NIGHTLIFE MODULE VALIDATION:
+ * When modules array includes tours-specific modules, validates:
+ * - trustBar: trust.signals ≥ 3
+ * - vibe: gallery ≥ 3
+ * - route: route.stops ≥ 3
+ * - rules: rules ≥ 4
  */
 
 import { readdir, readFile, access } from 'fs/promises';
@@ -62,6 +69,57 @@ const MIN_DATA_REQUIREMENTS = {
   products: 2,
   proof: 2,
   'intel.faq': 3,
+};
+
+// =============================================================================
+// TOURS/NIGHTLIFE MODULE VALIDATION
+// =============================================================================
+
+/**
+ * Module-specific validation rules for tours/nightlife vertical
+ * When a module ID is in the modules array, its data must exist with minimum counts
+ */
+const TOURS_MODULE_VALIDATION: Record<string, { dataPath: string; minCount: number; itemValidation?: (item: any) => string | null }> = {
+  trustBar: {
+    dataPath: 'trust.signals',
+    minCount: 3,
+    itemValidation: (item: any) => {
+      if (!item.icon) return 'missing "icon"';
+      if (!item.label) return 'missing "label"';
+      return null;
+    },
+  },
+  vibe: {
+    dataPath: 'gallery',
+    minCount: 3,
+    itemValidation: (item: any) => {
+      if (!item.src) return 'missing "src"';
+      return null;
+    },
+  },
+  route: {
+    dataPath: 'route.stops',
+    minCount: 3,
+    itemValidation: (item: any) => {
+      if (!item.name) return 'missing "name"';
+      if (!item.description) return 'missing "description"';
+      return null;
+    },
+  },
+  rules: {
+    dataPath: 'rules',
+    minCount: 4,
+    itemValidation: (item: any) => {
+      if (!item.title) return 'missing "title"';
+      if (!item.desc) return 'missing "desc"';
+      return null;
+    },
+  },
+  localIntel: {
+    dataPath: 'localIntel',
+    minCount: 0, // localIntel is optional, just needs to exist if module is present
+    itemValidation: null,
+  },
 };
 
 // =============================================================================
@@ -127,7 +185,7 @@ async function validateCoreJson(filePath: string): Promise<string[]> {
   return errors;
 }
 
-async function validateLangJson(filePath: string, lang: string): Promise<string[]> {
+async function validateLangJson(filePath: string, lang: string, modules: string[] = []): Promise<string[]> {
   const errors: string[] = [];
   const fileName = `${lang}.json`;
   
@@ -148,6 +206,40 @@ async function validateLangJson(filePath: string, lang: string): Promise<string[
       const value = getNestedValue(langData, field);
       if (Array.isArray(value) && value.length < min) {
         errors.push(`${fileName}: "${field}" should have at least ${min} items (found ${value.length})`);
+      }
+    }
+    
+    // ==========================================================================
+    // TOURS/NIGHTLIFE MODULE VALIDATION
+    // When a module is in the modules array, validate its data exists
+    // ==========================================================================
+    for (const moduleId of modules) {
+      const validation = TOURS_MODULE_VALIDATION[moduleId];
+      if (!validation) continue; // Not a tours module
+      
+      const value = getNestedValue(langData, validation.dataPath);
+      
+      // Check if data exists
+      if (value === undefined || value === null) {
+        errors.push(`${fileName}: Module "${moduleId}" requires "${validation.dataPath}" data`);
+        continue;
+      }
+      
+      // Check minimum count for arrays
+      if (Array.isArray(value)) {
+        if (value.length < validation.minCount) {
+          errors.push(`${fileName}: "${validation.dataPath}" should have at least ${validation.minCount} items for "${moduleId}" module (found ${value.length})`);
+        }
+        
+        // Validate individual items
+        if (validation.itemValidation) {
+          value.forEach((item: any, i: number) => {
+            const itemError = validation.itemValidation!(item);
+            if (itemError) {
+              errors.push(`${fileName}: ${validation.dataPath}[${i}] ${itemError}`);
+            }
+          });
+        }
       }
     }
     
@@ -194,6 +286,16 @@ async function validateOperatorFolder(folder: OperatorFolder): Promise<string[]>
   // Validate core.json
   errors.push(...await validateCoreJson(corePath));
   
+  // Read modules from core.json for tours validation
+  let modules: string[] = [];
+  try {
+    const coreContent = await readFile(corePath, 'utf-8');
+    const coreData = JSON.parse(coreContent);
+    modules = coreData.modules || [];
+  } catch {
+    // Already reported in validateCoreJson
+  }
+  
   // Check and validate each language file
   for (const lang of SUPPORTED_LANGUAGES) {
     const langPath = join(folder.path, `${lang}.json`);
@@ -201,7 +303,7 @@ async function validateOperatorFolder(folder: OperatorFolder): Promise<string[]>
     if (!await fileExists(langPath)) {
       errors.push(`Missing ${lang}.json`);
     } else {
-      errors.push(...await validateLangJson(langPath, lang));
+      errors.push(...await validateLangJson(langPath, lang, modules));
     }
   }
   

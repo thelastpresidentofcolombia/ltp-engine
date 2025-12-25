@@ -1,0 +1,121 @@
+---
+/**
+ * Conversion Module - Tours (Nightlife) Skin
+ * "Join The Crawl" - Final booking CTA with pricing card
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.conversion, operator.pricing, operator.contact
+ * 
+ * DESIGN: Background image overlay, text-outline headline, centered pricing card
+ * Based on reference HTML booking section
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// Conversion content
+const headline = operator.conversion?.headline ?? 'Join The Crawl';
+const subhead = operator.conversion?.subhead ?? "Experience Medellín's nightlife safely with a group of travelers and locals.";
+const ctaText = operator.conversion?.cta ?? operator.ui?.cta?.primary ?? toursDefaults.cta.primary;
+const urgency = operator.conversion?.urgency ?? 'Limited capacity per night. Book early.';
+
+// Pricing - get the first/main tier for display
+const pricing = operator.pricing ?? {};
+const mainTier = pricing.tiers?.[0] ?? operator.products?.[0] ?? {};
+const price = mainTier.priceUsd ?? mainTier.price ?? 25;
+const tierName = mainTier.name ?? 'Access Pass';
+const bullets = mainTier.bullets ?? mainTier.includes ?? [
+  'Entry to 4 Venues (Cover Included)',
+  'Free Shots at Each Stop',
+  'Private Party Bus',
+  'Bilingual Party Guides'
+];
+
+// Background image
+const bgImage = operator.conversion?.bgImage ?? 'https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?q=80&w=2574&auto=format&fit=crop';
+
+// Contact
+const whatsapp = operator.contact?.whatsapp ?? operator.contact?.conciergeWhatsapp;
+const whatsappUrl = whatsapp ? `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}` : null;
+
+// Build style
+const bgStyle = `background-image: url('${bgImage}');`;
+---
+
+<style>
+  .text-outline-conversion {
+    -webkit-text-stroke: 2px rgba(255,255,255,0.4);
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 60px rgba(57, 255, 20, 0.15);
+  }
+</style>
+
+<section id="conversion" class="py-20 relative bg-engine-bg">
+  <!-- Background image with overlay -->
+  <div class="absolute inset-0">
+    <img 
+      src={bgImage} 
+      alt="" 
+      class="w-full h-full object-cover opacity-20"
+      loading="lazy"
+    />
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+  </div>
+
+  <div class="max-w-3xl mx-auto px-4 relative z-10 text-center">
+    <!-- Headline -->
+    <h2 class="text-5xl md:text-7xl font-bold uppercase mb-4 text-outline-conversion tracking-wider">
+      {headline}
+    </h2>
+    <p class="text-xl text-white mb-10 max-w-lg mx-auto">
+      {subhead}
+    </p>
+    
+    <!-- Pricing Card -->
+    <div class="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-lg max-w-md mx-auto hover:border-[var(--color-accent)] transition duration-500">
+      <div class="flex justify-between items-center mb-6">
+        <span class="text-gray-400 uppercase tracking-widest text-sm">{tierName}</span>
+        <span class="text-3xl font-bold text-[var(--color-accent)]">${price} USD</span>
+      </div>
+      
+      <ul class="text-left space-y-3 mb-8 text-sm text-gray-300">
+        {bullets.slice(0, 5).map((item: string) => (
+          <li class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-[var(--color-accent)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            {item}
+          </li>
+        ))}
+      </ul>
+      
+      <a 
+        href={mainTier.checkoutUrl ?? mainTier.stripePriceId ? `/api/checkout?productId=${operator.id}_${mainTier.id}` : '#products'}
+        class="block w-full bg-[var(--color-accent)] text-black font-bold py-4 uppercase tracking-widest hover:bg-white transition duration-300 text-center"
+      >
+        {ctaText}
+      </a>
+      
+      <p class="text-[10px] text-gray-500 mt-4 uppercase">{urgency}</p>
+    </div>
+
+    <!-- WhatsApp link -->
+    {whatsappUrl && (
+      <a 
+        href={whatsappUrl}
+        class="inline-flex items-center gap-2 mt-6 text-gray-400 hover:text-white transition text-xs uppercase tracking-widest"
+      >
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+        </svg>
+        Have a question? Ask on WhatsApp
+      </a>
+    )}
+  </div>
+</section>

@@ -1,0 +1,246 @@
+---
+/**
+ * Hero Module - Tours (Nightlife) Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.brand, operator.hero, operator.ui, operator.liveStatus, operator.contact
+ * - Skin defaults: toursDefaults.nav, toursDefaults.labels.hero, toursDefaults.cta
+ * 
+ * TOKEN DEPENDENCIES (Nightlife palette):
+ * - --color-bg-base (dark: #050505)
+ * - --color-accent (neon: #39ff14)
+ * - --color-text-primary, --color-text-secondary, --color-text-muted
+ * 
+ * VISUAL METAPHOR: Circuit / Mission / Ops
+ * Full-screen parallax hero with neon accents, live status badge, mission stats.
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// === BRAND ===
+const brandName = operator.brand?.name ?? 'Bar Crawl';
+const systemTag = operator.brand?.systemTag ?? operator.location?.city?.toUpperCase()?.slice(0,3) ?? 'MDE';
+
+// === HERO CONTENT ===
+const headline = operator.hero?.headline ?? 'MEDELLIN';
+const headlineAccent = operator.hero?.headlineAccent ?? 'After Dark';
+const subhead = operator.hero?.subhead ?? '';
+
+// === LIVE STATUS ===
+const liveStatus = operator.liveStatus;
+const liveLabel = liveStatus?.label ?? toursDefaults.labels.hero.liveStatus;
+const liveDistrict = liveStatus?.district ?? operator.location?.district ?? '';
+
+// === STATS (Mission Profile) ===
+const stats = operator.hero?.stats ?? [];
+
+// === MEDIA ===
+const heroImage = operator.media?.heroImage ?? 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=2670&auto=format&fit=crop';
+const logo = operator.media?.logo ?? null;
+
+// === CTAs ===
+const ctaPrimary = operator.hero?.cta?.primary ?? operator.ui?.cta?.primary ?? toursDefaults.cta.primary;
+const ctaSecondary = operator.hero?.cta?.secondary ?? operator.ui?.cta?.secondary ?? toursDefaults.cta.secondary;
+
+// === NAV ===
+const navLinks = operator.ui?.nav ?? toursDefaults.nav;
+
+// === CONTACT ===
+const whatsapp = operator.contact?.whatsapp ?? operator.contact?.conciergeWhatsapp;
+const whatsappUrl = whatsapp ? `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}` : null;
+
+// Build hero background style inline
+// NOTE: CSS var() doesn't work inside url() - must use operator token directly
+const bgBase = operator.vibe?.tokens?.bgBase ?? '#050505';
+const heroStyle = `
+  background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), ${bgBase}), url('${heroImage}');
+  background-size: cover;
+  background-position: center;
+`;
+---
+
+<style>
+  @media (min-width: 768px) { 
+    .hero-bg { background-attachment: fixed; } 
+  }
+
+  .live-dot { 
+    animation: pulse-accent 2s infinite; 
+  }
+  @keyframes pulse-accent {
+    0% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(57, 255, 20, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0); }
+  }
+
+  .text-outline {
+    -webkit-text-stroke: 1px rgba(255,255,255,0.4);
+    color: transparent;
+  }
+
+  .laser-line {
+    position: absolute;
+    width: 1px;
+    height: 150%;
+    background: var(--color-accent);
+    box-shadow: 0 0 15px var(--color-accent);
+    opacity: 0.3;
+  }
+</style>
+
+<!-- NAV (FIXED) -->
+<nav class="fixed top-0 w-full z-50 border-b border-white/10 backdrop-blur-md bg-black/80 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-20">
+      <!-- Brand -->
+      <div class="flex-shrink-0 flex items-center gap-2 z-50">
+        {liveStatus?.enabled && (
+          <span class="w-2 h-2 bg-[var(--color-accent)] rounded-full live-dot"></span>
+        )}
+        <a href="#" class="font-[var(--font-brand)] font-bold text-white tracking-widest text-sm md:text-base hover:text-[var(--color-accent)] transition">
+          {brandName.toUpperCase()} // {systemTag}
+        </a>
+      </div>
+
+      <!-- Desktop Nav -->
+      <div class="hidden md:flex space-x-8 items-center">
+        {navLinks.map((link: { label: string; href: string }) => (
+          <a 
+            href={link.href} 
+            class="text-xs tracking-widest uppercase hover:text-[var(--color-accent)] transition text-[var(--color-text-muted)]"
+          >
+            {link.label}
+          </a>
+        ))}
+        <a 
+          href="#offers" 
+          class="bg-white text-black hover:bg-[var(--color-accent)] px-6 py-2 text-xs font-bold uppercase tracking-widest transition duration-300"
+        >
+          {ctaPrimary}
+        </a>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <div class="md:hidden z-50">
+        <button id="menu-btn-tours" class="text-white focus:outline-none p-2" aria-label="Open menu">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MOBILE STICKY CTA -->
+<div class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-engine-bg-surface border-t border-white/10 p-4 flex gap-3 shadow-2xl safe-area-bottom">
+  {whatsappUrl && (
+    <a 
+      href={whatsappUrl}
+      class="flex-1 flex items-center justify-center border border-gray-600 text-white font-bold py-3 uppercase text-xs tracking-widest"
+    >
+      WhatsApp
+    </a>
+  )}
+  <a 
+    href="#offers"
+    class="flex-1 flex items-center justify-center bg-[var(--color-accent)] text-black font-bold py-3 uppercase text-xs tracking-widest"
+  >
+    {ctaPrimary}
+  </a>
+</div>
+
+<!-- HERO SECTION -->
+<section 
+  id="hero" 
+  class="relative min-h-screen flex flex-col justify-center items-center overflow-hidden pt-20"
+>
+  <!-- Background with gradient -->
+  <div class="absolute inset-0 hero-bg" style={heroStyle}></div>
+  
+  <!-- Laser Lines (decorative) -->
+  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div class="laser-line top-[-10%] left-[20%] rotate-[25deg]"></div>
+    <div class="laser-line top-[-10%] right-[20%] rotate-[-25deg]"></div>
+  </div>
+
+  <!-- Content Container -->
+  <div class="relative z-10 w-full max-w-7xl px-4 flex flex-col justify-between min-h-[85vh]">
+    
+    <!-- Live Status Badge -->
+    {liveStatus?.enabled && (
+      <div class="flex justify-start mt-8">
+        <div class="inline-flex items-center gap-3 bg-black/60 backdrop-blur border border-[var(--color-accent)]/30 px-4 py-2 rounded-full">
+          <span class="w-2 h-2 bg-[var(--color-accent)] rounded-full live-dot"></span>
+          <span class="text-[var(--color-accent)] text-[10px] md:text-xs font-bold tracking-widest uppercase">
+            {liveLabel}: {liveDistrict}
+          </span>
+        </div>
+      </div>
+    )}
+
+    <!-- Main Headline -->
+    <div class="flex flex-col items-center justify-center flex-grow">
+      <h2 class="text-white/80 text-xs md:text-lg tracking-[0.3em] md:tracking-[0.5em] mb-[-10px] md:mb-[-20px] uppercase font-light z-20">
+        The Official
+      </h2>
+      {/* Logo + Headline Row */}
+      <div class="flex items-center justify-center gap-2 md:gap-4">
+        {logo && (
+          <img 
+            src={logo} 
+            alt={brandName} 
+            class="h-[12vw] md:h-[14vw] w-auto object-contain"
+            style="background: transparent;"
+          />
+        )}
+        <h1 class="font-[var(--font-brand)] text-[11vw] md:text-[13vw] leading-none font-bold text-center tracking-tighter text-white">
+          <span set:html={headline.replace(/Í/g, '<span class="text-[var(--color-accent)]">Í</span>')} />
+        </h1>
+      </div>
+      <div class="flex items-center gap-4 w-full justify-between mt-[-2vw]">
+        <span class="h-[1px] bg-white/30 w-full hidden md:block"></span>
+        <h2 class="text-outline font-[var(--font-brand)] text-3xl md:text-6xl font-bold whitespace-nowrap uppercase italic">
+          {headlineAccent}
+        </h2>
+        <span class="h-[1px] bg-white/30 w-full hidden md:block"></span>
+      </div>
+    </div>
+
+    <!-- Mission Profile Stats -->
+    {stats.length > 0 && (
+      <div class="flex flex-col md:flex-row justify-end items-end w-full pb-8">
+        <div class="bg-black/80 border-l-2 border-[var(--color-accent)] p-5 backdrop-blur-sm max-w-md w-full">
+          <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">// Mission Profile</p>
+          <ul class="space-y-2 text-xs md:text-sm text-gray-200 font-mono">
+            {stats.map((stat: { label: string; value: string }, i: number) => (
+              <li class={`flex justify-between ${i < stats.length - 1 ? 'border-b border-gray-800 pb-1' : 'pt-1'}`}>
+                <span>{stat.label}</span>
+                <span class={i === stats.length - 1 ? 'text-[var(--color-accent)] font-bold' : 'text-white'}>
+                  {stat.value}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+
+<script>
+  // Mobile menu toggle
+  const menuBtn = document.getElementById('menu-btn-tours');
+  const mobileMenu = document.getElementById('mobile-menu-tours');
+  
+  menuBtn?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('open');
+  });
+</script>

@@ -1,0 +1,91 @@
+---
+/**
+ * Route Module - Tours (Nightlife) Skin
+ * "The Circuit" - Timeline-based itinerary display
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.route (stops array with time, name, type, description)
+ * 
+ * DESIGN: Centered timeline with alternating left/right stops on desktop,
+ * left-aligned timeline on mobile. First dot is larger with glow effect.
+ * Based on reference HTML timeline design.
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const route = operator.route ?? {};
+const stops = route.stops ?? [];
+const sectionTitle = route.title ?? operator.ui?.labels?.route?.title ?? 'The Circuit';
+const sectionDesc = route.description ?? 'One Night. Four Venues. Zero Worries.';
+---
+
+<section id="route" class="py-24 bg-engine-bg relative overflow-hidden">
+  <!-- Grid background texture -->
+  <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+  
+  <div class="max-w-4xl mx-auto px-4 relative z-10">
+    <!-- Section Header -->
+    <div class="text-center mb-16">
+      <h2 class="text-4xl font-bold uppercase mb-2 text-white">{sectionTitle}</h2>
+      <p class="text-gray-500 font-mono text-sm">{sectionDesc}</p>
+    </div>
+
+    <!-- Timeline -->
+    <div class="relative">
+      <!-- Vertical line -->
+      <div class="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--color-accent)] via-gray-800 to-gray-800 md:-ml-px"></div>
+
+      {stops.map((stop: any, index: number) => {
+        const isFirst = index === 0;
+        const isEven = index % 2 === 0;
+        const time = stop.time ?? stop.order ?? '';
+        
+        return (
+          <div class="relative mb-12">
+            <div class="flex flex-col md:flex-row items-center w-full">
+              {/* Left content (desktop: even items) */}
+              {isEven ? (
+                <>
+                  <div class="w-full md:w-1/2 md:pr-12 md:text-right pl-12 md:pl-0">
+                    <h3 class="text-xl text-white font-bold">{time} // {stop.name}</h3>
+                    <p class="text-gray-400 text-sm mt-1">{stop.description}</p>
+                  </div>
+                  
+                  {/* Timeline dot */}
+                  {isFirst ? (
+                    <div class="absolute left-0 md:left-1/2 w-8 h-8 rounded-full border-4 border-black bg-[var(--color-accent)] md:-ml-4 flex items-center justify-center z-10 shadow-[0_0_15px_var(--color-accent)]">
+                      <span class="w-2 h-2 bg-black rounded-full animate-ping"></span>
+                    </div>
+                  ) : (
+                    <div class="absolute left-0 md:left-1/2 w-4 h-4 rounded-full border-2 border-[var(--color-accent)] bg-black md:-ml-2 z-10"></div>
+                  )}
+                  
+                  <div class="w-full md:w-1/2 md:pl-12 hidden md:block"></div>
+                </>
+              ) : (
+                <>
+                  <div class="w-full md:w-1/2 md:pr-12 hidden md:block"></div>
+                  
+                  {/* Timeline dot */}
+                  <div class="absolute left-0 md:left-1/2 w-4 h-4 rounded-full border-2 border-[var(--color-accent)] bg-black md:-ml-2 z-10"></div>
+                  
+                  <div class="w-full md:w-1/2 md:pl-12 pl-12 md:pl-0">
+                    <h3 class="text-xl text-white font-bold">{time} // {stop.name}</h3>
+                    <p class="text-gray-400 text-sm mt-1">{stop.description}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>

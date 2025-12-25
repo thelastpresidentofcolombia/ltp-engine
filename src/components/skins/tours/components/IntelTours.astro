@@ -1,0 +1,152 @@
+---
+/**
+ * Intel Module - Tours (Nightlife) Skin
+ * "Intel Database" - FAQs with search functionality (per SOP Section 12)
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.intel.faq OR operator.intel.faqs (array with q/question, a/answer, tags)
+ * 
+ * DESIGN: Database-style searchable FAQ with client-side filtering
+ * Based on night-bare-bones-v1.html "Intel Database"
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// Support both faq and faqs, and both q/a and question/answer
+const rawFaqs = operator.intel?.faq ?? operator.intel?.faqs ?? [];
+const faqs = rawFaqs.map((f: any) => ({
+  q: f.q ?? f.question,
+  a: f.a ?? f.answer,
+  tags: f.tags ?? [f.category],
+}));
+
+const sectionLabel = operator.ui?.labels?.intel?.section ?? toursDefaults.labels.intel.section;
+const sectionTitle = operator.intel?.title ?? operator.ui?.labels?.intel?.title ?? toursDefaults.labels.intel.title;
+const searchPlaceholder = operator.intel?.searchPlaceholder ?? operator.ui?.labels?.intel?.searchPlaceholder ?? toursDefaults.labels.intel.searchPlaceholder;
+---
+
+<section id="intel" class="py-20 bg-engine-bg">
+  <div class="max-w-4xl mx-auto px-4">
+    <h2 class="text-3xl font-bold uppercase text-center mb-8 text-white">
+      {sectionLabel}
+    </h2>
+
+    <!-- Search Input -->
+    <div class="relative mb-6 max-w-lg mx-auto">
+      <input 
+        type="text"
+        id="faq-search"
+        placeholder={`Search protocol (e.g. dress code, solo...)`}
+        class="w-full bg-engine-bg-surface border border-gray-700 text-white p-4 pl-12 font-mono text-sm focus:border-[var(--color-accent)] focus:outline-none transition rounded-none"
+      />
+      <svg class="w-5 h-5 text-[var(--color-text-muted)] absolute left-4 top-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+    </div>
+
+    <!-- Info strip -->
+    <div class="max-w-lg mx-auto mb-12 border border-white/10 bg-white/5 p-4">
+      <p class="text-[11px] text-[var(--color-text-muted)] font-mono leading-relaxed">
+        <span class="text-[var(--color-accent)] font-bold">//</span> After booking, you instantly receive the meeting point + guide contact via WhatsApp/email.
+      </p>
+    </div>
+
+    <!-- FAQ Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="faq-container">
+      <div class="space-y-8 faq-col">
+        {faqs.filter((_: any, i: number) => i % 2 === 0).map((faq: any) => (
+          <div 
+            class="faq-item"
+            data-question={faq.q?.toLowerCase()}
+            data-answer={faq.a?.toLowerCase()}
+            data-tags={faq.tags?.join(' ')?.toLowerCase()}
+          >
+            <h4 class="text-white font-bold uppercase text-sm mb-2 flex items-center gap-2">
+              <span class="text-[var(--color-accent)]">//</span>
+              {faq.q}
+            </h4>
+            <p class="text-[var(--color-text-muted)] text-xs leading-relaxed">
+              {faq.a}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div class="space-y-8 faq-col">
+        {faqs.filter((_: any, i: number) => i % 2 === 1).map((faq: any) => (
+          <div 
+            class="faq-item"
+            data-question={faq.q?.toLowerCase()}
+            data-answer={faq.a?.toLowerCase()}
+            data-tags={faq.tags?.join(' ')?.toLowerCase()}
+          >
+            <h4 class="text-white font-bold uppercase text-sm mb-2 flex items-center gap-2">
+              <span class="text-[var(--color-accent)]">//</span>
+              {faq.q}
+            </h4>
+            <p class="text-[var(--color-text-muted)] text-xs leading-relaxed">
+              {faq.a}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- No Results -->
+    <p id="no-results" class="hidden text-center text-[var(--color-text-muted)] text-sm mt-6">
+      No matching intel found.
+    </p>
+  </div>
+</section>
+
+<script>
+  const searchInput = document.getElementById('faq-search') as HTMLInputElement;
+  const faqItems = document.querySelectorAll('.faq-item');
+  const faqCols = document.querySelectorAll('.faq-col');
+  const noResults = document.getElementById('no-results');
+
+  function updateFaqColumnsVisibility() {
+    faqCols.forEach(col => {
+      const visibleItems = Array.from(col.querySelectorAll('.faq-item')).filter(
+        item => (item as HTMLElement).style.display !== 'none'
+      );
+      (col as HTMLElement).style.display = visibleItems.length ? 'block' : 'none';
+    });
+  }
+
+  searchInput?.addEventListener('input', (e) => {
+    const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
+    let hasResults = false;
+
+    faqItems.forEach(item => {
+      const el = item as HTMLElement;
+      const question = el.dataset.question ?? '';
+      const answer = el.dataset.answer ?? '';
+      const tags = el.dataset.tags ?? '';
+      
+      const match = term === '' || 
+        question.includes(term) || 
+        answer.includes(term) || 
+        tags.includes(term);
+      
+      el.style.display = match ? 'block' : 'none';
+      if (match) hasResults = true;
+    });
+
+    updateFaqColumnsVisibility();
+
+    if (noResults) {
+      noResults.classList.toggle('hidden', hasResults);
+    }
+  });
+
+  // Initial visibility
+  updateFaqColumnsVisibility();
+</script>

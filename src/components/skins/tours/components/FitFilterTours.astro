@@ -1,0 +1,65 @@
+---
+/**
+ * FitFilter Module - Tours (Nightlife) Skin
+ * "Vibe Check" - Compatible/Incompatible profiles
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+const compatible = operator.fitFilter?.compatible ?? { heading: toursDefaults.labels.fitFilter.compatible, profiles: [] };
+const incompatible = operator.fitFilter?.incompatible ?? { heading: toursDefaults.labels.fitFilter.incompatible, profiles: [] };
+const sectionLabel = operator.ui?.labels?.fitFilter?.section ?? toursDefaults.labels.fitFilter.section;
+---
+
+<section id="fit" class="py-20 bg-engine-bg border-t border-white/10">
+  <div class="max-w-5xl mx-auto px-4">
+    <p class="text-[var(--color-accent)] text-xs font-mono uppercase tracking-widest mb-4">
+      // {sectionLabel}
+    </p>
+    
+    <div class="grid md:grid-cols-2 gap-8">
+      <!-- Compatible -->
+      <div class="bg-white/5 border border-white/10 p-6 rounded-lg">
+        <h3 class="text-[var(--color-accent)] font-bold text-lg mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          {compatible.heading}
+        </h3>
+        <ul class="space-y-3">
+          {(compatible.profiles ?? []).map((profile: string) => (
+            <li class="text-[var(--color-text-secondary)] text-sm flex items-start gap-2">
+              <span class="text-[var(--color-accent)] mt-1">•</span>
+              {profile}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Incompatible -->
+      <div class="bg-white/5 border border-white/10 p-6 rounded-lg">
+        <h3 class="text-red-400 font-bold text-lg mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          {incompatible.heading}
+        </h3>
+        <ul class="space-y-3">
+          {(incompatible.profiles ?? []).map((profile: string) => (
+            <li class="text-[var(--color-text-muted)] text-sm flex items-start gap-2">
+              <span class="text-red-400 mt-1">•</span>
+              {profile}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

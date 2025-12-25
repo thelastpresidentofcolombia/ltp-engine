@@ -10,6 +10,38 @@
     "shortName": "BAR CRAWL",
     "systemTag": "MDE"
   },
+  "trust": {
+    "summary": "Guías locales. Lugares asociados. Ruta coordinada. Hecho para viajeros que quieren la vida nocturna de Medellín sin el caos.",
+    "signals": [
+      { "icon": "verified", "label": "Verificado", "sublabel": "Operador Local" },
+      { "icon": "secure", "label": "Seguro", "sublabel": "Experiencia Escoltada" },
+      { "icon": "refund", "label": "Reembolsos", "sublabel": "Política 24hrs" },
+      { "icon": "social", "label": "Social", "sublabel": "Grupos y Solos" }
+    ]
+  },
+  "rules": [
+    { "title": "ID Requerido", "desc": "Copia Física o Foto" },
+    { "title": "Código de Vestir", "desc": "Smart Casual (Sin Chanclas)" },
+    { "title": "Cero Drogas", "desc": "Política Estricta" },
+    { "title": "Respeto", "desc": "Staff y Locales" }
+  ],
+  "gallery": [
+    {
+      "src": "https://images.unsplash.com/photo-1574391884720-38528073d6c6?q=80&w=2670&auto=format&fit=crop",
+      "label": "Calentamiento en Rooftop",
+      "tag": "INICIO"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=2670&auto=format&fit=crop",
+      "label": "Club Subterráneo",
+      "tag": "PICO"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=2670&auto=format&fit=crop",
+      "label": "After Hours",
+      "tag": "TARDE"
+    }
+  ],
   "seo": {
     "title": "Bar Crawl Medellín // El Circuito Oficial de Rumba",
     "description": "La experiencia original de bar crawl en Medellín. 4 lugares curados, acceso sin fila, guías locales y noches legendarias. Desde 2019.",
@@ -164,9 +196,22 @@
       }
     ]
   },
+  "localIntel": {
+    "title": "Intel del Sector",
+    "blocks": [
+      { "label": "El Vibe", "text": "Distrito de vida nocturna premium con rooftops abiertos y mezcla de viajeros internacionales + locales." },
+      { "label": "Transporte", "text": "Uber/Didi recomendado. Taxis seguros cuando se llaman desde el lugar. Nuestro bus maneja traslados del crawl." },
+      { "label": "Protocolo de Seguridad", "text": "Quédate con el grupo. Mantén objetos de valor discretos. Guías se quedan contigo hasta el final." }
+    ],
+    "operatingZone": {
+      "name": "Provenza / Parque Lleras",
+      "description": "El corazón de la vida nocturna de Poblado - distrito caminable con 50+ lugares en un radio de 6 cuadras."
+    }
+  },
   "proof": [
     {
       "type": "testimonial",
+      "title": "Mejor Noche",
       "author": "Mike & Grupo",
       "role": "Despedida de Soltero de Texas",
       "content": "Mejor noche de todo el viaje. El guía conocía a todos y nos metió a lugares que nunca hubiéramos encontrado.",
@@ -175,9 +220,46 @@
     },
     {
       "type": "testimonial",
+      "title": "Viaje Solo Perfecto",
       "author": "Sarah L.",
       "role": "Viajera Sola de Londres",
       "content": "Estaba nerviosa yendo sola pero conocí gente increíble. Los guías realmente se preocupan de que todos se diviertan.",
+      "rating": 5,
+      "platform": "TripAdvisor"
+    },
+    {
+      "type": "testimonial",
+      "title": "Vale Cada Peso",
+      "author": "James K.",
+      "role": "Nómada Digital",
+      "content": "Tercera vez haciendo este crawl. La ruta sigue mejorando. Estos tipos conocen la rumba de Medellín.",
+      "rating": 5,
+      "platform": "Google"
+    },
+    {
+      "type": "testimonial",
+      "title": "Seguro y Divertido",
+      "author": "Emma & Amigas",
+      "role": "Viaje de Chicas de Canadá",
+      "content": "Nos sentimos seguras todo el tiempo. Los guías manejaron todo - solo tuvimos que aparecer y divertirnos.",
+      "rating": 5,
+      "platform": "WhatsApp"
+    },
+    {
+      "type": "testimonial",
+      "title": "Conocimiento Local",
+      "author": "Carlos M.",
+      "role": "Viajero de Negocios",
+      "content": "Solo el speakeasy valió la pena. No hay forma de que hubiera encontrado ese lugar solo.",
+      "rating": 5,
+      "platform": "Google"
+    },
+    {
+      "type": "testimonial",
+      "title": "Experiencia Top",
+      "author": "Grupo de Fin de Semana",
+      "role": "Crew de NYC",
+      "content": "Hemos hecho bar crawls en 10 ciudades. Este realmente cumple lo que promete.",
       "rating": 5,
       "platform": "TripAdvisor"
     },

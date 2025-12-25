@@ -31,8 +31,7 @@ import {
   loadOperator,
   loadAllOperatorPaths,
   resolveSkin, 
-  resolveModules, 
-  applyThemeVars,
+  resolveModules,
   skinToCssClasses,
 } from '@/lib/engine';
 
@@ -74,9 +73,6 @@ if (!SUPPORTED_VERTICALS.includes(vertical as SupportedVertical)) {
 const hreflangLinks = buildHreflangLinks(vertical, slug);
 const canonicalUrl = buildOperatorUrl(vertical, slug, lang as SupportedLang);
 
-// Apply theme variables from vibe system
-const { styleString } = applyThemeVars(operator);
-
 // Resolve skin for this vertical/operator
 const skin = resolveSkin(operator);
 const skinClasses = skinToCssClasses(skin);
@@ -98,7 +94,7 @@ if (import.meta.env.DEV && (skipped.length > 0 || errors.length > 0)) {
   hreflangLinks={hreflangLinks}
   operator={operator}
 >
-  <div class:list={skinClasses} style={styleString}>
+  <div class:list={skinClasses}>
     <ModuleRenderer operator={operator} modules={activeModules} skin={skin} />
   </div>
 </EngineLayout>

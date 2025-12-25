@@ -14,6 +14,9 @@ export * from './intel';
 export * from './products';
 export * from './offers';
 
+// Vertical-specific types
+export * from './tours';
+
 // Configuration types
 export * from './presentation';
 export * from './nomenclature';

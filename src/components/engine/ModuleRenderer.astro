@@ -26,6 +26,7 @@ import FooterModule from '@/components/engine/modules/Footer.astro';
 
 // Vertical-specific skins
 import { consultancySkin } from '@/components/skins/consultancy/skin';
+import { toursSkin } from '@/components/skins/tours/skin';
 
 interface Props {
   operator: Operator;
@@ -50,8 +51,8 @@ const defaultModuleComponents: Record<string, any> = {
 // Skin registry - maps verticals to their skin component overrides
 const skinRegistry: Record<string, Record<string, any>> = {
   consultancy: consultancySkin.components,
+  tours: toursSkin.components,
   // fitness: fitnessSkin.components,  // TODO: Phase 6
-  // tours: toursSkin.components,      // TODO: Phase 6
   // nightlife: nightlifeSkin.components, // TODO: Phase 6
 };
 

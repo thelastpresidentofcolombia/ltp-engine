@@ -16,39 +16,10 @@
 @tailwind utilities;
 
 /* ==============================
-   ENGINE TOKEN LAYER (Defaults)
+   ENGINE TOKEN LAYER (Non-color defaults)
+   Color tokens are injected inline by EngineLayout from operator vibe.tokens
    ============================== */
 :root {
-  /* === SEMANTIC COLORS (Override via vibe tokens) === */
-  
-  /* Backgrounds */
-  --color-bg-base: #ffffff;
-  --color-bg-offset: #f4f4f5;
-  --color-bg-surface: #fafafa;
-  --color-bg-inverse: #18181b;
-  
-  /* Text */
-  --color-text-primary: #09090b;
-  --color-text-secondary: #52525b;
-  --color-text-muted: #71717a;
-  --color-text-inverse: #ffffff;
-  
-  /* Borders */
-  --color-border: #e4e4e7;
-  --color-border-strong: #d4d4d8;
-  
-  /* Accent (operator-specific via vibe) */
-  --color-accent: #18181b;
-  --color-accent-hover: #27272a;
-  
-  /* Interactive states */
-  --color-hover-bg: #f4f4f5;
-  --color-active-bg: #e4e4e7;
-  
-  /* Semantic */
-  --color-success: #10b981;
-  --color-error: #ef4444;
-  
   /* === SPACING === */
   --space-section: 8rem;
   --space-module: 6rem;

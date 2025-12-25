@@ -1,0 +1,66 @@
+---
+/**
+ * TrustBar Module - Tours (Nightlife) Skin
+ * Authority signals and trust indicators (per SOP Section 1.1)
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.trust (trustSignals array) or infers from location, brand
+ * 
+ * DESIGN: Horizontal strip with icon + label pairs, based on night-bare-bones-v1.html
+ * "Local guides. Partner venues. Coordinated route."
+ */
+
+import { toursDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// Trust signals - from operator or sensible defaults
+const trustSignals = operator.trust?.signals ?? [
+  { icon: 'verified', label: 'Verified', sublabel: 'Local Operator' },
+  { icon: 'secure', label: 'Secure', sublabel: 'Escorted Experience' },
+  { icon: 'refund', label: 'Refunds', sublabel: '24hr Notice Policy' },
+  { icon: 'social', label: 'Social', sublabel: 'Groups & Solo Travelers' },
+];
+
+const trustSummary = operator.trust?.summary ?? 
+  'Local guides. Partner venues. Coordinated route. Built for travelers who want nightlife without the chaos.';
+
+// Icon components inline (keeping it self-contained)
+const icons: Record<string, string> = {
+  verified: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>`,
+  secure: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>`,
+  refund: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>`,
+  social: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>`,
+  shield: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>`,
+  guide: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>`,
+};
+---
+
+<section class="border-y border-white/10 bg-engine-bg-offset py-12">
+  <div class="max-w-5xl mx-auto px-4">
+    <!-- Summary text -->
+    <p class="text-center text-white/80 text-sm md:text-base max-w-3xl mx-auto mb-10 font-mono leading-relaxed">
+      {trustSummary}
+    </p>
+
+    <!-- Trust signals grid -->
+    <div class="flex flex-wrap justify-center gap-8 md:gap-16">
+      {trustSignals.map((signal: any) => (
+        <div class="flex items-center gap-3">
+          <svg class="w-7 h-7 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <Fragment set:html={icons[signal.icon] ?? icons.verified} />
+          </svg>
+          <div>
+            <p class="text-white font-medium text-sm">{signal.label}</p>
+            <p class="text-xs text-white/60">{signal.sublabel}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

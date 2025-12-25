@@ -15,7 +15,7 @@
       { "icon": "social", "label": "Social", "sublabel": "Groups & Solo Travelers" }
     ]
   },
-  "rules": [
+  "rules": [{"title": "only one"}
     { "title": "ID Required", "desc": "Physical Copy or Photo" },
     { "title": "Dress Code", "desc": "Smart Casual (No Flip Flops)" },
     { "title": "Zero Drugs", "desc": "Strict Policy" },
@@ -208,7 +208,6 @@
   "proof": [
     {
       "type": "testimonial",
-      "title": "Best Night Ever",
       "author": "Mike & Group",
       "role": "Bachelor Party from Texas",
       "content": "Best night of the whole trip. The guide knew everyone and got us into places we never would have found.",
@@ -217,46 +216,9 @@
     },
     {
       "type": "testimonial",
-      "title": "Solo Travel Win",
       "author": "Sarah L.",
       "role": "Solo Traveler from London",
       "content": "Was nervous going solo but met amazing people. The guides actually care about everyone having fun.",
-      "rating": 5,
-      "platform": "TripAdvisor"
-    },
-    {
-      "type": "testimonial",
-      "title": "Worth Every Dollar",
-      "author": "James K.",
-      "role": "Digital Nomad",
-      "content": "Third time doing this crawl. The route keeps getting better. These guys know Medellín nightlife.",
-      "rating": 5,
-      "platform": "Google"
-    },
-    {
-      "type": "testimonial",
-      "title": "Safe & Fun",
-      "author": "Emma & Friends",
-      "role": "Girls Trip from Canada",
-      "content": "Felt safe the entire time. The guides handled everything - we just had to show up and have fun.",
-      "rating": 5,
-      "platform": "WhatsApp"
-    },
-    {
-      "type": "testimonial",
-      "title": "Local Knowledge",
-      "author": "Carlos M.",
-      "role": "Business Traveler",
-      "content": "The speakeasy alone was worth it. No way I would have found that place on my own.",
-      "rating": 5,
-      "platform": "Google"
-    },
-    {
-      "type": "testimonial",
-      "title": "Top Tier Experience",
-      "author": "Weekend Group",
-      "role": "NYC Crew",
-      "content": "We've done bar crawls in 10 cities. This one actually delivers on the promise.",
       "rating": 5,
       "platform": "TripAdvisor"
     },
@@ -320,6 +282,12 @@
       }
     ]
   },
+  "rules": [{"title": "only one"}
+    { "title": "ID Required", "desc": "Physical Copy or Photo" },
+    { "title": "Dress Code", "desc": "Smart Casual (No Flip Flops)" },
+    { "title": "Zero Drugs", "desc": "Strict Policy" },
+    { "title": "Respect", "desc": "Staff & Locals" }
+  ],
   "pricing": {
     "currency": "USD",
     "title": "Choose Your Experience",
@@ -376,6 +344,7 @@
     ]
   },
   "conversion": {
+    "headline": "Ready for a Legendary Night?",
     "headline": "Join The Crawl",
     "subhead": "Experience Medellín's nightlife safely with a group of travelers and locals.",
     "cta": "Secure Your Spot",
@@ -407,3 +376,4 @@
     "lastUpdated": "2024-12-22"
   }
 }
+

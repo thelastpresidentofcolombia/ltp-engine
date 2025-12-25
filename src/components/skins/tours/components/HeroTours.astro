@@ -165,8 +165,8 @@ const heroStyle = `
   <!-- Background with gradient -->
   <div class="absolute inset-0 hero-bg" style={heroStyle}></div>
   
-  <!-- Laser Lines (decorative) -->
-  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+  <!-- Laser Lines (decorative) - hidden on mobile -->
+  <div class="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
     <div class="laser-line top-[-10%] left-[20%] rotate-[25deg]"></div>
     <div class="laser-line top-[-10%] right-[20%] rotate-[-25deg]"></div>
   </div>

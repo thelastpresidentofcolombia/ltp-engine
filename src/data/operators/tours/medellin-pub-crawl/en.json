@@ -279,36 +279,47 @@
       "context": "Est. 2018"
     }
   ],
-  "intel": [
-    {
-      "q": "What time does the crawl start and end?",
-      "a": "We meet at 9 PM and typically finish around 3-4 AM. You're welcome to leave earlier if needed — just let your guide know."
-    },
-    {
-      "q": "Is it safe?",
-      "a": "Absolutely. We've been running for 6 years with zero incidents. Our guides are trained locals who know the area, staff, and security at every venue."
-    },
-    {
-      "q": "Can I join solo?",
-      "a": "Yes! About 40% of our crawlers come solo. It's one of the best ways to meet fellow travelers. We make introductions easy."
-    },
-    {
-      "q": "What's included in the price?",
-      "a": "Entry to all 4 venues (no cover charges), a welcome drink at each stop, local bilingual guide, and WhatsApp support throughout the night."
-    },
-    {
-      "q": "What if I need to cancel?",
-      "a": "Free rescheduling with 24 hours notice. We run Thursday, Friday, and Saturday so there's flexibility."
-    },
-    {
-      "q": "What should I wear?",
-      "a": "Smart casual. No sandals, flip-flops, or tank tops for guys. Jeans and a nice shirt work great. Ladies — whatever you're comfortable dancing in."
-    },
-    {
-      "q": "Do you accept groups?",
-      "a": "Yes! Groups of 8+ can book a private crawl with a custom route and dedicated guide. Perfect for bachelor/ette parties."
-    }
-  ],
+  "intel": {
+    "title": "FAQ",
+    "searchPlaceholder": "Search (e.g. dress code, solo...)",
+    "faq": [
+      {
+        "question": "What time does the crawl start and end?",
+        "answer": "We meet at 9 PM and typically finish around 3-4 AM. You're welcome to leave earlier if needed — just let your guide know.",
+        "category": "logistics"
+      },
+      {
+        "question": "Is it safe?",
+        "answer": "Absolutely. We've been running for 6 years with zero incidents. Our guides are trained locals who know the area, staff, and security at every venue.",
+        "category": "safety"
+      },
+      {
+        "question": "Can I join solo?",
+        "answer": "Yes! About 40% of our crawlers come solo. It's one of the best ways to meet fellow travelers. We make introductions easy.",
+        "category": "solo"
+      },
+      {
+        "question": "What's included in the price?",
+        "answer": "Entry to all 4 venues (no cover charges), a welcome drink at each stop, local bilingual guide, and WhatsApp support throughout the night.",
+        "category": "pricing"
+      },
+      {
+        "question": "What if I need to cancel?",
+        "answer": "Free rescheduling with 24 hours notice. We run Thursday, Friday, and Saturday so there's flexibility.",
+        "category": "logistics"
+      },
+      {
+        "question": "What should I wear?",
+        "answer": "Smart casual. No sandals, flip-flops, or tank tops for guys. Jeans and a nice shirt work great. Ladies — whatever you're comfortable dancing in.",
+        "category": "dress-code"
+      },
+      {
+        "question": "Do you accept groups?",
+        "answer": "Yes! Groups of 8+ can book a private crawl with a custom route and dedicated guide. Perfect for bachelor/ette parties.",
+        "category": "groups"
+      }
+    ]
+  },
   "conversion": {
     "headline": "Ready?",
     "subhead": "Join the most trusted pub crawl in Medellín. Your best night starts here.",

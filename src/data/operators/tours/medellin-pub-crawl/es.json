@@ -279,36 +279,47 @@
       "context": "Est. 2018"
     }
   ],
-  "intel": [
-    {
-      "q": "¿A qué hora empieza y termina el crawl?",
-      "a": "Nos encontramos a las 9 PM y típicamente terminamos entre 3-4 AM. Puedes irte antes si necesitas — solo avisa a tu guía."
-    },
-    {
-      "q": "¿Es seguro?",
-      "a": "Absolutamente. Llevamos 6 años operando con cero incidentes. Nuestros guías son locales entrenados que conocen el área."
-    },
-    {
-      "q": "¿Puedo ir solo?",
-      "a": "¡Sí! Aproximadamente 40% de nuestros crawlers vienen solos. Es una de las mejores formas de conocer otros viajeros."
-    },
-    {
-      "q": "¿Qué incluye el precio?",
-      "a": "Entrada a los 4 locales (sin cover), trago de bienvenida en cada parada, guía bilingüe y soporte WhatsApp toda la noche."
-    },
-    {
-      "q": "¿Qué pasa si necesito cancelar?",
-      "a": "Reprogramación gratis con 24 horas de anticipación. Operamos jueves, viernes y sábado así que hay flexibilidad."
-    },
-    {
-      "q": "¿Cómo debo vestirme?",
-      "a": "Smart casual. Sin sandalias, chanclas o camisetas sin mangas para hombres. Jeans y camisa funcionan bien."
-    },
-    {
-      "q": "¿Aceptan grupos?",
-      "a": "¡Sí! Grupos de 8+ pueden reservar un crawl privado con ruta personalizada y guía dedicado."
-    }
-  ],
+  "intel": {
+    "title": "Preguntas Frecuentes",
+    "searchPlaceholder": "Buscar (ej. vestimenta, solo...)",
+    "faq": [
+      {
+        "question": "¿A qué hora empieza y termina el crawl?",
+        "answer": "Nos encontramos a las 9 PM y típicamente terminamos entre 3-4 AM. Puedes irte antes si necesitas — solo avisa a tu guía.",
+        "category": "logistics"
+      },
+      {
+        "question": "¿Es seguro?",
+        "answer": "Absolutamente. Llevamos 6 años operando con cero incidentes. Nuestros guías son locales entrenados que conocen el área.",
+        "category": "safety"
+      },
+      {
+        "question": "¿Puedo ir solo?",
+        "answer": "¡Sí! Aproximadamente 40% de nuestros crawlers vienen solos. Es una de las mejores formas de conocer otros viajeros.",
+        "category": "solo"
+      },
+      {
+        "question": "¿Qué incluye el precio?",
+        "answer": "Entrada a los 4 locales (sin cover), trago de bienvenida en cada parada, guía bilingüe y soporte WhatsApp toda la noche.",
+        "category": "pricing"
+      },
+      {
+        "question": "¿Qué pasa si necesito cancelar?",
+        "answer": "Reprogramación gratis con 24 horas de anticipación. Operamos jueves, viernes y sábado así que hay flexibilidad.",
+        "category": "logistics"
+      },
+      {
+        "question": "¿Cómo debo vestirme?",
+        "answer": "Smart casual. Sin sandalias, chanclas o camisetas sin mangas para hombres. Jeans y camisa funcionan bien.",
+        "category": "dress-code"
+      },
+      {
+        "question": "¿Aceptan grupos?",
+        "answer": "¡Sí! Grupos de 8+ pueden reservar un crawl privado con ruta personalizada y guía dedicado.",
+        "category": "groups"
+      }
+    ]
+  },
   "conversion": {
     "headline": "¿Listo?",
     "subhead": "Únete al pub crawl más confiable de Medellín. Tu mejor noche empieza aquí.",

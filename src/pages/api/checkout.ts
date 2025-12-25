@@ -31,7 +31,7 @@ const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 const ENGINE_VERSION = '1.0.0';
 
 interface CheckoutParams {
-  operatorId: string;
+  slug: string;
   vertical: string;
   productId?: string;
   offerId?: string;
@@ -45,14 +45,17 @@ async function createCheckoutSession(
   origin: string
 ): Promise<{ url: string } | { error: string; status: number }> {
   
-  const { operatorId, vertical, productId, offerId } = params;
+  const { slug, vertical, productId, offerId } = params;
 
   // === LOAD OPERATOR DATA ===
   let operatorData: any;
+  let operatorId: string;
   try {
-    // Dynamic import of operator JSON
-    const module = await import(`../../data/operators/${vertical}/${operatorId}/en.json`);
+    // Dynamic import of operator JSON (slug is the folder name)
+    const module = await import(`../../data/operators/${vertical}/${slug}/en.json`);
     operatorData = module.default;
+    // Get the actual operator ID from the loaded data (for metadata)
+    operatorId = operatorData.id || `${vertical}-${slug}`;
   } catch (e) {
     console.error('[Checkout] Failed to load operator:', e);
     return { error: 'Operator not found', status: 404 };
@@ -135,14 +138,14 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
 
   // === PARSE QUERY PARAMS ===
-  const operatorId = url.searchParams.get('operator');
+  const slug = url.searchParams.get('slug');
   const vertical = url.searchParams.get('vertical');
   const productId = url.searchParams.get('product') || undefined;
   const offerId = url.searchParams.get('offer') || undefined;
 
   // === VALIDATE ===
-  if (!operatorId || !vertical) {
-    return new Response('Missing operator or vertical parameter', { status: 400 });
+  if (!slug || !vertical) {
+    return new Response('Missing slug or vertical parameter', { status: 400 });
   }
 
   if (!productId && !offerId) {
@@ -151,7 +154,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   // === CREATE SESSION ===
   const origin = new URL(request.url).origin;
-  const result = await createCheckoutSession({ operatorId, vertical, productId, offerId }, origin);
+  const result = await createCheckoutSession({ slug, vertical, productId, offerId }, origin);
 
   if ('error' in result) {
     return new Response(result.error, { status: result.status });

@@ -1,5 +1,6 @@
 {
   "id": "fitness-demo",
+  "slug": "demo",
   "vertical": "fitness",
   "contact": {
     "email": "transform@apex-performance.co",

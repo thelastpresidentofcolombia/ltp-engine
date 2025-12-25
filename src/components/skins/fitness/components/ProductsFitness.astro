@@ -31,11 +31,12 @@ const checkoutPending = labels.checkoutPending ?? 'Coming soon!';
 const products = operator.products ?? [];
 
 // === CHECKOUT URL BUILDER ===
-const operatorId = operator.meta?.slug ?? operator.slug ?? operator.id ?? '';
+// Use the folder slug (not operator.id which may be different)
+const slug = operator.slug ?? operator.meta?.slug ?? 'demo';
 const vertical = operator.vertical ?? 'fitness';
 
 function buildCheckoutUrl(productId: string): string {
-  return `/api/checkout?operator=${operatorId}&vertical=${vertical}&product=${productId}`;
+  return `/api/checkout?slug=${slug}&vertical=${vertical}&product=${productId}`;
 }
 
 // Format price helper

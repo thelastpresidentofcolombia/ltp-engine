@@ -1,0 +1,420 @@
+/**
+ * /api/stripe/webhook - Stripe Webhook Handler (Engine v1)
+ * 
+ * ENGINE CONTRACT:
+ * - Verifies Stripe signature
+ * - IDEMPOTENT: Uses events_stripe ledger to prevent duplicate processing
+ * - Creates/updates users, memberships, entitlements
+ * - Handles email-first purchases via pendingEntitlements
+ * - Sends fulfillment email via Brevo
+ * 
+ * REQUIRED ENV VARS:
+ * - STRIPE_SECRET_KEY
+ * - STRIPE_WEBHOOK_SECRET
+ * - FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+ * - BREVO_API_KEY
+ * - FULFILLMENT_FROM_EMAIL
+ * - FULFILLMENT_BCC_EMAIL (optional)
+ */
+
+import type { APIRoute } from 'astro';
+import Stripe from 'stripe';
+import { db, auth, Collections, Subcollections } from '../../../lib/firebase/admin';
+import { normalizeEmail, hashEmail, serverTimestamp, nowTimestamp, ENGINE_VERSION } from '../../../lib/firebase/utils';
+import type { 
+  EntitlementDoc, 
+  PendingEntitlementDoc, 
+  StripeCustomerDoc, 
+  UserDoc, 
+  MembershipDoc,
+  StripeEventDoc,
+  Vertical,
+  PaymentMode,
+  EntitlementType
+} from '../../../lib/firebase/types';
+
+export const prerender = false;
+
+// Initialize Stripe
+const stripeSecretKey = import.meta.env.STRIPE_SECRET_KEY;
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
+
+// ============================================================
+// BREVO EMAIL HELPER
+// ============================================================
+
+interface EmailParams {
+  from: { name: string; email: string };
+  to: { email: string }[];
+  subject: string;
+  htmlContent: string;
+  bcc?: { email: string }[];
+}
+
+async function sendEmailBrevo(params: EmailParams): Promise<void> {
+  const apiKey = import.meta.env.BREVO_API_KEY;
+  if (!apiKey) {
+    throw new Error('BREVO_API_KEY not configured');
+  }
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': apiKey,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: params.from,
+      to: params.to,
+      subject: params.subject,
+      htmlContent: params.htmlContent,
+      bcc: params.bcc,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Brevo error (${res.status}): ${text}`);
+  }
+}
+
+// ============================================================
+// WEBHOOK HANDLER
+// ============================================================
+
+export const POST: APIRoute = async ({ request }) => {
+  // === GUARD: Services configured ===
+  if (!stripe) {
+    console.error('[Webhook] STRIPE_SECRET_KEY not configured');
+    return new Response('Stripe not configured', { status: 500 });
+  }
+
+  if (!db || !auth) {
+    console.error('[Webhook] Firebase not configured');
+    return new Response('Firebase not configured', { status: 500 });
+  }
+
+  // === VERIFY SIGNATURE ===
+  const sig = request.headers.get('stripe-signature');
+  if (!sig) {
+    return new Response('Missing Stripe signature', { status: 400 });
+  }
+
+  const webhookSecret = import.meta.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('[Webhook] STRIPE_WEBHOOK_SECRET not configured');
+    return new Response('Webhook not configured', { status: 500 });
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    const rawBody = await request.text();
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+  } catch (err: any) {
+    console.error('[Webhook] Signature verification failed:', err?.message);
+    return new Response(`Webhook signature verification failed`, { status: 400 });
+  }
+
+  // === IDEMPOTENCY CHECK ===
+  const stripeEventId = event.id;
+  const eventRef = db.collection(Collections.EVENTS_STRIPE).doc(stripeEventId);
+
+  try {
+    const existingEvent = await eventRef.get();
+    if (existingEvent.exists) {
+      console.log('[Webhook] Duplicate event ignored:', stripeEventId);
+      return new Response('Already processed', { status: 200 });
+    }
+
+    // Mark as received (will update to processed after success)
+    await eventRef.set({
+      stripeEventId,
+      type: event.type,
+      receivedAt: serverTimestamp(),
+      processed: false,
+    } as Omit<StripeEventDoc, 'receivedAt'> & { receivedAt: ReturnType<typeof serverTimestamp> });
+  } catch (err) {
+    console.error('[Webhook] Idempotency check failed:', err);
+    // Continue anyway - better to risk duplicate than miss payment
+  }
+
+  // === HANDLE EVENT ===
+  if (event.type !== 'checkout.session.completed') {
+    return new Response('Ignored', { status: 200 });
+  }
+
+  const session = event.data.object as Stripe.Checkout.Session;
+
+  // === EXTRACT METADATA ===
+  const operatorId = session.metadata?.operatorId;
+  const vertical = (session.metadata?.vertical || 'fitness') as Vertical;
+  const resourceId = session.metadata?.productId || session.metadata?.resourceId;
+  const sourceModule = session.metadata?.sourceModule || 'unknown';
+  const platformFeeCents = parseInt(session.metadata?.platformFeeCents || '0', 10);
+  const entitlementType = (session.metadata?.entitlementType || 'program') as EntitlementType;
+
+  if (!operatorId || !resourceId) {
+    console.warn('[Webhook] Missing metadata:', { operatorId, resourceId, sessionId: session.id });
+    return new Response('Missing metadata (accepted)', { status: 200 });
+  }
+
+  // === EXTRACT PAYMENT INFO ===
+  const stripeCustomerId = typeof session.customer === 'string' ? session.customer : session.customer?.id || null;
+  const customerEmail = session.customer_details?.email || session.customer_email || null;
+  const amountTotal = session.amount_total || 0;
+  const currency = session.currency?.toLowerCase() || 'usd';
+  const mode: PaymentMode = session.mode === 'subscription' ? 'subscription' : 'payment';
+  const stripeSubscriptionId = typeof session.subscription === 'string' ? session.subscription : null;
+  const stripePaymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : null;
+
+  if (!customerEmail) {
+    console.warn('[Webhook] No customer email:', session.id);
+    return new Response('No customer email (accepted)', { status: 200 });
+  }
+
+  const emailLower = normalizeEmail(customerEmail);
+  const emailHash = hashEmail(customerEmail);
+
+  // === RESOLVE UID ===
+  let uid: string | null = null;
+
+  // 1. Try lookup by Stripe customer ID
+  if (stripeCustomerId) {
+    try {
+      const cusDoc = await db.collection(Collections.STRIPE_CUSTOMERS).doc(stripeCustomerId).get();
+      if (cusDoc.exists) {
+        uid = cusDoc.data()?.uid || null;
+        console.log('[Webhook] Resolved uid from stripeCustomers:', uid);
+      }
+    } catch (err) {
+      console.warn('[Webhook] stripeCustomers lookup failed:', err);
+    }
+  }
+
+  // 2. Try lookup by email in Firebase Auth
+  if (!uid) {
+    try {
+      const userRecord = await auth.getUserByEmail(emailLower);
+      uid = userRecord.uid;
+      console.log('[Webhook] Resolved uid from Firebase Auth:', uid);
+    } catch (err: any) {
+      if (err?.code !== 'auth/user-not-found') {
+        console.warn('[Webhook] Auth lookup error:', err?.message);
+      }
+    }
+  }
+
+  // === BUILD ENTITLEMENT DATA ===
+  const now = nowTimestamp();
+  const entitlementData = {
+    operatorId,
+    vertical,
+    createdAt: now,
+    source: 'checkout' as const,
+    sourceModule,
+
+    type: entitlementType,
+    resourceId,
+    status: 'active' as const,
+
+    grantedAt: now,
+    expiresAt: null,
+
+    quota: null,
+    used: null,
+
+    stripeSessionId: session.id,
+    stripeEventId,
+    stripePaymentIntentId,
+    stripeSubscriptionId,
+
+    mode,
+    amountTotal,
+    currency,
+    platformFeeCents,
+    engineVersion: ENGINE_VERSION,
+  };
+
+  // === PATH 1: UID EXISTS - DIRECT ENTITLEMENT ===
+  if (uid) {
+    try {
+      const batch = db.batch();
+
+      // 1. Upsert stripeCustomers lookup
+      if (stripeCustomerId) {
+        const cusRef = db.collection(Collections.STRIPE_CUSTOMERS).doc(stripeCustomerId);
+        batch.set(cusRef, {
+          stripeCustomerId,
+          uid,
+          emailLower,
+          createdAt: now,
+          updatedAt: now,
+        } as StripeCustomerDoc, { merge: true });
+      }
+
+      // 2. Update user doc
+      const userRef = db.collection(Collections.USERS).doc(uid);
+      const userDoc = await userRef.get();
+      
+      if (userDoc.exists) {
+        batch.update(userRef, {
+          updatedAt: now,
+          'stripe.customerId': stripeCustomerId || userDoc.data()?.stripe?.customerId,
+          'stripe.subscriptionId': stripeSubscriptionId || userDoc.data()?.stripe?.subscriptionId,
+          'stripe.status': mode === 'subscription' ? 'active' : userDoc.data()?.stripe?.status,
+          'totals.totalSpentCents': (userDoc.data()?.totals?.totalSpentCents || 0) + amountTotal,
+          'totals.lastPurchaseAt': now,
+        });
+      } else {
+        // Create user doc
+        batch.set(userRef, {
+          uid,
+          email: customerEmail,
+          emailLower,
+          createdAt: now,
+          updatedAt: now,
+          profile: {},
+          stripe: {
+            customerId: stripeCustomerId,
+            subscriptionId: stripeSubscriptionId,
+            status: mode === 'subscription' ? 'active' : 'none',
+          },
+          totals: {
+            totalSpentCents: amountTotal,
+            lastPurchaseAt: now,
+          },
+        } as UserDoc);
+      }
+
+      // 3. Ensure membership exists
+      const membershipRef = userRef.collection(Subcollections.MEMBERSHIPS).doc(operatorId);
+      const membershipDoc = await membershipRef.get();
+      
+      if (!membershipDoc.exists) {
+        batch.set(membershipRef, {
+          operatorId,
+          vertical,
+          status: 'active',
+          joinedAt: now,
+          updatedAt: now,
+          profile: {},
+        } as MembershipDoc);
+      }
+
+      // 4. Create entitlement
+      const entitlementRef = userRef.collection(Subcollections.ENTITLEMENTS).doc();
+      batch.set(entitlementRef, entitlementData as EntitlementDoc);
+
+      // 5. Link waitlist if exists
+      const waitlistQuery = await db
+        .collection(Collections.WAITLIST)
+        .where('emailHash', '==', emailHash)
+        .where('operatorId', '==', operatorId)
+        .where('convertedAt', '==', null)
+        .limit(1)
+        .get();
+
+      if (!waitlistQuery.empty) {
+        const waitlistDoc = waitlistQuery.docs[0];
+        batch.update(waitlistDoc.ref, {
+          convertedAt: now,
+          uid,
+        });
+      }
+
+      await batch.commit();
+      console.log('[Webhook] Created entitlement for uid:', uid, 'resource:', resourceId);
+
+    } catch (err) {
+      console.error('[Webhook] Direct entitlement failed:', err);
+      return new Response('Fulfillment failed', { status: 500 });
+    }
+  }
+
+  // === PATH 2: NO UID - PENDING ENTITLEMENT ===
+  else {
+    try {
+      const pendingRef = db
+        .collection(Collections.PENDING_ENTITLEMENTS)
+        .doc(emailHash)
+        .collection(Subcollections.ITEMS)
+        .doc();
+
+      const pendingData: PendingEntitlementDoc = {
+        email: customerEmail,
+        emailLower,
+        emailHash,
+        ...entitlementData,
+        claimedAt: null,
+        claimedByUid: null,
+      };
+
+      await pendingRef.set(pendingData);
+      console.log('[Webhook] Created pending entitlement for:', emailLower, 'resource:', resourceId);
+
+    } catch (err) {
+      console.error('[Webhook] Pending entitlement failed:', err);
+      return new Response('Fulfillment failed', { status: 500 });
+    }
+  }
+
+  // === MARK EVENT PROCESSED ===
+  try {
+    await eventRef.update({ processed: true });
+  } catch (err) {
+    console.warn('[Webhook] Failed to mark event processed:', err);
+  }
+
+  // === SEND FULFILLMENT EMAIL ===
+  const from = import.meta.env.FULFILLMENT_FROM_EMAIL;
+  const bcc = import.meta.env.FULFILLMENT_BCC_EMAIL;
+
+  if (from && customerEmail) {
+    try {
+      const itemName = session.metadata?.itemName || resourceId;
+      const amountStr = `${(amountTotal / 100).toFixed(2)} ${currency.toUpperCase()}`;
+      const portalLink = uid 
+        ? `${import.meta.env.SITE_URL || 'https://lovethisplace.co'}/portal`
+        : `${import.meta.env.SITE_URL || 'https://lovethisplace.co'}/portal?claim=true`;
+
+      await sendEmailBrevo({
+        from: { name: 'LoveThisPlace', email: from },
+        to: [{ email: customerEmail }],
+        subject: 'Your purchase is confirmed ✅',
+        bcc: bcc ? [{ email: bcc }] : undefined,
+        htmlContent: `
+          <div style="font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;line-height:1.6;max-width:600px;margin:0 auto;padding:24px">
+            <h2 style="color:#1a1a1a;margin-bottom:16px">Payment received ✅</h2>
+            <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:16px">
+              <p style="margin:0 0 8px 0"><strong>Product:</strong> ${itemName}</p>
+              <p style="margin:0 0 8px 0"><strong>Amount:</strong> ${amountStr}</p>
+              <p style="margin:0"><strong>Order ID:</strong> ${session.id}</p>
+            </div>
+            <a href="${portalLink}" style="display:inline-block;background:#000;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+              Access Your Purchase →
+            </a>
+            ${!uid ? '<p style="color:#666;font-size:14px">Sign in with this email to access your content.</p>' : ''}
+            <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0" />
+            <p style="color:#666;font-size:12px">
+              Order ID: ${session.id}
+            </p>
+          </div>
+        `,
+      });
+
+      console.log('[Webhook] Fulfillment email sent to:', customerEmail);
+    } catch (err: any) {
+      // Don't fail the webhook for email issues
+      console.error('[Webhook] Email failed:', err?.message);
+    }
+  }
+
+  return new Response('OK', { status: 200 });
+};
+
+// Reject other methods
+export const ALL: APIRoute = () => {
+  return new Response('Method not allowed', { status: 405 });
+};

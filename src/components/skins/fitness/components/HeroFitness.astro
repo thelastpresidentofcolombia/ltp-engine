@@ -1,0 +1,427 @@
+---
+/**
+ * Hero Module - Fitness/Coaching Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.brand, operator.hero, operator.ui, operator.diagnostic, operator.media
+ * - Skin defaults: fitnessDefaults.nav, fitnessDefaults.labels
+ * 
+ * TOKEN DEPENDENCIES (Glass luxury palette):
+ * - --color-bg-deep (#050505)
+ * - --color-bg-surface (#080808)
+ * - --color-accent (#ccff00)
+ * - --color-text-primary, --color-text-secondary, --color-text-muted
+ * - --font-display (Clash Display)
+ * - --font-body (General Sans)
+ * 
+ * VISUAL METAPHOR: Protocol / System / Evolution
+ * Premium glass aesthetic with diagnostic widget, stats grid, and glow effects.
+ */
+
+import { fitnessDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// === BRAND ===
+const brandName = operator.brand?.name ?? 'Performance Protocol';
+const brandShort = operator.brand?.shortName ?? operator.brand?.short ?? 'APEX';
+const systemTag = operator.brand?.systemTag ?? 'SYS';
+
+// === HERO CONTENT ===
+const badge = operator.hero?.badge ?? fitnessDefaults.labels.hero.badge;
+const headline = operator.hero?.headline ?? 'Engineer Your';
+const headlineAccent = operator.hero?.headlineAccent ?? 'Evolution';
+const subhead = operator.hero?.subhead ?? '';
+
+// === STATS ===
+const stats = operator.hero?.stats ?? [];
+
+// === MEDIA ===
+const heroImage = operator.media?.heroImage ?? 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2670&auto=format&fit=crop';
+const coachImage = operator.media?.avatar ?? operator.founders?.[0]?.avatar ?? null;
+const coachName = operator.founders?.[0]?.name ?? operator.brand?.founderName ?? null;
+const coachTitle = operator.founders?.[0]?.title ?? operator.brand?.founderTitle ?? null;
+
+// === CTAs ===
+const ctaPrimary = operator.hero?.cta?.primary ?? operator.ui?.cta?.primary ?? fitnessDefaults.cta.primary;
+const ctaSecondary = operator.hero?.cta?.secondary ?? operator.ui?.cta?.secondary ?? fitnessDefaults.cta.secondary;
+
+// === NAV ===
+const navLinks = operator.ui?.nav ?? fitnessDefaults.nav;
+
+// === DIAGNOSTIC WIDGET ===
+const diagnostic = operator.diagnostic;
+const diagnosticTitle = diagnostic?.title ?? operator.hero?.diagnostic?.title ?? fitnessDefaults.labels.diagnostic.title;
+const diagnosticCta = diagnostic?.cta ?? fitnessDefaults.labels.diagnostic.cta;
+const diagnosticDisclaimer = diagnostic?.disclaimer ?? fitnessDefaults.labels.diagnostic.disclaimer;
+const diagnosticFields = diagnostic?.fields ?? [];
+
+// === CONTACT ===
+const whatsapp = operator.contact?.whatsapp;
+const whatsappUrl = whatsapp ? `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}` : null;
+const calendlyUrl = operator.contact?.calendlyUrl;
+---
+
+<style>
+  /* Grain texture overlay */
+  .bg-grain::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    z-index: 1;
+  }
+
+  /* Glow orbs */
+  .glow-orb {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: var(--color-accent, #ccff00);
+    filter: blur(140px);
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glass card base */
+  .glass-card {
+    background: var(--color-glass-surface, rgba(255,255,255,0.03));
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--color-glass-border, rgba(255,255,255,0.08));
+  }
+
+  /* Glass card hover accent */
+  .accent-hover {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .accent-hover:hover {
+    border-color: color-mix(in srgb, var(--color-accent, #ccff00) 30%, transparent);
+    box-shadow: 0 0 40px rgba(204,255,0,0.08);
+  }
+
+  /* Button styles */
+  .btn-primary {
+    background: var(--color-accent, #ccff00);
+    color: #000;
+    font-weight: 700;
+    transition: all 0.3s ease;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 30px rgba(204,255,0,0.4);
+  }
+
+  .btn-ghost {
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    transition: all 0.3s ease;
+  }
+  .btn-ghost:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  /* Tag pill */
+  .tag-pill {
+    border: 1px solid color-mix(in srgb, var(--color-accent, #ccff00) 30%, transparent);
+    background: color-mix(in srgb, var(--color-accent, #ccff00) 8%, transparent);
+  }
+
+  /* Pulse animation for live dot */
+  .pulse-dot {
+    animation: pulse-accent 2s infinite;
+  }
+  @keyframes pulse-accent {
+    0% { box-shadow: 0 0 0 0 rgba(204, 255, 0, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(204, 255, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(204, 255, 0, 0); }
+  }
+
+  /* Diagnostic card glow */
+  .diagnostic-glow {
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    opacity: 0.1;
+    filter: blur(90px);
+    pointer-events: none;
+    background: var(--color-accent, #ccff00);
+    transition: opacity 0.7s ease;
+  }
+  .group:hover .diagnostic-glow {
+    opacity: 0.2;
+  }
+</style>
+
+<!-- Background layers -->
+<div class="bg-grain"></div>
+<div class="glow-orb" style="top: -120px; left: -140px;"></div>
+<div class="glow-orb" style="bottom: -80px; right: -100px; opacity: 0.05;"></div>
+
+<!-- NAVIGATION -->
+<div class="fixed top-6 left-0 w-full z-50 px-4 md:px-6 flex justify-center">
+  <nav class="glass-card px-2 py-2 rounded-full flex items-center justify-between gap-4 md:gap-10 min-w-[280px] md:min-w-[680px] max-w-full bg-[color-mix(in_srgb,var(--color-bg-surface,#080808)_70%,transparent)]">
+    <!-- Brand -->
+    <div class="pl-3 md:pl-4 flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full pulse-dot" style="background: var(--color-accent, #ccff00);"></div>
+      <span class="font-[var(--font-display)] font-semibold tracking-tight text-xs md:text-sm text-white">
+        {brandShort}<span class="text-[var(--color-text-secondary)]">.</span>{systemTag}
+      </span>
+    </div>
+
+    <!-- Desktop Nav Links -->
+    <div class="hidden md:flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-secondary)] bg-white/5 rounded-full p-1 border border-white/5">
+      {navLinks.map((link: { label: string; href: string }) => (
+        <a 
+          href={link.href} 
+          class="px-4 py-1.5 hover:text-white hover:bg-white/10 rounded-full transition"
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
+
+    <!-- CTA Button -->
+    <a 
+      href="#pricing" 
+      class="bg-white text-black px-4 md:px-5 py-2 md:py-2.5 rounded-full text-xs font-bold hover:bg-[var(--color-accent)] transition duration-300"
+    >
+      {ctaPrimary}
+    </a>
+  </nav>
+</div>
+
+<!-- HERO SECTION -->
+<section id="hero" class="relative min-h-screen flex items-center pt-32 pb-20 px-4 md:px-6 z-10">
+  <div class="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 w-full">
+    
+    <!-- Left: Headline + Stats -->
+    <div class="lg:col-span-7 flex flex-col justify-center" data-aos="fade-up">
+      <!-- Badge -->
+      {badge && (
+        <div class="inline-flex items-center gap-2 rounded-full px-3 py-1 w-fit mb-6 md:mb-8 tag-pill">
+          <span class="text-[10px] uppercase tracking-widest" style="color: var(--color-accent, #ccff00);">
+            {badge}
+          </span>
+        </div>
+      )}
+
+      <!-- Headline -->
+      <h1 class="font-[var(--font-display)] text-5xl md:text-7xl lg:text-[6rem] xl:text-[7rem] font-medium leading-[0.9] tracking-tight mb-6 md:mb-8 text-white">
+        {headline}<br/>
+        <span class="italic pr-4" style="color: var(--color-accent, #ccff00);">
+          {headlineAccent}
+        </span>
+      </h1>
+
+      <!-- Subhead -->
+      {subhead && (
+        <p class="text-base md:text-lg text-[var(--color-text-secondary)] max-w-xl leading-relaxed mb-8 md:mb-10 font-light">
+          {subhead}
+        </p>
+      )}
+
+      <!-- Stats -->
+      {stats.length > 0 && (
+        <div class="flex flex-wrap gap-6 md:gap-8 mb-10 md:mb-12 border-t border-white/10 pt-6 md:pt-8">
+          {stats.map((stat: { value: string; label: string }, index: number) => (
+            <div>
+              <p 
+                class="text-2xl md:text-3xl font-[var(--font-display)]"
+                style={index === stats.length - 1 ? 'color: var(--color-accent, #ccff00);' : 'color: white;'}
+              >
+                {stat.value}
+              </p>
+              <p class="text-[10px] md:text-xs text-[var(--color-text-muted)] uppercase tracking-wider mt-1">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <!-- CTAs -->
+      <div class="flex flex-col sm:flex-row gap-4">
+        <a 
+          href={calendlyUrl ?? '#pricing'}
+          class="btn-primary px-6 md:px-8 py-3.5 md:py-4 rounded-xl text-sm text-center"
+        >
+          {ctaPrimary}
+        </a>
+        <a 
+          href="#products" 
+          class="btn-ghost px-6 md:px-8 py-3.5 md:py-4 rounded-xl text-sm font-bold text-center"
+        >
+          {ctaSecondary}
+        </a>
+      </div>
+    </div>
+
+    <!-- Right: Coach Photo with Diagnostic Overlay -->
+    <div class="lg:col-span-5 flex items-center justify-center" data-aos="fade-left" data-aos-delay="200">
+      
+      {/* Coach Photo - Full Size */}
+      {coachImage && (
+        <div class="relative w-full max-w-md mx-auto">
+          <!-- Glow behind image -->
+          <div class="absolute -inset-4 rounded-[var(--radius-2xl,24px)] opacity-25 blur-2xl" style="background: var(--color-accent, #ccff00);"></div>
+          
+          <!-- Photo container -->
+          <div class="relative glass-card rounded-[var(--radius-2xl,24px)] p-3 overflow-hidden">
+            <img 
+              src={coachImage} 
+              alt={coachName ?? 'Your Coach'} 
+              class="w-full aspect-[3/4] object-cover rounded-[calc(var(--radius-2xl,24px)-12px)]"
+            />
+            
+            {/* Coach name badge */}
+            {(coachName || coachTitle) && (
+              <div class="absolute bottom-4 left-4 glass-card rounded-xl px-4 py-3">
+                {coachName && (
+                  <p class="text-white font-bold">{coachName}</p>
+                )}
+                {coachTitle && (
+                  <p class="text-[var(--color-text-muted)] text-[10px] uppercase tracking-wider mt-0.5">{coachTitle}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Diagnostic Widget - Only show if NO coach photo */}
+      {!coachImage && (
+        <div class="glass-card accent-hover w-full rounded-[var(--radius-2xl,24px)] p-6 md:p-8 relative overflow-hidden group">
+          <div class="diagnostic-glow"></div>
+
+          <div class="relative z-10">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="font-[var(--font-display)] text-xl md:text-2xl text-white">
+                {diagnosticTitle}
+              </h3>
+              <span class="w-2 h-2 rounded-full pulse-dot" style="background: var(--color-accent, #ccff00);"></span>
+            </div>
+
+            <!-- Fields -->
+            <div class="space-y-4">
+              {diagnosticFields.length > 0 ? (
+                diagnosticFields.map((field: { id: string; type: string; label: string; options?: string[]; badge?: string }) => (
+                  <div>
+                    <label class="text-[10px] uppercase text-[var(--color-text-muted)] tracking-widest mb-2 block">
+                      {field.label}
+                    </label>
+                    
+                    {field.type === 'select' && field.options && (
+                      <div class="grid grid-cols-3 gap-2">
+                        {field.options.map((option: string) => (
+                          <button 
+                            class="border border-white/10 bg-white/5 rounded-lg py-2.5 text-xs text-white hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition"
+                            type="button"
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {field.type === 'slider' && (
+                      <div class="w-full bg-white/10 rounded-full h-1.5 mb-4 relative">
+                        <div 
+                          class="absolute left-0 top-0 h-full rounded-full" 
+                          style="background: var(--color-accent, #ccff00); width: 66%;"
+                        ></div>
+                        {field.badge && (
+                          <div 
+                            class="absolute right-0 top-[-8px] text-black text-[9px] font-bold px-1.5 py-0.5 rounded"
+                            style="background: var(--color-accent, #ccff00);"
+                          >
+                            {field.badge}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <Fragment>
+                  <div>
+                    <label class="text-[10px] uppercase text-[var(--color-text-muted)] tracking-widest mb-2 block">
+                      Primary Goal
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                      <button class="border border-white/10 bg-white/5 rounded-lg py-2.5 text-xs text-white hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition" type="button">
+                        Shred
+                      </button>
+                      <button class="border border-white/10 bg-white/5 rounded-lg py-2.5 text-xs text-white hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition" type="button">
+                        Build
+                      </button>
+                      <button class="border border-white/10 bg-white/5 rounded-lg py-2.5 text-xs text-white hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition" type="button">
+                        Perform
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="text-[10px] uppercase text-[var(--color-text-muted)] tracking-widest mb-2 block">
+                      Experience Level
+                    </label>
+                    <div class="w-full bg-white/10 rounded-full h-1.5 mb-4 relative">
+                      <div class="absolute left-0 top-0 h-full rounded-full" style="background: var(--color-accent, #ccff00); width: 66%;"></div>
+                      <div class="absolute right-0 top-[-8px] text-black text-[9px] font-bold px-1.5 py-0.5 rounded" style="background: var(--color-accent, #ccff00);">
+                        Intermediate
+                      </div>
+                    </div>
+                  </div>
+                </Fragment>
+              )}
+            </div>
+
+            <!-- CTA -->
+            <button 
+              class="btn-primary w-full py-3.5 rounded-xl text-sm shadow-[0_0_20px_rgba(204,255,0,0.3)]"
+              type="button"
+            >
+              {diagnosticCta}
+            </button>
+
+            <!-- Disclaimer -->
+            <p class="text-center text-[10px] text-[var(--color-text-muted)] mt-4">
+              {diagnosticDisclaimer}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+    
+  </div>
+</section>
+
+<!-- Mobile sticky CTA -->
+<div class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-[color-mix(in_srgb,var(--color-bg-surface,#080808)_80%,transparent)] border-t border-white/10 p-4 flex gap-3 safe-area-bottom">
+  <a href="#products" class="flex-1 flex items-center justify-center btn-ghost font-bold py-3 text-xs uppercase tracking-widest rounded-xl">
+    Programs
+  </a>
+  <a href="#pricing" class="flex-1 flex items-center justify-center btn-primary font-bold py-3 text-xs uppercase tracking-widest rounded-xl">
+    Start
+  </a>
+</div>
+
+<script>
+  // Init AOS if available (handled globally in layout)
+  if (typeof (window as any).AOS !== 'undefined') {
+    (window as any).AOS.init({ duration: 1000, once: true, offset: 50 });
+  }
+</script>

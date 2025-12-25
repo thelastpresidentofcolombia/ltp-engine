@@ -1,0 +1,227 @@
+---
+/**
+ * Intel Module - Fitness/Coaching Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.intel (title, faq array)
+ * - Skin defaults: fitnessDefaults.labels.intel
+ * 
+ * FAQ accordion with search and tag filtering.
+ * Premium glass aesthetic.
+ */
+
+import { fitnessDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// === LABELS ===
+const labels = operator.ui?.labels?.intel ?? fitnessDefaults.labels.intel;
+const kicker = labels.kicker ?? 'Intel Database';
+const sectionTitle = operator.intel?.title ?? labels.title ?? 'Questions & Resources';
+const subhead = labels.subhead ?? 'Everything you need to make an informed decision.';
+const searchPlaceholder = operator.intel?.searchPlaceholder ?? labels.searchPlaceholder ?? 'Search questions...';
+
+// === FAQ ===
+const faq = operator.intel?.faq ?? [];
+
+// Get unique categories for filtering
+const categories = [...new Set(faq.map((f: any) => f.category).filter(Boolean))] as string[];
+---
+
+<style>
+  .glass-card {
+    background: var(--color-glass-surface, rgba(255,255,255,0.03));
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--color-glass-border, rgba(255,255,255,0.08));
+  }
+  .tag-btn {
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+  }
+  .tag-btn:hover,
+  .tag-btn[data-active="true"] {
+    background: var(--color-accent, #ccff00);
+    color: black;
+    border-color: var(--color-accent, #ccff00);
+  }
+  .faq-item {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .faq-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .faq-item[data-expanded="true"] .faq-body {
+    max-height: 500px;
+  }
+  .faq-chevron {
+    transition: transform 0.3s ease;
+  }
+  .faq-item[data-expanded="true"] .faq-chevron {
+    transform: rotate(180deg);
+  }
+</style>
+
+<section id="intel" class="py-20 md:py-28 px-4 md:px-6 border-t border-white/5 bg-[color-mix(in_srgb,var(--color-bg-surface,#080808)_85%,#000)] relative z-10">
+  <div class="max-w-[1000px] mx-auto">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 md:mb-12" data-aos="fade-up">
+      <div>
+        <span 
+          class="text-[10px] uppercase tracking-widest font-bold"
+          style="color: var(--color-accent, #ccff00);"
+        >
+          {kicker}
+        </span>
+        <h2 class="font-[var(--font-display)] text-3xl md:text-5xl lg:text-6xl mt-3 text-white">
+          {sectionTitle}
+        </h2>
+        <p class="text-[var(--color-text-secondary)] mt-3 max-w-xl text-sm md:text-base">
+          {subhead}
+        </p>
+      </div>
+
+      <!-- Search -->
+      <div class="w-full md:w-[320px] glass-card rounded-2xl px-4 py-3 flex items-center gap-3">
+        <svg class="w-4 h-4 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input 
+          id="intel-search" 
+          type="text" 
+          placeholder={searchPlaceholder}
+          class="bg-transparent text-sm w-full focus:outline-none text-white placeholder:text-[var(--color-text-secondary)]"
+        />
+      </div>
+    </div>
+
+    <!-- Category filters -->
+    {categories.length > 0 && (
+      <div class="flex flex-wrap gap-2 mb-8" data-aos="fade-up">
+        <button class="tag-btn px-4 py-2 rounded-full text-xs font-medium text-white" data-category="all" data-active="true">
+          All
+        </button>
+        {categories.map((category: string) => (
+          <button class="tag-btn px-4 py-2 rounded-full text-xs font-medium text-white capitalize" data-category={category}>
+            {category}
+          </button>
+        ))}
+      </div>
+    )}
+
+    <!-- FAQ List -->
+    <div class="glass-card rounded-[var(--radius-2xl,24px)] divide-y divide-white/10" data-aos="fade-up">
+      {faq.length > 0 ? (
+        faq.map((item: any, index: number) => (
+          <div 
+            class="faq-item p-6 md:p-8" 
+            data-expanded="false"
+            data-category={item.category ?? 'general'}
+          >
+            <button 
+              class="w-full flex items-start justify-between gap-4 text-left faq-trigger"
+              type="button"
+            >
+              <div class="flex-1">
+                <p class="text-white font-bold text-base md:text-lg">
+                  {item.question}
+                </p>
+                {item.category && (
+                  <p class="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest mt-2">
+                    {item.category}
+                  </p>
+                )}
+              </div>
+              <span 
+                class="text-xs font-bold uppercase tracking-widest faq-chevron"
+                style="color: var(--color-accent, #ccff00);"
+              >
+                ↓
+              </span>
+            </button>
+            <div class="faq-body">
+              <p class="text-[var(--color-text-secondary)] text-sm md:text-base leading-relaxed mt-4 max-w-3xl">
+                {item.answer}
+              </p>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div class="p-8 text-center text-[var(--color-text-muted)]">
+          <p>No FAQ items configured yet.</p>
+        </div>
+      )}
+    </div>
+  </div>
+</section>
+
+<script>
+  // FAQ accordion
+  const faqItems = document.querySelectorAll('.faq-item');
+  faqItems.forEach(item => {
+    const trigger = item.querySelector('.faq-trigger');
+    if (trigger) {
+      trigger.addEventListener('click', () => {
+        const isExpanded = item.getAttribute('data-expanded') === 'true';
+        // Close all others
+        faqItems.forEach(i => i.setAttribute('data-expanded', 'false'));
+        // Toggle current
+        item.setAttribute('data-expanded', (!isExpanded).toString());
+      });
+    }
+  });
+
+  // Category filtering
+  const categoryBtns = document.querySelectorAll('[data-category]');
+  categoryBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const category = btn.getAttribute('data-category');
+      
+      // Update active state
+      categoryBtns.forEach(b => b.setAttribute('data-active', 'false'));
+      btn.setAttribute('data-active', 'true');
+      
+      // Filter items
+      faqItems.forEach(item => {
+        const itemCategory = item.getAttribute('data-category');
+        if (category === 'all' || itemCategory === category) {
+          (item as HTMLElement).style.display = 'block';
+        } else {
+          (item as HTMLElement).style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Search
+  const searchInput = document.getElementById('intel-search') as HTMLInputElement;
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const term = (e.target as HTMLInputElement).value.toLowerCase();
+      
+      faqItems.forEach(item => {
+        const text = item.textContent?.toLowerCase() ?? '';
+        if (text.includes(term)) {
+          (item as HTMLElement).style.display = 'block';
+        } else {
+          (item as HTMLElement).style.display = 'none';
+        }
+      });
+
+      // Reset category filter to "all" when searching
+      if (term.length > 0) {
+        categoryBtns.forEach(btn => {
+          btn.setAttribute('data-active', btn.getAttribute('data-category') === 'all' ? 'true' : 'false');
+        });
+      }
+    });
+  }
+</script>

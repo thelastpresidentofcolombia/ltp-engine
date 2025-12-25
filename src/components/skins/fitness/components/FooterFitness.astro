@@ -1,0 +1,123 @@
+---
+/**
+ * Footer Module - Fitness/Coaching Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.brand, operator.contact, operator.ui
+ * - Skin defaults: fitnessDefaults.labels.footer
+ * 
+ * Minimal footer with brand, legal, and social links.
+ */
+
+import { fitnessDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// === BRAND ===
+const brandName = operator.brand?.name ?? 'Performance Protocol';
+const brandShort = operator.brand?.shortName ?? operator.brand?.short ?? 'APEX';
+const systemTag = operator.brand?.systemTag ?? 'SYS';
+
+// === CONTACT ===
+const contact = operator.contact ?? {};
+const email = contact.email;
+const instagram = contact.instagram;
+const linkedin = contact.linkedin;
+
+// === LEGAL ===
+const currentYear = new Date().getFullYear();
+const legalEntity = operator.legal?.entity ?? `${brandName} LLC`;
+
+// === NAV LINKS ===
+const navLinks = operator.ui?.nav ?? fitnessDefaults.nav;
+
+// === FOOTER LINKS ===
+const footerLinks = operator.ui?.footerLinks ?? [
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Terms', href: '/terms' },
+];
+---
+
+<style>
+  .footer-link {
+    transition: color 0.3s ease;
+  }
+  .footer-link:hover {
+    color: var(--color-accent, #ccff00);
+  }
+</style>
+
+<footer class="py-16 md:py-20 px-4 md:px-6 border-t border-white/5 bg-black relative z-10">
+  <div class="max-w-[1400px] mx-auto">
+    
+    <div class="flex flex-col md:flex-row justify-between items-center gap-8">
+      
+      <!-- Brand -->
+      <div class="text-center md:text-left">
+        <h4 class="font-[var(--font-display)] text-xl md:text-2xl tracking-tight text-white">
+          {brandShort}<span class="text-[var(--color-text-secondary)]">.</span>{systemTag}
+        </h4>
+        <p class="text-xs text-[var(--color-text-muted)] mt-2">
+          © {currentYear} {legalEntity}. All rights reserved.
+        </p>
+      </div>
+
+      <!-- Nav Links -->
+      <div class="flex flex-wrap justify-center gap-6 md:gap-8 text-xs font-bold uppercase tracking-widest text-[var(--color-text-muted)]">
+        {navLinks.slice(0, 4).map((link: { label: string; href: string }) => (
+          <a href={link.href} class="footer-link">
+            {link.label}
+          </a>
+        ))}
+      </div>
+
+      <!-- Social / Contact Links -->
+      <div class="flex gap-6 text-xs font-bold uppercase tracking-widest text-[var(--color-text-muted)]">
+        {instagram && (
+          <a 
+            href={`https://instagram.com/${instagram.replace('@', '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-link"
+          >
+            Instagram
+          </a>
+        )}
+        {linkedin && (
+          <a 
+            href={linkedin.startsWith('http') ? linkedin : `https://linkedin.com/in/${linkedin}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-link"
+          >
+            LinkedIn
+          </a>
+        )}
+        {email && (
+          <a href={`mailto:${email}`} class="footer-link">
+            Email
+          </a>
+        )}
+      </div>
+    </div>
+
+    <!-- Legal links row -->
+    <div class="mt-10 pt-6 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-[var(--color-text-muted)]">
+      <div class="flex gap-6">
+        {footerLinks.map((link: { label: string; href: string }) => (
+          <a href={link.href} class="hover:text-white transition">
+            {link.label}
+          </a>
+        ))}
+      </div>
+      <p>
+        Powered by <a href="https://lovethisplace.co" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">LTP Engine</a>
+      </p>
+    </div>
+  </div>
+</footer>

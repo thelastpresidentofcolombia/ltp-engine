@@ -27,6 +27,7 @@ import FooterModule from '@/components/engine/modules/Footer.astro';
 // Vertical-specific skins
 import { consultancySkin } from '@/components/skins/consultancy/skin';
 import { toursSkin } from '@/components/skins/tours/skin';
+import { fitnessSkin } from '@/components/skins/fitness/skin';
 
 interface Props {
   operator: Operator;
@@ -52,7 +53,7 @@ const defaultModuleComponents: Record<string, any> = {
 const skinRegistry: Record<string, Record<string, any>> = {
   consultancy: consultancySkin.components,
   tours: toursSkin.components,
-  // fitness: fitnessSkin.components,  // TODO: Phase 6
+  fitness: fitnessSkin.components,
   // nightlife: nightlifeSkin.components, // TODO: Phase 6
 };
 

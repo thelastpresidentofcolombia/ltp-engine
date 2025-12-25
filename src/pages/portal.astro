@@ -1,0 +1,396 @@
+---
+/**
+ * Portal Page - Client Authentication + Entitlements
+ * 
+ * ENGINE CONTRACT:
+ * - Magic link (passwordless) sign-in via Firebase Auth
+ * - Claims pending entitlements on login
+ * - Loads user data via /api/portal/bootstrap
+ * - Renders entitlements and program access
+ */
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Portal | LTP Engine</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #fafafa;
+        color: #1a1a1a;
+        line-height: 1.5;
+      }
+      main {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 32px 16px;
+      }
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+      .subtitle {
+        margin: 0 0 32px;
+        opacity: 0.7;
+      }
+      .card {
+        padding: 20px;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 16px;
+        background: white;
+        margin-bottom: 16px;
+      }
+      .card h3 {
+        margin: 0 0 12px;
+        font-size: 1.1rem;
+      }
+      .card p {
+        margin: 0 0 16px;
+        opacity: 0.8;
+      }
+      input[type="email"] {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.12);
+        font-size: 1rem;
+        margin-bottom: 12px;
+      }
+      input[type="email"]:focus {
+        outline: none;
+        border-color: #000;
+      }
+      .btn-primary {
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        border: 0;
+        background: #000;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .btn-primary:hover {
+        opacity: 0.85;
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-ghost {
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: 1px solid rgba(0,0,0,0.12);
+        background: transparent;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .btn-ghost:hover {
+        background: rgba(0,0,0,0.04);
+      }
+      .error {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 12px;
+      }
+      .user-header {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+      }
+      .user-email {
+        font-weight: 600;
+      }
+      .user-label {
+        font-size: 0.75rem;
+        opacity: 0.6;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .entitlement-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+      }
+      .entitlement-item:last-child {
+        border-bottom: 0;
+      }
+      .entitlement-type {
+        font-size: 0.75rem;
+        opacity: 0.5;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .entitlement-resource {
+        font-weight: 500;
+      }
+      .status-active {
+        color: #16a34a;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .loading {
+        text-align: center;
+        padding: 48px;
+        opacity: 0.6;
+      }
+      .success-card {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Client Portal</h1>
+      <p class="subtitle">Sign in to access your programs, bookings, and check-ins.</p>
+      
+      <div id="portal-root">
+        <div class="loading">Loading...</div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { firebaseAuth } from "../lib/firebase/client";
+      import {
+        isSignInWithEmailLink,
+        sendSignInLinkToEmail,
+        signInWithEmailLink,
+        onAuthStateChanged,
+        signOut,
+      } from "firebase/auth";
+
+      const root = document.getElementById("portal-root");
+
+      function render(html) {
+        root.innerHTML = html;
+      }
+
+      function getEmailFromStorage() {
+        return window.localStorage.getItem("ltp_portal_email") || "";
+      }
+
+      function setEmailToStorage(email) {
+        window.localStorage.setItem("ltp_portal_email", email);
+      }
+
+      function clearEmailStorage() {
+        window.localStorage.removeItem("ltp_portal_email");
+      }
+
+      async function postAuthed(url) {
+        const token = await firebaseAuth.currentUser.getIdToken();
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`POST ${url} failed (${res.status})`);
+        return res.json();
+      }
+
+      async function getAuthed(url) {
+        const token = await firebaseAuth.currentUser.getIdToken();
+        const res = await fetch(url, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`GET ${url} failed (${res.status})`);
+        return res.json();
+      }
+
+      async function completeEmailLinkIfPresent() {
+        const href = window.location.href;
+
+        if (!isSignInWithEmailLink(firebaseAuth, href)) return;
+
+        let email = getEmailFromStorage();
+
+        if (!email) {
+          email = window.prompt("Enter the email you used to request the login link:");
+          if (!email) return;
+          setEmailToStorage(email);
+        }
+
+        await signInWithEmailLink(firebaseAuth, email, href);
+
+        clearEmailStorage();
+        window.history.replaceState({}, document.title, "/portal");
+      }
+
+      async function sendLink(email) {
+        const actionCodeSettings = {
+          url: `${window.location.origin}/portal`,
+          handleCodeInApp: true,
+        };
+
+        await sendSignInLinkToEmail(firebaseAuth, email, actionCodeSettings);
+        setEmailToStorage(email);
+
+        render(`
+          <div class="card success-card">
+            <h3>Check your email ✉️</h3>
+            <p style="margin:0;">
+              We sent a secure sign-in link to <strong>${email}</strong>.<br/>
+              Click the link in your email to access your portal.
+            </p>
+          </div>
+        `);
+      }
+
+      async function loadPortal() {
+        render(`<div class="loading">Loading your portal...</div>`);
+
+        // 1) Claim pending entitlements (engine invariant)
+        const claimResult = await postAuthed("/api/portal/claim");
+        console.log("[Portal] Claim result:", claimResult);
+
+        // 2) Bootstrap portal data
+        const data = await getAuthed("/api/portal/bootstrap");
+        console.log("[Portal] Bootstrap data:", data);
+
+        // Group entitlements by operator
+        const entitlementsByOperator = {};
+        for (const ent of data.entitlements || []) {
+          if (!entitlementsByOperator[ent.operatorId]) {
+            entitlementsByOperator[ent.operatorId] = [];
+          }
+          entitlementsByOperator[ent.operatorId].push(ent);
+        }
+
+        // Build entitlements HTML
+        let entitlementsHtml = "";
+        const operatorIds = Object.keys(entitlementsByOperator);
+
+        if (operatorIds.length === 0) {
+          entitlementsHtml = `
+            <div class="card">
+              <h3>No Active Access</h3>
+              <p style="margin:0;">You don't have any active programs or subscriptions yet.</p>
+            </div>
+          `;
+        } else {
+          for (const opId of operatorIds) {
+            const ents = entitlementsByOperator[opId];
+            const items = ents.map(e => `
+              <div class="entitlement-item">
+                <div>
+                  <div class="entitlement-type">${e.type}</div>
+                  <div class="entitlement-resource">${e.resourceId}</div>
+                </div>
+                <div class="status-active">${e.status}</div>
+              </div>
+            `).join("");
+
+            entitlementsHtml += `
+              <div class="card">
+                <h3>${opId}</h3>
+                ${items}
+              </div>
+            `;
+          }
+        }
+
+        // Render portal
+        render(`
+          <div class="user-header">
+            <div>
+              <div class="user-label">Signed in as</div>
+              <div class="user-email">${data.user?.email || ""}</div>
+            </div>
+            <button id="logout" class="btn-ghost">Log out</button>
+          </div>
+
+          <h3 style="margin: 0 0 16px; font-size: 1rem; opacity: 0.7;">Your Access</h3>
+          ${entitlementsHtml}
+
+          <div class="card" style="margin-top: 24px;">
+            <h3>Need Help?</h3>
+            <p style="margin:0;">Contact your coach directly via WhatsApp or email for support.</p>
+          </div>
+        `);
+
+        // Logout handler
+        document.getElementById("logout")?.addEventListener("click", async () => {
+          await signOut(firebaseAuth);
+          window.location.reload();
+        });
+      }
+
+      function renderLogin() {
+        render(`
+          <div class="card">
+            <h3>Sign in</h3>
+            <p>Get a magic link sent to your email — no password needed.</p>
+            <input id="email" type="email" placeholder="you@email.com" />
+            <button id="send" class="btn-primary">Send login link</button>
+            <div id="err" class="error"></div>
+          </div>
+        `);
+
+        const emailInput = document.getElementById("email");
+        const btn = document.getElementById("send");
+        const err = document.getElementById("err");
+
+        btn.addEventListener("click", async () => {
+          err.textContent = "";
+          const email = String(emailInput.value || "").trim();
+          if (!email) {
+            err.textContent = "Please enter your email.";
+            return;
+          }
+          try {
+            btn.disabled = true;
+            btn.textContent = "Sending...";
+            await sendLink(email);
+          } catch (e) {
+            console.error("[Portal] Send link error:", e);
+            err.textContent = e?.message || "Failed to send link.";
+            btn.disabled = false;
+            btn.textContent = "Send login link";
+          }
+        });
+
+        // Allow Enter key
+        emailInput.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") btn.click();
+        });
+      }
+
+      // Boot
+      try {
+        await completeEmailLinkIfPresent();
+
+        onAuthStateChanged(firebaseAuth, (user) => {
+          if (!user) {
+            renderLogin();
+          } else {
+            loadPortal().catch((e) => {
+              console.error("[Portal] Load error:", e);
+              render(`<div class="card"><p class="error">${e.message}</p></div>`);
+            });
+          }
+        });
+      } catch (e) {
+        console.error("[Portal] Boot error:", e);
+        render(`<div class="card"><p class="error">${e?.message || "Authentication failed."}</p></div>`);
+      }
+    </script>
+  </body>
+</html>

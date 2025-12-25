@@ -1,0 +1,107 @@
+---
+/**
+ * Conversion Module - Fitness/Coaching Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.conversion, operator.contact
+ * - Skin defaults: fitnessDefaults.labels.conversion
+ * 
+ * Final CTA section with prominent action buttons.
+ */
+
+import { fitnessDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// === LABELS ===
+const labels = operator.ui?.labels?.conversion ?? fitnessDefaults.labels.conversion;
+const sectionLabel = labels.section ?? 'Next Step';
+const title = operator.conversion?.title ?? labels.title ?? 'Ready to Start?';
+const description = operator.conversion?.description ?? labels.description ?? 'Take the first step toward your transformation.';
+
+// === CTAs ===
+const cta = operator.ui?.cta ?? fitnessDefaults.cta;
+const primaryCta = operator.conversion?.primaryCta ?? cta.primary ?? 'Start Assessment';
+const secondaryCta = operator.conversion?.secondaryCta ?? cta.secondary ?? 'View Programs';
+
+// === CONTACT ===
+const calendlyUrl = operator.contact?.calendlyUrl;
+const whatsapp = operator.contact?.whatsapp;
+const whatsappUrl = whatsapp ? `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}` : null;
+---
+
+<style>
+  .glass-card {
+    background: var(--color-glass-surface, rgba(255,255,255,0.03));
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--color-glass-border, rgba(255,255,255,0.08));
+  }
+  .btn-primary {
+    background: var(--color-accent, #ccff00);
+    color: #000;
+    font-weight: 700;
+    transition: all 0.3s ease;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 30px rgba(204,255,0,0.4);
+  }
+  .btn-ghost {
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    transition: all 0.3s ease;
+  }
+  .btn-ghost:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.4);
+  }
+</style>
+
+<section id="conversion" class="py-20 md:py-28 px-4 md:px-6 relative z-10">
+  <div class="max-w-[900px] mx-auto">
+    
+    <div class="glass-card rounded-[var(--radius-2xl,24px)] p-8 md:p-12 text-center" data-aos="fade-up">
+      
+      <!-- Kicker -->
+      <span 
+        class="text-[10px] uppercase tracking-widest font-bold"
+        style="color: var(--color-accent, #ccff00);"
+      >
+        {sectionLabel}
+      </span>
+
+      <!-- Title -->
+      <h2 class="font-[var(--font-display)] text-3xl md:text-5xl lg:text-6xl mt-4 mb-4 text-white">
+        {title}
+      </h2>
+
+      <!-- Description -->
+      <p class="text-[var(--color-text-secondary)] text-base md:text-lg max-w-2xl mx-auto mb-8">
+        {description}
+      </p>
+
+      <!-- CTAs -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a 
+          href={calendlyUrl ?? '#offers'}
+          class="btn-primary px-8 py-4 rounded-xl text-sm"
+        >
+          {primaryCta}
+        </a>
+        <a 
+          href={whatsappUrl ?? '#products'}
+          class="btn-ghost px-8 py-4 rounded-xl text-sm font-bold"
+        >
+          {whatsappUrl ? 'Chat on WhatsApp' : secondaryCta}
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>

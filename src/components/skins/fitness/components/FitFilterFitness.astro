@@ -1,0 +1,121 @@
+---
+/**
+ * FitFilter Module - Fitness/Coaching Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.fitFilter.compatible, operator.fitFilter.incompatible
+ * - Skin defaults: fitnessDefaults.labels.fitFilter
+ * 
+ * Shows two-column layout: ideal candidates vs not a fit
+ * Premium glass cards with check/x icons
+ */
+
+import { fitnessDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// === LABELS ===
+const labels = operator.ui?.labels?.fitFilter ?? fitnessDefaults.labels.fitFilter;
+const sectionLabel = labels.section ?? 'Fit Assessment';
+const compatibleLabel = labels.compatible ?? 'Ideal Candidates';
+const incompatibleLabel = labels.incompatible ?? 'Not Right For';
+
+// === CONTENT ===
+const fitFilter = operator.fitFilter ?? {};
+const title = fitFilter.title ?? 'Is This For You?';
+const compatibleProfiles = fitFilter.compatible?.profiles ?? fitFilter.compatible ?? [];
+const incompatibleProfiles = fitFilter.incompatible?.profiles ?? fitFilter.incompatible ?? [];
+---
+
+<style>
+  .glass-card {
+    background: var(--color-glass-surface, rgba(255,255,255,0.03));
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--color-glass-border, rgba(255,255,255,0.08));
+  }
+  .accent-hover {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .accent-hover:hover {
+    border-color: color-mix(in srgb, var(--color-accent, #ccff00) 30%, transparent);
+    box-shadow: 0 0 40px rgba(204,255,0,0.08);
+  }
+</style>
+
+<section id="fit-filter" class="py-20 md:py-28 px-4 md:px-6 border-t border-white/5 relative z-10">
+  <div class="max-w-[1400px] mx-auto">
+    
+    <!-- Header -->
+    <div class="text-center mb-12 md:mb-16" data-aos="fade-up">
+      <span 
+        class="text-[10px] uppercase tracking-widest font-bold"
+        style="color: var(--color-accent, #ccff00);"
+      >
+        {sectionLabel}
+      </span>
+      <h2 class="font-[var(--font-display)] text-3xl md:text-5xl lg:text-6xl mt-3 text-white">
+        {title}
+      </h2>
+    </div>
+
+    <!-- Two-column layout -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Compatible -->
+      <div class="glass-card accent-hover rounded-[var(--radius-2xl,24px)] p-6 md:p-8" data-aos="fade-up" data-aos-delay="100">
+        <div class="flex items-center gap-3 mb-6">
+          <div 
+            class="w-10 h-10 rounded-full flex items-center justify-center"
+            style="background: color-mix(in srgb, var(--color-accent, #ccff00) 15%, transparent);"
+          >
+            <svg class="w-5 h-5" style="color: var(--color-accent, #ccff00);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <h3 class="font-[var(--font-display)] text-xl md:text-2xl text-white">
+            {compatibleLabel}
+          </h3>
+        </div>
+
+        <ul class="space-y-4">
+          {compatibleProfiles.map((profile: string) => (
+            <li class="flex gap-3 items-start text-sm md:text-base text-[var(--color-text-secondary)]">
+              <span style="color: var(--color-accent, #ccff00);" class="mt-0.5">✓</span>
+              <span>{profile}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Incompatible -->
+      <div class="glass-card rounded-[var(--radius-2xl,24px)] p-6 md:p-8 opacity-80" data-aos="fade-up" data-aos-delay="200">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center bg-white/5">
+            <svg class="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </div>
+          <h3 class="font-[var(--font-display)] text-xl md:text-2xl text-white">
+            {incompatibleLabel}
+          </h3>
+        </div>
+
+        <ul class="space-y-4">
+          {incompatibleProfiles.map((profile: string) => (
+            <li class="flex gap-3 items-start text-sm md:text-base text-[var(--color-text-muted)]">
+              <span class="text-[var(--color-text-muted)] mt-0.5">×</span>
+              <span>{profile}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>

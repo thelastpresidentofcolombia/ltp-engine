@@ -1,0 +1,157 @@
+---
+/**
+ * Offers Module - Fitness/Coaching Skin
+ * 
+ * ENGINE CONTRACT:
+ * - Reads: operator.offers (array of offer objects)
+ * - Skin defaults: fitnessDefaults.labels.offers
+ * 
+ * Entry-level offers like free assessments, trials, etc.
+ * Premium glass cards with highlight states.
+ */
+
+import { fitnessDefaults } from '../skin';
+
+interface Props {
+  operator: any;
+  variant?: string;
+}
+
+const { operator } = Astro.props;
+
+// === LABELS ===
+const labels = operator.ui?.labels?.offers ?? fitnessDefaults.labels.offers;
+const sectionLabel = labels.section ?? 'Entry Points';
+const sectionTitle = labels.title ?? 'Start Here';
+const primaryCta = labels.primaryCta ?? 'Book Now';
+const detailsLabel = labels.detailsLabel ?? 'Learn More';
+
+// === OFFERS ===
+const offers = operator.offers ?? [];
+
+// === CONTACT ===
+const calendlyUrl = operator.contact?.calendlyUrl;
+---
+
+<style>
+  .glass-card {
+    background: var(--color-glass-surface, rgba(255,255,255,0.03));
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--color-glass-border, rgba(255,255,255,0.08));
+  }
+  .accent-hover {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .accent-hover:hover {
+    border-color: color-mix(in srgb, var(--color-accent, #ccff00) 30%, transparent);
+    box-shadow: 0 0 40px rgba(204,255,0,0.08);
+  }
+  .highlight-card {
+    border-color: color-mix(in srgb, var(--color-accent, #ccff00) 40%, transparent);
+    box-shadow: 0 0 50px rgba(204,255,0,0.1);
+  }
+  .btn-primary {
+    background: var(--color-accent, #ccff00);
+    color: #000;
+    font-weight: 700;
+    transition: all 0.3s ease;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 30px rgba(204,255,0,0.4);
+  }
+  .btn-ghost {
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    transition: all 0.3s ease;
+  }
+  .btn-ghost:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.4);
+  }
+  .tag-pill {
+    border: 1px solid color-mix(in srgb, var(--color-accent, #ccff00) 30%, transparent);
+    background: color-mix(in srgb, var(--color-accent, #ccff00) 8%, transparent);
+  }
+</style>
+
+<section id="offers" class="py-20 md:py-28 px-4 md:px-6 relative z-10">
+  <div class="max-w-[1400px] mx-auto">
+    
+    <!-- Header -->
+    <div class="text-center mb-12 md:mb-16" data-aos="fade-up">
+      <span 
+        class="text-[10px] uppercase tracking-widest font-bold"
+        style="color: var(--color-accent, #ccff00);"
+      >
+        {sectionLabel}
+      </span>
+      <h2 class="font-[var(--font-display)] text-3xl md:text-5xl lg:text-6xl mt-3 text-white">
+        {sectionTitle}
+      </h2>
+    </div>
+
+    <!-- Offers grid -->
+    {offers.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        {offers.map((offer: any, index: number) => (
+          <div 
+            class:list={[
+              "glass-card rounded-[var(--radius-2xl,24px)] p-6 md:p-8 relative overflow-hidden",
+              offer.highlight ? "highlight-card" : "accent-hover"
+            ]}
+            data-aos="fade-up" 
+            data-aos-delay={index * 100}
+          >
+            {/* Badge */}
+            {offer.badge && (
+              <div class="inline-flex items-center gap-2 tag-pill px-3 py-1 rounded-full mb-4">
+                <span 
+                  class="text-[10px] uppercase tracking-widest font-bold"
+                  style="color: var(--color-accent, #ccff00);"
+                >
+                  {offer.badge}
+                </span>
+              </div>
+            )}
+
+            {/* Title & Description */}
+            <h3 class="font-[var(--font-display)] text-xl md:text-2xl text-white mb-3">
+              {offer.title}
+            </h3>
+            <p class="text-sm md:text-base text-[var(--color-text-secondary)] mb-6">
+              {offer.description}
+            </p>
+
+            {/* Price */}
+            <div class="mb-6">
+              <span 
+                class="text-3xl md:text-4xl font-[var(--font-display)]"
+                style={offer.highlight ? 'color: var(--color-accent, #ccff00);' : 'color: white;'}
+              >
+                {offer.price}
+              </span>
+            </div>
+
+            {/* CTA */}
+            <a 
+              href={calendlyUrl ?? `#${offer.id}`}
+              class:list={[
+                "block w-full text-center py-3.5 rounded-xl text-sm font-bold",
+                offer.highlight ? "btn-primary" : "btn-ghost"
+              ]}
+            >
+              {offer.cta ?? primaryCta}
+            </a>
+          </div>
+        ))}
+      </div>
+    ) : (
+      /* Placeholder when no offers */
+      <div class="text-center text-[var(--color-text-muted)]">
+        <p>No offers configured yet.</p>
+      </div>
+    )}
+  </div>
+</section>

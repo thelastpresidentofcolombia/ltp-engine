@@ -5,7 +5,7 @@
  * - Verifies Stripe signature (STRIPE_WEBHOOK_SECRET)
  * - Handles checkout.session.completed events
  * - Extracts { operatorId, productId?, offerId? } from session metadata
- * - Sends fulfillment email via Brevo (Sendinblue)
+ * - Sends fulfillment email via shared sendAccessEmail function
  * - Returns 500 on fulfillment failure (triggers Stripe retry)
  * 
  * REQUIRED ENV VARS:
@@ -18,6 +18,7 @@
 
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
+import { sendAccessEmail, sendEmailBrevo, type AccessEmailResource } from '../../lib/email/sendAccessEmail';
 
 // Astro 5: API routes must explicitly opt out of prerendering
 export const prerender = false;
@@ -25,46 +26,6 @@ export const prerender = false;
 // Initialize Stripe
 const stripeSecretKey = import.meta.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
-
-// ============================================================
-// BREVO EMAIL HELPER (no SDK required)
-// ============================================================
-
-interface EmailParams {
-  from: { name: string; email: string };
-  to: { email: string }[];
-  subject: string;
-  htmlContent: string;
-  bcc?: { email: string }[];
-}
-
-async function sendEmailBrevo(params: EmailParams): Promise<void> {
-  const apiKey = import.meta.env.BREVO_API_KEY;
-  if (!apiKey) {
-    throw new Error('BREVO_API_KEY not configured');
-  }
-
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'api-key': apiKey,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify({
-      sender: params.from,
-      to: params.to,
-      subject: params.subject,
-      htmlContent: params.htmlContent,
-      bcc: params.bcc,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Brevo error (${res.status}): ${text}`);
-  }
-}
 
 // ============================================================
 // WEBHOOK HANDLER
@@ -135,52 +96,37 @@ export const POST: APIRoute = async ({ request }) => {
   const amountTotal = typeof session.amount_total === 'number' ? session.amount_total : null;
   const currency = session.currency?.toUpperCase() ?? 'USD';
 
-  // === BUILD FULFILLMENT EMAIL ===
-  const purchasedLabel = productId 
-    ? `Product: ${itemName || productId}` 
-    : `Offer: ${itemName || offerId}`;
-  
-  const amountStr = amountTotal !== null 
-    ? `${(amountTotal / 100).toFixed(2)} ${currency}` 
-    : `Paid (${currency})`;
-
-  const from = import.meta.env.FULFILLMENT_FROM_EMAIL;
-  if (!from) {
-    console.error('[Webhook] FULFILLMENT_FROM_EMAIL not configured');
-    return new Response('Fulfillment not configured', { status: 500 });
-  }
-
-  const bcc = import.meta.env.FULFILLMENT_BCC_EMAIL || undefined;
+  // === BUILD RESOURCE INFO ===
+  const resourceId = productId || offerId || 'unknown';
+  const resourceLabel = itemName || resourceId;
 
   // === SEND FULFILLMENT EMAIL ===
   try {
     if (customerEmail) {
-      // Send confirmation to customer
-      await sendEmailBrevo({
-        from: { name: 'LoveThisPlace', email: from },
-        to: [{ email: customerEmail }],
-        subject: 'Your purchase is confirmed ✅',
-        bcc: bcc ? [{ email: bcc }] : undefined,
-        htmlContent: `
-          <div style="font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;line-height:1.6;max-width:600px;margin:0 auto;padding:24px">
-            <h2 style="color:#1a1a1a;margin-bottom:16px">Payment received ✅</h2>
-            <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:16px">
-              <p style="margin:0 0 8px 0"><strong>${purchasedLabel}</strong></p>
-              <p style="margin:0 0 8px 0"><strong>Amount:</strong> ${amountStr}</p>
-              <p style="margin:0"><strong>Order ID:</strong> ${session.id}</p>
-            </div>
-            <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0" />
-            <p style="color:#666;font-size:14px">
-              This is your confirmation. Fulfillment is being processed.
-            </p>
-          </div>
-        `,
+      // Get origin from request for portal URL
+      const origin = new URL(request.url).origin;
+      
+      // Build resource for email
+      const resources: AccessEmailResource[] = [{
+        operatorId: operatorId!,
+        resourceId,
+        resourceLabel,
+      }];
+      
+      // Send "Your access is ready" email via shared function
+      await sendAccessEmail({
+        toEmail: customerEmail,
+        resources,
+        portalUrl: `${origin}/portal`,
       });
 
       console.log(`[Webhook] Fulfillment email sent to ${customerEmail} for ${operatorId}/${productId || offerId}`);
     } else {
       // No customer email — send internal notification only
-      if (bcc) {
+      const from = import.meta.env.FULFILLMENT_FROM_EMAIL;
+      const bcc = import.meta.env.FULFILLMENT_BCC_EMAIL;
+      
+      if (bcc && from) {
         await sendEmailBrevo({
           from: { name: 'LTP Engine', email: from },
           to: [{ email: bcc }],
@@ -190,8 +136,7 @@ export const POST: APIRoute = async ({ request }) => {
               <h2 style="color:#1a1a1a;margin-bottom:16px">Checkout completed ✅</h2>
               <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:16px">
                 <p style="margin:0 0 8px 0"><strong>Operator:</strong> ${operatorId}</p>
-                <p style="margin:0 0 8px 0"><strong>${purchasedLabel}</strong></p>
-                <p style="margin:0 0 8px 0"><strong>Amount:</strong> ${amountStr}</p>
+                <p style="margin:0 0 8px 0"><strong>Resource:</strong> ${resourceLabel}</p>
                 <p style="margin:0"><strong>Session:</strong> ${session.id}</p>
               </div>
               <p style="color:#b91c1c;font-size:14px">

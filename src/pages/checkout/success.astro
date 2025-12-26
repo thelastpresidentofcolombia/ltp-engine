@@ -191,13 +191,71 @@ const sessionId = Astro.url.searchParams.get('session_id');
     </main>
 
     <script>
-      // Resend email functionality (wires to /api/portal/resend when available)
-      const resendBtn = document.getElementById('resend-btn');
-      const resendStatus = document.getElementById('resend-status');
+      import { auth, onAuthStateChanged } from "../../lib/firebase/client.client";
+      
+      const resendBtn = document.getElementById('resend-btn') as HTMLButtonElement;
+      const resendStatus = document.getElementById('resend-status') as HTMLElement;
+      
+      let isLoggedIn = false;
+      let isLoading = false;
+      
+      // Check auth state
+      onAuthStateChanged(auth, (user) => {
+        isLoggedIn = !!user;
+        if (isLoggedIn) {
+          resendBtn.textContent = 'Resend access email';
+        } else {
+          resendBtn.textContent = 'Sign in to resend';
+        }
+      });
       
       resendBtn?.addEventListener('click', async () => {
-        resendStatus!.textContent = 'This feature is coming soon. Please go to the portal and sign in with your email.';
-        resendStatus!.style.color = '#6b7280';
+        if (isLoading) return;
+        
+        // If not logged in, redirect to portal
+        if (!isLoggedIn) {
+          window.location.href = '/portal';
+          return;
+        }
+        
+        // Try to resend
+        isLoading = true;
+        resendBtn.textContent = 'Sending...';
+        resendBtn.disabled = true;
+        resendStatus.textContent = '';
+        
+        try {
+          const token = await auth.currentUser?.getIdToken();
+          const res = await fetch('/api/portal/resend', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          const data = await res.json();
+          
+          if (data.ok) {
+            resendStatus.textContent = '✅ Email sent! Check your inbox.';
+            resendStatus.style.color = '#16a34a';
+            resendBtn.textContent = 'Email sent';
+            // Keep button disabled for a bit
+            setTimeout(() => {
+              resendBtn.textContent = 'Resend access email';
+              resendBtn.disabled = false;
+            }, 60000); // Match rate limit
+          } else {
+            resendStatus.textContent = data.error || 'Failed to send email.';
+            resendStatus.style.color = '#dc2626';
+            resendBtn.textContent = 'Resend access email';
+            resendBtn.disabled = false;
+          }
+        } catch (err: any) {
+          resendStatus.textContent = 'Network error. Try again.';
+          resendStatus.style.color = '#dc2626';
+          resendBtn.textContent = 'Resend access email';
+          resendBtn.disabled = false;
+        }
+        
+        isLoading = false;
       });
     </script>
   </body>

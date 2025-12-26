@@ -25,6 +25,17 @@ import type {
   PortalBootstrapResponse 
 } from '../../../lib/firebase/types';
 import { getResourceDefinition } from '../../../data/resources';
+import { loadOperatorCore } from '../../../data/operators';
+
+/** Minimal operator branding info for portal cards */
+export interface OperatorBranding {
+  id: string;
+  brandName: string;
+  shortName?: string;
+  logo?: string;
+  avatar?: string;
+  vertical: string;
+}
 
 export const prerender = false;
 
@@ -116,10 +127,21 @@ export const GET: APIRoute = async ({ request }) => {
       };
     });
 
+    // Collect unique operator IDs and get branding info
+    const operatorIds = [...new Set(entitlements.map(e => e.operatorId))];
+    const operators: Record<string, OperatorBranding> = {};
+    for (const opId of operatorIds) {
+      const branding = loadOperatorCore(opId);
+      if (branding) {
+        operators[opId] = branding;
+      }
+    }
+
     const response: PortalBootstrapResponse = {
       user,
       memberships,
       entitlements: entitlements as any, // Type coercion for timestamp conversion
+      operators, // NEW: operator branding info for portal cards
       engineVersion: ENGINE_VERSION,
     };
 

@@ -1,12 +1,187 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.6.0  
+> **Version:** 1.7.0  
 > **Last Updated:** December 26, 2025  
-> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Firebase Auth ✅ | Client Portal ✅ | Entitlements ✅ | Production Ready 🚀
+> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Firebase Auth ✅ | Client Portal ✅ | Entitlements ✅ | Gated Content ✅ | Email Delivery ✅ | Production Ready 🚀
 
 ---
 
 ## 📋 Changelog
+
+### v1.7.0 (December 26, 2025) — Resource Contract + Premium Email Pipeline
+
+#### 🚀 MAJOR MILESTONE: Entitlements Now Deliver Actual Content
+
+The payment pipeline is now **complete end-to-end**:
+
+```
+Buy → Stripe → Webhook → Entitlement → Email 
+    → Portal Login → Click Entitlement → Gated Content Page
+```
+
+**Phase 1 & 2 Complete:** Users can now pay, receive a premium email, log in, and access their purchased content.
+
+#### 🎫 Resource Contract v1 (Phase 1)
+
+Defines **what an entitlement delivers** (not just what was bought):
+
+| Action Type | Portal Click Result |
+|-------------|---------------------|
+| `page` | Navigate to `/portal/r/{operatorId}/{resourceId}` |
+| `download` | Navigate to gated page (download button there) |
+| `external` | Open external URL in new tab |
+| `embed` | Navigate to gated page (embed renders there) |
+
+**New Files:**
+- `src/types/resources.ts` — Resource Contract types (`ResourceDefinition`, `ResourceAction`, etc.)
+- `src/data/resources/index.ts` — Static registry (`getResourceDefinition()`, `getAllResourcePaths()`)
+- `src/data/resources/fitness-demo/index.ts` — Demo operator resources with content
+
+**Architecture:**
+```
+ResourceDefinition {
+  id: "product-foundation"
+  label: "Foundation Protocol"
+  action: { type: "page" }
+  content: { title, hero, sections[], downloads[] }
+}
+```
+
+#### 🔒 Gated Resource Pages (Phase 1)
+
+New route: `/portal/r/[operatorId]/[resourceId]`
+
+| Feature | Status |
+|---------|--------|
+| Auth check (Firebase) | ✅ |
+| Entitlement verification | ✅ |
+| Content rendering by action type | ✅ |
+| Access denied for unauthorized | ✅ |
+
+**Files:**
+- `src/pages/portal/r/[operatorId]/[resourceId].astro` — Gated route (SSG with client auth)
+- `src/lib/portal/resourcePage.client.ts` — Client controller
+
+**Key Pattern:** Server passes resource definition to client via `data-resource` JSON attribute (no client-side server imports).
+
+#### 🔗 Portal → Gated Pages Wiring (Phase 1.5)
+
+Portal entitlement cards are now **clickable links**:
+
+| Before | After |
+|--------|-------|
+| Static cards showing `resourceId` | Clickable cards with labels, descriptions, arrows |
+| No navigation | Click → correct gated page or external URL |
+
+**Changes:**
+- `src/pages/api/portal/bootstrap.ts` — Enriches entitlements with `resource.label`, `resource.description`, `resource.action`
+- `src/lib/portal/portal.client.ts` — Added `resolveEntitlementHref()`, renders `<a>` cards
+- `src/pages/portal.astro` — Added clickable card styles
+
+#### ✅ Branded Checkout Pages (Phase 2.0)
+
+New success/cancel pages replace query-param-on-landing-page pattern:
+
+| URL | Purpose |
+|-----|---------|
+| `/checkout/success` | Payment confirmed → Check email → Go to Portal |
+| `/checkout/cancel` | Reassurance (no charge) → Go Back / Return Home |
+
+**Success Page Includes:**
+1. ✅ Animated checkmark
+2. Step 1: Check your email
+3. Step 2: Sign in to portal
+4. Big "Go to Portal" button
+5. "Resend access email" button
+
+**Files:**
+- `src/pages/checkout/success.astro`
+- `src/pages/checkout/cancel.astro`
+- `src/pages/api/checkout.ts` — Updated redirect URLs
+
+#### 📧 Premium Email Pipeline (Phase 2.1)
+
+**Shared Email Function:**
+- `src/lib/email/sendAccessEmail.ts` — Single source of truth for access emails
+
+**Used By:**
+- `/api/stripe/webhook` — Fulfillment after purchase
+- `/api/portal/resend` — User-triggered resend
+
+**Email Template Includes:**
+```
+✓ Your access is ready
+    ↓
+[Go to Portal →] (big CTA button)
+    ↓
+What you have access to:
+  - Operator Name
+    - Resource Label (with description)
+    ↓
+How to access:
+  1. Click "Go to Portal"
+  2. Sign in with this email
+  3. Click any program to start
+```
+
+**Resend Endpoint:**
+- `POST /api/portal/resend` — Requires Firebase auth, 60s rate limit
+- Success page button wired with loading/success/error states
+
+#### 🐛 Critical Bug Fixes
+
+**Firestore Undefined Value Crash:**
+```
+Cannot use "undefined" as a Firestore value (found in field "stripe.customerId")
+```
+- **Cause:** Stripe returns `customer = null` unless explicitly created
+- **Fix:** Added `stripUndefined()` helper to remove undefined values before Firestore writes
+- **File:** `src/pages/api/stripe/webhook.ts`
+
+**Email CTA Pointing to Wrong Domain:**
+```
+lovethisplace.co/portal → 404
+```
+- **Cause:** Webhook had hardcoded `SITE_URL || 'lovethisplace.co'`
+- **Fix:** Use shared `sendAccessEmail()` with `PUBLIC_PORTAL_URL` env var
+- **Default:** `https://ltp-engine.vercel.app/portal`
+
+#### 📁 Files Added This Version
+
+| File | Purpose |
+|------|---------|
+| `src/types/resources.ts` | Resource Contract v1 types |
+| `src/data/resources/index.ts` | Resources registry |
+| `src/data/resources/fitness-demo/index.ts` | Demo operator resources |
+| `src/pages/portal/r/[operatorId]/[resourceId].astro` | Gated resource route |
+| `src/lib/portal/resourcePage.client.ts` | Gated page client controller |
+| `src/pages/checkout/success.astro` | Branded success page |
+| `src/pages/checkout/cancel.astro` | Branded cancel page |
+| `src/lib/email/sendAccessEmail.ts` | Shared access email function |
+| `src/pages/api/portal/resend.ts` | Resend access email endpoint |
+
+#### 📁 Files Modified This Version
+
+| File | Change |
+|------|--------|
+| `src/pages/api/portal/bootstrap.ts` | Enriches entitlements with resource info |
+| `src/lib/portal/portal.client.ts` | Clickable entitlement cards |
+| `src/pages/portal.astro` | Card link styles |
+| `src/pages/api/checkout.ts` | Redirect to branded pages |
+| `src/pages/api/stripe/webhook.ts` | `stripUndefined()`, shared email, correct portal URL |
+| `src/pages/api/webhook.ts` | Uses shared `sendAccessEmail()` |
+
+#### 🌐 Domain Architecture (Recommended)
+
+```
+portal.lovethisplace.co  → LTP Engine (Vercel subdomain)
+ltp-engine.vercel.app    → LTP Engine (default)
+www.lovethisplace.co     → Main LoveThisPlace site (future)
+```
+
+**Env Var:** `PUBLIC_PORTAL_URL=https://portal.lovethisplace.co/portal`
+
+---
 
 ### v1.6.0 (December 26, 2025) — Client Portal + Full Payment Pipeline
 

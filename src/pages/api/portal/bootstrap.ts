@@ -24,6 +24,7 @@ import type {
   UserDoc,
   PortalBootstrapResponse 
 } from '../../../lib/firebase/types';
+import { getResourceDefinition } from '../../../data/resources';
 
 export const prerender = false;
 
@@ -91,9 +92,13 @@ export const GET: APIRoute = async ({ request }) => {
       };
     });
 
-    // Build entitlements array
+    // Build entitlements array with resource action info
     const entitlements = entitlementsSnap.docs.map(doc => {
       const data = doc.data() as EntitlementDoc;
+      
+      // Enrich with resource definition (engine contract: portal gets ready-to-use data)
+      const resource = getResourceDefinition(data.operatorId, data.resourceId);
+      
       return {
         id: doc.id,
         ...data,
@@ -101,6 +106,13 @@ export const GET: APIRoute = async ({ request }) => {
         createdAt: data.createdAt?.toDate?.().toISOString() || null,
         grantedAt: data.grantedAt?.toDate?.().toISOString() || null,
         expiresAt: data.expiresAt?.toDate?.().toISOString() || null,
+        // Resource info for portal rendering
+        resource: resource ? {
+          label: resource.label,
+          description: resource.description,
+          icon: resource.icon,
+          action: resource.action,
+        } : null,
       };
     });
 

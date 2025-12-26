@@ -55,6 +55,31 @@ async function getAuthed(url: string) {
   return res.json();
 }
 
+/**
+ * Resolve entitlement to clickable href based on resource action.
+ * ENGINE CONTRACT: Portal never re-implements routing logic.
+ */
+function resolveEntitlementHref(ent: any): string | null {
+  if (!ent.resource?.action) return null;
+  
+  const action = ent.resource.action;
+  
+  switch (action.type) {
+    case 'page':
+    case 'embed':
+    case 'download':
+      // All these render on gated page
+      return `/portal/r/${ent.operatorId}/${ent.resourceId}`;
+    
+    case 'external':
+      // Direct external link
+      return action.href;
+    
+    default:
+      return null;
+  }
+}
+
 async function completeEmailLinkIfPresent() {
   const href = window.location.href;
 
@@ -128,15 +153,33 @@ async function loadPortal() {
   } else {
     for (const opId of operatorIds) {
       const ents = entitlementsByOperator[opId];
-      const items = ents.map(e => `
-        <div class="entitlement-item">
-          <div>
-            <div class="entitlement-type">${e.type}</div>
-            <div class="entitlement-resource">${e.resourceId}</div>
-          </div>
-          <div class="status-active">${e.status}</div>
-        </div>
-      `).join("");
+      const items = ents.map(e => {
+        const href = resolveEntitlementHref(e);
+        const label = e.resource?.label || e.resourceId;
+        const description = e.resource?.description || '';
+        const isExternal = e.resource?.action?.type === 'external';
+        
+        if (href) {
+          return `
+            <a href="${href}" class="entitlement-item entitlement-link" ${isExternal ? 'target="_blank" rel="noreferrer"' : ''}>
+              <div>
+                <div class="entitlement-label">${label}</div>
+                ${description ? `<div class="entitlement-desc">${description}</div>` : ''}
+              </div>
+              <div class="entitlement-arrow">${isExternal ? '↗' : '→'}</div>
+            </a>
+          `;
+        } else {
+          return `
+            <div class="entitlement-item entitlement-unavailable">
+              <div>
+                <div class="entitlement-label">${label}</div>
+                <div class="entitlement-desc">Content coming soon</div>
+              </div>
+            </div>
+          `;
+        }
+      }).join("");
 
       entitlementsHtml += `
         <div class="card">

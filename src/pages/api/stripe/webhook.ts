@@ -219,7 +219,9 @@ export const POST: APIRoute = async ({ request }) => {
       uid = userRecord.uid;
       console.log('[Webhook] Resolved uid from Firebase Auth:', uid);
     } catch (err: any) {
-      if (err?.code !== 'auth/user-not-found') {
+      // Expected errors: user-not-found, configuration-not-found (no multi-tenancy)
+      // These are normal for first-time purchasers - we'll create a pending entitlement
+      if (err?.code !== 'auth/user-not-found' && !err?.message?.includes('no configuration')) {
         console.warn('[Webhook] Auth lookup error:', err?.message);
       }
     }

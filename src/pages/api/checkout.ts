@@ -109,9 +109,9 @@ async function createCheckoutSession(
           quantity: 1,
         },
       ],
-      // Success/cancel URLs
-      success_url: `${origin}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}?checkout=cancelled`,
+      // Branded success/cancel pages (not query params on landing page)
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/checkout/cancel`,
       
       // Metadata for webhooks (REQUIRED for /api/stripe/webhook)
       metadata: {

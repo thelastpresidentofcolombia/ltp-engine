@@ -1,0 +1,204 @@
+---
+/**
+ * Checkout Success Page
+ * 
+ * ENGINE CONTRACT:
+ * - Shows after successful Stripe payment
+ * - Receives session_id query param from Stripe redirect
+ * - Tells user: payment confirmed, check email, go to portal
+ * - Optionally verifies session via Stripe API (future)
+ */
+
+export const prerender = false;
+
+// Get session_id from URL (passed by Stripe)
+const sessionId = Astro.url.searchParams.get('session_id');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment Confirmed | LTP Engine</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: linear-gradient(135deg, #f0fdf4 0%, #fafafa 100%);
+        color: #1a1a1a;
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      main {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 32px 20px;
+        text-align: center;
+      }
+      .success-icon {
+        width: 80px;
+        height: 80px;
+        background: #16a34a;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+        animation: pop 0.4s ease-out;
+      }
+      @keyframes pop {
+        0% { transform: scale(0.8); opacity: 0; }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .success-icon svg {
+        width: 40px;
+        height: 40px;
+        color: white;
+      }
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0 0 12px;
+        color: #16a34a;
+      }
+      .subtitle {
+        font-size: 1.1rem;
+        opacity: 0.8;
+        margin: 0 0 32px;
+      }
+      .card {
+        background: white;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 16px;
+        text-align: left;
+      }
+      .card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card p {
+        margin: 0;
+        opacity: 0.8;
+        font-size: 0.95rem;
+      }
+      .step-number {
+        width: 24px;
+        height: 24px;
+        background: #000;
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 16px 24px;
+        border-radius: 12px;
+        border: 0;
+        background: #000;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: opacity 0.2s;
+        margin-top: 8px;
+      }
+      .btn-primary:hover {
+        opacity: 0.85;
+      }
+      .help-section {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid rgba(0,0,0,0.08);
+      }
+      .help-text {
+        font-size: 0.875rem;
+        opacity: 0.6;
+        margin: 0 0 12px;
+      }
+      .btn-ghost {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 10px;
+        border: 1px solid rgba(0,0,0,0.12);
+        background: transparent;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s;
+      }
+      .btn-ghost:hover {
+        background: rgba(0,0,0,0.04);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="success-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      
+      <h1>Payment Confirmed!</h1>
+      <p class="subtitle">Your purchase was successful. Here's what happens next:</p>
+      
+      <div class="card">
+        <h3><span class="step-number">1</span> Check your email</h3>
+        <p>We sent an access link to your email address. It may take a few minutes to arrive.</p>
+      </div>
+      
+      <div class="card">
+        <h3><span class="step-number">2</span> Sign in to your portal</h3>
+        <p>Click the link in your email, or sign in below with the same email you used to purchase.</p>
+      </div>
+      
+      <a href="/portal" class="btn-primary">
+        Go to Portal
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+      
+      <div class="help-section">
+        <p class="help-text">Didn't receive the email? Check your spam folder, or:</p>
+        <button class="btn-ghost" id="resend-btn">Resend access email</button>
+        <div id="resend-status" style="margin-top: 12px; font-size: 0.875rem;"></div>
+      </div>
+    </main>
+
+    <script>
+      // Resend email functionality (wires to /api/portal/resend when available)
+      const resendBtn = document.getElementById('resend-btn');
+      const resendStatus = document.getElementById('resend-status');
+      
+      resendBtn?.addEventListener('click', async () => {
+        resendStatus!.textContent = 'This feature is coming soon. Please go to the portal and sign in with your email.';
+        resendStatus!.style.color = '#6b7280';
+      });
+    </script>
+  </body>
+</html>

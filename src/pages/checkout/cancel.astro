@@ -1,0 +1,157 @@
+---
+/**
+ * Checkout Cancel Page
+ * 
+ * ENGINE CONTRACT:
+ * - Shows when user cancels/abandons Stripe checkout
+ * - Provides clear next steps: retry or contact support
+ * - No payment was taken
+ */
+
+export const prerender = false;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Checkout Cancelled | LTP Engine</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #fafafa;
+        color: #1a1a1a;
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      main {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 32px 20px;
+        text-align: center;
+      }
+      .cancel-icon {
+        width: 64px;
+        height: 64px;
+        background: #f3f4f6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+      }
+      .cancel-icon svg {
+        width: 32px;
+        height: 32px;
+        color: #6b7280;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 12px;
+      }
+      .subtitle {
+        font-size: 1rem;
+        opacity: 0.7;
+        margin: 0 0 32px;
+      }
+      .card {
+        background: white;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 16px;
+        text-align: left;
+      }
+      .card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+      .card p {
+        margin: 0;
+        opacity: 0.8;
+        font-size: 0.95rem;
+      }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 16px 24px;
+        border-radius: 12px;
+        border: 0;
+        background: #000;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: opacity 0.2s;
+      }
+      .btn-primary:hover {
+        opacity: 0.85;
+      }
+      .btn-secondary {
+        display: inline-block;
+        width: 100%;
+        padding: 14px 24px;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.12);
+        background: transparent;
+        font-size: 1rem;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s;
+        margin-top: 12px;
+      }
+      .btn-secondary:hover {
+        background: rgba(0,0,0,0.04);
+      }
+      .reassurance {
+        margin-top: 24px;
+        font-size: 0.875rem;
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="cancel-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </div>
+      
+      <h1>Checkout Cancelled</h1>
+      <p class="subtitle">No payment was taken. Your card has not been charged.</p>
+      
+      <div class="card">
+        <h3>Changed your mind?</h3>
+        <p>No problem. You can return anytime to complete your purchase when you're ready.</p>
+      </div>
+      
+      <a href="javascript:history.back()" class="btn-primary">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+        </svg>
+        Go Back
+      </a>
+      
+      <a href="/" class="btn-secondary">Return to Home</a>
+      
+      <p class="reassurance">
+        Questions? Contact us anytime — we're here to help.
+      </p>
+    </main>
+  </body>
+</html>

@@ -168,33 +168,22 @@
     </main>
 
     <script type="module">
+      import { firebaseAuth } from "../lib/firebase/client";
+      import {
+        isSignInWithEmailLink,
+        sendSignInLinkToEmail,
+        signInWithEmailLink,
+        onAuthStateChanged,
+        signOut,
+      } from "firebase/auth";
+
       const root = document.getElementById("portal-root");
 
       function render(html) {
         root.innerHTML = html;
       }
 
-      // Early init check - Firebase must be configured
-      let firebaseAuth;
-      let isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink, onAuthStateChanged, signOut;
-      
-      try {
-        const client = await import("../lib/firebase/client");
-        firebaseAuth = client.firebaseAuth;
-        
-        const authModule = await import("firebase/auth");
-        isSignInWithEmailLink = authModule.isSignInWithEmailLink;
-        sendSignInLinkToEmail = authModule.sendSignInLinkToEmail;
-        signInWithEmailLink = authModule.signInWithEmailLink;
-        onAuthStateChanged = authModule.onAuthStateChanged;
-        signOut = authModule.signOut;
-        
-        console.log("[Portal] Firebase loaded OK");
-      } catch (e) {
-        console.error("[Portal] Firebase init failed:", e);
-        render(`<div class="card"><p class="error">Authentication service unavailable. Please try again later.<br/><small>${e?.message || ""}</small></p></div>`);
-        throw e; // Stop execution
-      }
+      console.log("[Portal] Firebase client loaded, auth:", !!firebaseAuth);
 
       function getEmailFromStorage() {
         return window.localStorage.getItem("ltp_portal_email") || "";

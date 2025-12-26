@@ -21,6 +21,7 @@ import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { db, auth, Collections, Subcollections } from '../../../lib/firebase/admin';
 import { normalizeEmail, hashEmail, serverTimestamp, nowTimestamp, ENGINE_VERSION } from '../../../lib/firebase/utils';
+import { sendAccessEmail, type AccessEmailResource } from '../../../lib/email/sendAccessEmail';
 import type { 
   EntitlementDoc, 
   PendingEntitlementDoc, 
@@ -71,46 +72,6 @@ function stripUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
   return Object.fromEntries(
     Object.entries(obj).filter(([_, v]) => v !== undefined)
   ) as Partial<T>;
-}
-
-// ============================================================
-// BREVO EMAIL HELPER
-// ============================================================
-
-interface EmailParams {
-  from: { name: string; email: string };
-  to: { email: string }[];
-  subject: string;
-  htmlContent: string;
-  bcc?: { email: string }[];
-}
-
-async function sendEmailBrevo(params: EmailParams): Promise<void> {
-  const apiKey = import.meta.env.BREVO_API_KEY;
-  if (!apiKey) {
-    throw new Error('BREVO_API_KEY not configured');
-  }
-
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'api-key': apiKey,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify({
-      sender: params.from,
-      to: params.to,
-      subject: params.subject,
-      htmlContent: params.htmlContent,
-      bcc: params.bcc,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Brevo error (${res.status}): ${text}`);
-  }
 }
 
 // ============================================================
@@ -406,40 +367,24 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // === SEND FULFILLMENT EMAIL ===
-  const from = import.meta.env.FULFILLMENT_FROM_EMAIL;
-  const bcc = import.meta.env.FULFILLMENT_BCC_EMAIL;
+  // Use shared sendAccessEmail for consistent premium template
+  // ENGINE INVARIANT: Portal URL defaults to engine domain until custom domains configured
+  const portalUrl = import.meta.env.PUBLIC_PORTAL_URL || 'https://ltp-engine.vercel.app/portal';
 
-  if (from && customerEmail) {
+  if (customerEmail) {
     try {
       const itemName = session.metadata?.itemName || resourceId;
-      const amountStr = `${(amountTotal / 100).toFixed(2)} ${currency.toUpperCase()}`;
-      const portalLink = uid 
-        ? `${import.meta.env.SITE_URL || 'https://lovethisplace.co'}/portal`
-        : `${import.meta.env.SITE_URL || 'https://lovethisplace.co'}/portal?claim=true`;
+      
+      const resources: AccessEmailResource[] = [{
+        operatorId,
+        resourceId,
+        resourceLabel: itemName,
+      }];
 
-      await sendEmailBrevo({
-        from: { name: 'LoveThisPlace', email: from },
-        to: [{ email: customerEmail }],
-        subject: 'Your purchase is confirmed ✅',
-        bcc: bcc ? [{ email: bcc }] : undefined,
-        htmlContent: `
-          <div style="font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;line-height:1.6;max-width:600px;margin:0 auto;padding:24px">
-            <h2 style="color:#1a1a1a;margin-bottom:16px">Payment received ✅</h2>
-            <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin-bottom:16px">
-              <p style="margin:0 0 8px 0"><strong>Product:</strong> ${itemName}</p>
-              <p style="margin:0 0 8px 0"><strong>Amount:</strong> ${amountStr}</p>
-              <p style="margin:0"><strong>Order ID:</strong> ${session.id}</p>
-            </div>
-            <a href="${portalLink}" style="display:inline-block;background:#000;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
-              Access Your Purchase →
-            </a>
-            ${!uid ? '<p style="color:#666;font-size:14px">Sign in with this email to access your content.</p>' : ''}
-            <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0" />
-            <p style="color:#666;font-size:12px">
-              Order ID: ${session.id}
-            </p>
-          </div>
-        `,
+      await sendAccessEmail({
+        toEmail: customerEmail,
+        resources,
+        portalUrl,
       });
 
       console.log('[Webhook] Fulfillment email sent to:', customerEmail);

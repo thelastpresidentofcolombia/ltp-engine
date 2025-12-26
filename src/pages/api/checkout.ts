@@ -23,8 +23,21 @@ import Stripe from 'stripe';
 // Astro 5: API routes must explicitly opt out of prerendering
 export const prerender = false;
 
-// Initialize Stripe (will fail gracefully if key missing)
-const stripeSecretKey = import.meta.env.STRIPE_SECRET_KEY;
+// ============================================================
+// STRIPE TEST/LIVE MODE SUPPORT
+// Production defaults to LIVE unless explicitly forced to test
+// ============================================================
+const mode = (import.meta.env.STRIPE_MODE || '').toLowerCase();
+const isTestMode = mode === 'test' || (mode !== 'live' && import.meta.env.NODE_ENV !== 'production');
+
+const stripeSecretKey = isTestMode
+  ? import.meta.env.STRIPE_TEST_SECRET_KEY
+  : import.meta.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) {
+  console.error(`[Checkout] Missing Stripe secret key for ${isTestMode ? 'test' : 'live'} mode`);
+}
+
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 // Engine version for metadata tracking

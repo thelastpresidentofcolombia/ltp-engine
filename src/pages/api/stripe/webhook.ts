@@ -35,8 +35,28 @@ import type {
 
 export const prerender = false;
 
-// Initialize Stripe
-const stripeSecretKey = import.meta.env.STRIPE_SECRET_KEY;
+// ============================================================
+// STRIPE TEST/LIVE MODE SUPPORT
+// Production defaults to LIVE unless explicitly forced to test
+// ============================================================
+const mode = (import.meta.env.STRIPE_MODE || '').toLowerCase();
+const isTestMode = mode === 'test' || (mode !== 'live' && import.meta.env.NODE_ENV !== 'production');
+
+const stripeSecretKey = isTestMode
+  ? import.meta.env.STRIPE_TEST_SECRET_KEY
+  : import.meta.env.STRIPE_SECRET_KEY;
+
+const stripeWebhookSecret = isTestMode
+  ? import.meta.env.STRIPE_TEST_WEBHOOK_SECRET
+  : import.meta.env.STRIPE_WEBHOOK_SECRET;
+
+if (!stripeSecretKey) {
+  console.error(`[Webhook] Missing Stripe secret key for ${isTestMode ? 'test' : 'live'} mode`);
+}
+if (!stripeWebhookSecret) {
+  console.error(`[Webhook] Missing Stripe webhook secret for ${isTestMode ? 'test' : 'live'} mode`);
+}
+
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 // ============================================================
@@ -101,8 +121,7 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response('Missing Stripe signature', { status: 400 });
   }
 
-  const webhookSecret = import.meta.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
+  if (!stripeWebhookSecret) {
     console.error('[Webhook] STRIPE_WEBHOOK_SECRET not configured');
     return new Response('Webhook not configured', { status: 500 });
   }
@@ -111,7 +130,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const rawBody = await request.text();
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    event = stripe.webhooks.constructEvent(rawBody, sig, stripeWebhookSecret);
   } catch (err: any) {
     console.error('[Webhook] Signature verification failed:', err?.message);
     return new Response(`Webhook signature verification failed`, { status: 400 });

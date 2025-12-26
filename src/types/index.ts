@@ -21,6 +21,9 @@ export * from './tours';
 export * from './presentation';
 export * from './nomenclature';
 
+// Resource/Entitlement types
+export * from './resources';
+
 // Utility types
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];

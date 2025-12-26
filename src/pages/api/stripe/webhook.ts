@@ -60,6 +60,20 @@ if (!stripeWebhookSecret) {
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 // ============================================================
+// HELPERS
+// ============================================================
+
+/**
+ * Strip undefined values from object before Firestore write.
+ * ENGINE INVARIANT: Firestore rejects undefined values.
+ */
+function stripUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  ) as Partial<T>;
+}
+
+// ============================================================
 // BREVO EMAIL HELPER
 // ============================================================
 
@@ -278,18 +292,21 @@ export const POST: APIRoute = async ({ request }) => {
       // 2. Update user doc
       const userRef = db.collection(Collections.USERS).doc(uid);
       const userDoc = await userRef.get();
+      const existingData = userDoc.data();
       
       if (userDoc.exists) {
-        batch.update(userRef, {
+        // Use stripUndefined to prevent Firestore crash on undefined values
+        const updateData = stripUndefined({
           updatedAt: now,
-          'stripe.customerId': stripeCustomerId || userDoc.data()?.stripe?.customerId,
-          'stripe.subscriptionId': stripeSubscriptionId || userDoc.data()?.stripe?.subscriptionId,
-          'stripe.status': mode === 'subscription' ? 'active' : userDoc.data()?.stripe?.status,
-          'totals.totalSpentCents': (userDoc.data()?.totals?.totalSpentCents || 0) + amountTotal,
+          'stripe.customerId': stripeCustomerId || existingData?.stripe?.customerId,
+          'stripe.subscriptionId': stripeSubscriptionId || existingData?.stripe?.subscriptionId,
+          'stripe.status': mode === 'subscription' ? 'active' : existingData?.stripe?.status,
+          'totals.totalSpentCents': (existingData?.totals?.totalSpentCents || 0) + amountTotal,
           'totals.lastPurchaseAt': now,
         });
+        batch.update(userRef, updateData);
       } else {
-        // Create user doc
+        // Create user doc - use stripUndefined for stripe sub-object
         batch.set(userRef, {
           uid,
           email: customerEmail,
@@ -297,11 +314,11 @@ export const POST: APIRoute = async ({ request }) => {
           createdAt: now,
           updatedAt: now,
           profile: {},
-          stripe: {
+          stripe: stripUndefined({
             customerId: stripeCustomerId,
             subscriptionId: stripeSubscriptionId,
             status: mode === 'subscription' ? 'active' : 'none',
-          },
+          }),
           totals: {
             totalSpentCents: amountTotal,
             lastPurchaseAt: now,

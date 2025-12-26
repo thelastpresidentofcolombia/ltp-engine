@@ -1,14 +1,108 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.5.0  
-> **Last Updated:** December 23, 2025  
-> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Brevo Email ✅ | Tours Vertical ✅ | Token-Driven Theming ✅
+> **Version:** 1.6.0  
+> **Last Updated:** December 26, 2025  
+> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Firebase Auth ✅ | Client Portal ✅ | Entitlements ✅ | Production Ready 🚀
 
 ---
 
 ## 📋 Changelog
 
-### v1.5.0 (December 23, 2025) — Engine-First Token System
+### v1.6.0 (December 26, 2025) — Client Portal + Full Payment Pipeline
+
+#### 🚀 PRODUCTION MILESTONE: Complete Money → Access Loop
+
+The LTP Engine now has a **complete end-to-end payment pipeline**:
+
+```
+Customer clicks "Buy" → Stripe Checkout → Payment → Webhook (200 OK) 
+    → Pending Entitlement → Fulfillment Email → Portal Login 
+    → Claim Entitlement → Access Dashboard
+```
+
+**This is a viable business.** The entire flow is live and tested in production.
+
+#### 🔐 Firebase Authentication (Client Portal)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Magic Link (Passwordless) | ✅ Working | No passwords, just email links |
+| Email Link Sign-In | ✅ Working | Firebase `signInWithEmailLink` |
+| Session Persistence | ✅ Working | Stays logged in across refreshes |
+| Authorized Domains | ✅ Configured | `ltp-engine.vercel.app` + Vercel preview URLs |
+| Sign Out | ✅ Working | Clears session correctly |
+
+#### 🎫 Entitlements System (Firebase Firestore)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Pending Entitlements | ✅ Working | Created by webhook for new users |
+| Claim on Login | ✅ Working | `POST /api/portal/claim` moves pending → user |
+| Bootstrap API | ✅ Working | `GET /api/portal/bootstrap` returns user + entitlements |
+| Multi-Operator | ✅ Working | Entitlements grouped by `operatorId` |
+
+**Firestore Structure:**
+```
+users/{uid}/entitlements/{entId}
+pendingEntitlements/{email_operatorId_resourceId}
+```
+
+#### 🌐 Client Portal (`/portal`)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Login UI | ✅ Working | Clean card-based design |
+| Email Link Flow | ✅ Working | "Check your email" → click → signed in |
+| Entitlements Dashboard | ✅ Working | Shows operator, resource, status |
+| Empty State | ✅ Working | "No active programs" message |
+| Error Handling | ✅ Working | Displays API errors gracefully |
+
+#### 🔧 Technical: Astro + Firebase Client Bundling
+
+**Problem Solved:** Browsers cannot resolve bare module specifiers like `"firebase/auth"`. Astro's `<script>` tag bundling is required.
+
+**Solution:**
+```
+src/lib/firebase/client.client.ts  → Firebase SDK + auth functions (bundled)
+src/lib/portal/portal.client.ts    → Portal logic (bundled)
+src/pages/portal.astro             → <script>import "../lib/portal/portal.client"</script>
+```
+
+**Build Output:** `portal.astro...js 172.30 kB` — Firebase properly bundled.
+
+#### 💳 Stripe Test/Live Mode Support
+
+| Env Var | Purpose |
+|---------|---------|
+| `STRIPE_MODE` | `test` or `live` (defaults to live in production) |
+| `STRIPE_TEST_SECRET_KEY` | Test mode API key |
+| `STRIPE_LIVE_SECRET_KEY` | Live mode API key |
+| `STRIPE_TEST_WEBHOOK_SECRET` | Test mode webhook signature |
+| `STRIPE_LIVE_WEBHOOK_SECRET` | Live mode webhook signature |
+
+**Logic:** `STRIPE_MODE=test` forces test mode. In production without explicit mode, defaults to live (safe).
+
+#### 📧 Fulfillment Email (Brevo)
+
+Triggered by webhook after successful payment:
+- Subject: "Your access is ready"
+- Contains portal link
+- Sent via Brevo API (`BREVO_API_KEY`)
+
+#### 📁 Files Added/Modified
+
+**New Files:**
+- `src/lib/firebase/client.client.ts` — Browser-bundled Firebase SDK
+- `src/lib/firebase/admin.ts` — Server-side Firebase Admin SDK
+- `src/lib/portal/portal.client.ts` — Portal client logic (auth, claim, bootstrap)
+- `src/pages/portal.astro` — Client portal page
+- `src/pages/api/portal/claim.ts` — Claims pending entitlements for user
+- `src/pages/api/portal/bootstrap.ts` — Returns user data + entitlements
+- `src/pages/api/stripe/webhook.ts` — Stripe webhook with idempotency
+
+**Modified Files:**
+- `src/pages/api/checkout.ts` — Added GET support, test/live mode, slug param
+- `src/components/skins/fitness/components/ProductsFitness.astro` — Fixed checkout URL
 
 #### 🎨 Token-Driven Theming (Zero Hardcoding)
 Major architectural fix: All background colors now flow from operator `vibe.tokens` through CSS variables.
@@ -163,14 +257,88 @@ Complete implementation of the tours/nightlife vertical with 11 custom modules:
 
 | Gap | Status | Notes |
 |-----|--------|-------|
+| **Client Portal** | ✅ Complete | `/portal` with Firebase Auth + entitlements dashboard |
+| **Firebase Auth** | ✅ Complete | Magic link sign-in, session persistence, authorized domains |
+| **Entitlements System** | ✅ Complete | Pending → claim → user flow, multi-operator support |
+| **Payment Pipeline** | ✅ Complete | Stripe → webhook → entitlement → email → portal |
 | **Token-driven backgrounds** | ✅ Complete | All skins use `bg-engine-*` classes, no hardcoded colors |
-| **Offers not engine-first** | ✅ Complete | `resolveOfferAction()` + OffersConsultancy.astro wired |
+| **Offers engine-first** | ✅ Complete | `resolveOfferAction()` + OffersConsultancy.astro wired |
 | **Schema.org FAQPage** | ✅ Complete | `buildFaqJsonLd.ts` + EngineLayout injection |
 | **Tours TypeScript contracts** | ✅ Complete | `src/types/tours.ts` + validation enforcement |
 | **WhatsApp floating button** | ✅ Complete | Engine-wide, accent-color matched |
-| **Stripe Connect** | 🔄 Planned | Current: checkoutUrl-first; Target: split payouts + webhooks |
+| **Stripe Connect** | 🔄 Planned | Current: direct checkout; Target: split payouts |
 | **Zod runtime validation** | 🔄 Planned | Build-time validation exists via scripts |
 | **Fitness skin components** | 🔄 Partial | Uses consultancy skin as fallback |
+| **Portal UI polish** | 🔄 Planned | Basic functional, needs design refinement |
+| **Admin/Coach dashboard** | 🔄 Planned | Manual Firestore edits for now |
+
+---
+
+## 🚀 Business Viability Status
+
+### What's Live and Working (Production)
+
+| Capability | Status | Evidence |
+|------------|--------|----------|
+| Landing pages | ✅ Live | `ltp-engine.vercel.app/en/v/fitness/demo` |
+| Stripe checkout | ✅ Live | Real test purchases completed |
+| Payment webhooks | ✅ Live | 200 OK responses, entitlements created |
+| Email fulfillment | ✅ Live | Brevo sends "Your access is ready" |
+| Client portal | ✅ Live | `ltp-engine.vercel.app/portal` |
+| Firebase auth | ✅ Live | Magic link sign-in working |
+| Entitlements | ✅ Live | Claims work, dashboard shows access |
+
+### Revenue-Ready Checklist
+
+| Requirement | Status |
+|-------------|--------|
+| Accept payments | ✅ Stripe Checkout |
+| Deliver access | ✅ Entitlements + Portal |
+| Customer authentication | ✅ Firebase Magic Link |
+| Fulfillment notification | ✅ Brevo Email |
+| Multi-operator support | ✅ Data-driven |
+| Multi-language | ✅ en/es |
+
+**Bottom Line:** You can charge money and deliver digital access TODAY.
+
+### 🎯 Next Steps (Product Decisions)
+
+These are no longer debugging tasks — they're business/product choices:
+
+#### Immediate (Polish)
+
+| Task | Priority | Effort |
+|------|----------|--------|
+| Portal UI design | Medium | 2-4 hrs |
+| Email branding (custom domain) | Medium | 1 hr |
+| Error state improvements | Low | 1 hr |
+| Loading skeletons | Low | 1 hr |
+
+#### Short-Term (Features)
+
+| Task | Priority | Effort |
+|------|----------|--------|
+| Entitlement → action mapping | High | 2-4 hrs |
+| *What happens when user clicks a program? Link to content, embed, redirect?* |
+| Operator-specific portal routes | Medium | 2-3 hrs |
+| *`/portal/fitness-demo` instead of generic `/portal`* |
+| Subscription support | Medium | 4-8 hrs |
+| *Stripe subscriptions + recurring entitlements* |
+| Content delivery | High | Varies |
+| *Where does the actual program content live?* |
+
+#### Medium-Term (Scale)
+
+| Task | Priority | Effort |
+|------|----------|--------|
+| Admin/coach dashboard | High | 8-16 hrs |
+| *Grant entitlements, view customers, manage access* |
+| Stripe Connect | Medium | 8-16 hrs |
+| *Multi-operator payouts (platform fee model)* |
+| Rate limiting | Medium | 2-4 hrs |
+| *Protect API endpoints* |
+| Analytics | Low | 2-4 hrs |
+| *Track conversions, portal usage* |
 
 ---
 

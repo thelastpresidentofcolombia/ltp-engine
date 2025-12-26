@@ -1,12 +1,48 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.7.0  
-> **Last Updated:** December 26, 2025  
-> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Firebase Auth ✅ | Client Portal ✅ | Entitlements ✅ | Gated Content ✅ | Email Delivery ✅ | Production Ready 🚀
+> **Version:** 1.8.0  
+> **Last Updated:** December 27, 2025  
+> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Firebase Auth ✅ | Client Portal ✅ | Entitlements ✅ | Gated Content ✅ | Email Delivery ✅ | Portal UX ✅ | Production Ready 🚀
 
 ---
 
 ## 📋 Changelog
+
+### v1.8.0 (December 27, 2025) — Portal UX Polish (Phase 2.3)
+
+#### 🎨 Premium SaaS Portal Experience
+
+Portal now looks like a polished product, not a prototype:
+
+| Feature | Before | After |
+|---------|--------|-------|
+| Loading | Plain "Loading..." text | Skeleton cards with shimmer animation |
+| Operator Cards | Just operator ID | Logo/avatar, brand name, tagline |
+| Status | No indicator | Pills: Active (green), Expired (red) |
+| Empty State | Plain text | Icon, title, helpful description |
+| User Header | Just email | Avatar with initials, styled layout |
+| Sections | No header | "Your Access" with item count |
+
+**New Files:**
+- `src/data/operators/index.ts` — Operator branding registry for portal
+
+**Updated Files:**
+- `src/pages/portal.astro` — Premium CSS with skeletons, pills, cards
+- `src/lib/portal/portal.client.ts` — Renders operator branding, status pills, empty states
+- `src/pages/api/portal/bootstrap.ts` — Now includes `operators` object with branding
+
+**Visual Features:**
+```
+✨ Skeleton loaders with shimmer animation
+🏢 Operator logos (or initial avatar fallback)  
+💚 Status pills (Active/Expired)
+👤 User avatar with initials
+📦 Premium empty state
+🔢 Section headers with item counts
+📱 Responsive mobile layout
+```
+
+---
 
 ### v1.7.0 (December 26, 2025) — Resource Contract + Premium Email Pipeline
 

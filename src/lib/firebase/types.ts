@@ -306,5 +306,15 @@ export interface PortalBootstrapResponse {
   };
   memberships: Array<{ operatorId: string; status: MembershipStatus }>;
   entitlements: EntitlementDoc[];
+  operators?: Record<string, {
+    id: string;
+    brandName: string;
+    shortName?: string;
+    tagline?: string;
+    logo?: string;
+    avatar?: string;
+    vertical: string;
+    accentColor?: string;
+  }>;
   engineVersion: string;
 }

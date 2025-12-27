@@ -11,8 +11,6 @@
  * 2. Add to OPERATOR_BRANDING map below
  */
 
-import type { OperatorCore, OperatorLang } from '@/types/operator';
-
 // ============================================================
 // OPERATOR IMPORTS
 // ============================================================
@@ -50,11 +48,9 @@ export interface OperatorBranding {
 
 /**
  * Build branding info from core + lang data
+ * Using 'any' for params since operator JSON structures vary by vertical
  */
-function buildBranding(
-  core: typeof fitnessDemoCore,
-  lang: typeof fitnessDemoLang
-): OperatorBranding {
+function buildBranding(core: any, lang: any): OperatorBranding {
   return {
     id: core.id,
     brandName: (lang as any).brand?.name || core.id,

@@ -80,6 +80,29 @@ function resolveEntitlementHref(ent: any): string | null {
   }
 }
 
+/**
+ * Get destination from URL query param for deep linking
+ */
+function getDestFromUrl(): string | null {
+  const u = new URL(window.location.href);
+  const dest = u.searchParams.get("dest");
+  if (!dest) return null;
+
+  // Basic safety: allow only same-site paths
+  if (!dest.startsWith("/")) return null;
+  return dest;
+}
+
+/**
+ * Clear destination param from URL after using it
+ */
+function clearDestFromUrl() {
+  const u = new URL(window.location.href);
+  u.searchParams.delete("dest");
+  // Keep current pathname but strip dest param
+  window.history.replaceState({}, document.title, `${u.pathname}${u.search}${u.hash}`);
+}
+
 async function completeEmailLinkIfPresent() {
   const href = window.location.href;
 
@@ -96,9 +119,15 @@ async function completeEmailLinkIfPresent() {
   await signInWithEmailLink(auth, email, href);
 
   clearEmailStorage();
-  // After completing sign-in, strip query params but keep the
-  // current base path (works for /en/portal locally and /portal in prod).
-  window.history.replaceState({}, document.title, window.location.pathname);
+  // After completing sign-in, strip Firebase auth params BUT keep any "dest" for deep linking
+  const u = new URL(window.location.href);
+  
+  // Firebase adds auth params; we only keep "dest" if present
+  const dest = u.searchParams.get("dest");
+  const clean = new URL(window.location.origin + window.location.pathname);
+  if (dest) clean.searchParams.set("dest", dest);
+  
+  window.history.replaceState({}, document.title, clean.pathname + clean.search);
 }
 
 async function sendLink(email: string) {
@@ -177,6 +206,14 @@ async function loadPortal() {
   const data = await getAuthed("/api/portal/bootstrap");
   console.log("[Portal] Bootstrap data:", data);
 
+  // 0) If a deep link destination was provided, go there first
+  const dest = getDestFromUrl();
+  if (dest) {
+    clearDestFromUrl();
+    window.location.href = dest;
+    return;
+  }
+
   // Group entitlements by operator
   const entitlementsByOperator: Record<string, any[]> = {};
   for (const ent of data.entitlements || []) {
@@ -186,10 +223,24 @@ async function loadPortal() {
     entitlementsByOperator[ent.operatorId].push(ent);
   }
 
+  const entitlements = data.entitlements || [];
+  const totalEntitlements = entitlements.length;
+
+  // Prefer redirecting to an "active purchase" experience:
+  // - If exactly 1 entitlement: go straight into it (clean UX)
+  // - If multiple: show purchases list view (current implementation)
+  if (totalEntitlements === 1) {
+    const singleEntitlement = entitlements[0];
+    const entitlementHref = resolveEntitlementHref(singleEntitlement);
+    if (entitlementHref) {
+      window.location.href = entitlementHref;
+      return;
+    }
+  }
+
   // Build entitlements HTML
   let entitlementsHtml = "";
   const operatorIds = Object.keys(entitlementsByOperator);
-  const totalEntitlements = data.entitlements?.length || 0;
 
   if (operatorIds.length === 0) {
     // Premium empty state
@@ -198,116 +249,29 @@ async function loadPortal() {
         <div class="empty-state">
           <div class="empty-icon">📦</div>
           <h3 class="empty-title">No Active Access Yet</h3>
-          <p class="empty-desc">
-            Once you purchase a program or get access granted, your content will appear here.
-          </p>
+          <p class="empty-description">Your purchases will appear here once activated.</p>
         </div>
       </div>
     `;
   } else {
-    for (const opId of operatorIds) {
-      const ents = entitlementsByOperator[opId];
-      const branding = data.operators?.[opId];
-      const brandName = branding?.brandName || opId;
-      const tagline = branding?.tagline || '';
-      
-      const items = ents.map(e => {
-        const href = resolveEntitlementHref(e);
-        const label = e.resource?.label || e.resourceId;
-        const description = e.resource?.description || '';
-        const isExternal = e.resource?.action?.type === 'external';
-        const expired = isExpired(e);
-        
-        if (href && !expired) {
-          return `
-            <a href="${href}" class="entitlement-link" ${isExternal ? 'target="_blank" rel="noreferrer"' : ''}>
-              <div class="entitlement-item">
-                <div class="entitlement-content">
-                  <div class="entitlement-label">
-                    ${label}
-                    ${getStatusPillHtml(e)}
-                  </div>
-                  ${description ? `<div class="entitlement-desc">${description}</div>` : ''}
-                </div>
-                <div class="entitlement-arrow">${isExternal ? '↗' : '→'}</div>
-              </div>
-            </a>
-          `;
-        } else if (expired) {
-          return `
-            <div class="entitlement-item entitlement-unavailable">
-              <div class="entitlement-content">
-                <div class="entitlement-label">
-                  ${label}
-                  ${getStatusPillHtml(e)}
-                </div>
-                <div class="entitlement-desc">Access has expired</div>
-              </div>
-            </div>
-          `;
-        } else {
-          return `
-            <div class="entitlement-item entitlement-unavailable">
-              <div class="entitlement-content">
-                <div class="entitlement-label">${label}</div>
-                <div class="entitlement-desc">Content coming soon</div>
-              </div>
-            </div>
-          `;
-        }
-      }).join("");
-
-      entitlementsHtml += `
-        <div class="card operator-card">
-          <div class="operator-header">
-            ${getOperatorAvatarHtml(branding)}
-            <div class="operator-info">
-              <div class="operator-name">${brandName}</div>
-              ${tagline ? `<div class="operator-tagline">${tagline}</div>` : ''}
-            </div>
-          </div>
-          <div class="operator-entitlements">
-            ${items}
-          </div>
-        </div>
-      `;
+    // Render grouped entitlements
+    for (const operatorId of operatorIds) {
+      const operatorEntitlements = entitlementsByOperator[operatorId];
+      entitlementsHtml += `<div class="operator-group">`;
+      for (const ent of operatorEntitlements) {
+        const entitlementHref = resolveEntitlementHref(ent);
+        entitlementsHtml += `
+          <a href="${entitlementHref}" class="entitlement-card">
+            <div class="entitlement-title">${ent.resource?.title || "Untitled"}</div>
+            ${getStatusPillHtml(ent)}
+          </a>
+        `;
+      }
+      entitlementsHtml += `</div>`;
     }
   }
 
-  // Get user initials for avatar
-  const userEmail = data.user?.email || "";
-  const userInitials = getInitials(userEmail);
-
-  // Render portal
-  render(`
-    <div class="user-header">
-      <div class="user-info">
-        <div class="user-avatar">${userInitials}</div>
-        <div>
-          <div class="user-label">Signed in as</div>
-          <div class="user-email">${userEmail}</div>
-        </div>
-      </div>
-      <button id="logout" class="btn-ghost">Log out</button>
-    </div>
-
-    <div class="section-header">
-      <h3 class="section-title">Your Programs & Access</h3>
-      ${totalEntitlements > 0 ? `<span class="section-count">${totalEntitlements} item${totalEntitlements !== 1 ? 's' : ''}</span>` : ''}
-    </div>
-    ${entitlementsHtml}
-
-    <div class="card help-card">
-      <h3>Need Help? 💬</h3>
-      <p>Contact your coach directly via WhatsApp or email for support.</p>
-    </div>
-  `);
-
-  // Logout handler
-  document.getElementById("logout")?.addEventListener("click", async () => {
-    await signOut(auth);
-    window.location.reload();
-  });
+  render(entitlementsHtml);
 }
 
 function renderLogin() {

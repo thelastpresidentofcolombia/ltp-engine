@@ -3,6 +3,7 @@
  * 
  * ENGINE CONTRACT:
  * - portal.lovethisplace.co root (/) → redirect to /portal
+ * - portal.lovethisplace.co/en/ or /es/ → redirect to /portal
  * - All other routes pass through unchanged
  * 
  * WHY: Clean UX for portal subdomain without duplicating /portal/portal
@@ -15,8 +16,9 @@ export const onRequest: MiddlewareHandler = async ({ request }, next) => {
 
   const isPortalDomain = url.hostname === 'portal.lovethisplace.co';
   const isRootPath = url.pathname === '/';
+  const isLangRootPath = /^\/(en|es)\/?$/.test(url.pathname);
 
-  if (isPortalDomain && isRootPath) {
+  if (isPortalDomain && (isRootPath || isLangRootPath)) {
     return Response.redirect(
       new URL('/portal', url.origin),
       302

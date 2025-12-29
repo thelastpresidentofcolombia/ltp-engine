@@ -98,7 +98,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // === SEND EMAIL ===
     const origin = new URL(request.url).origin;
-    const portalUrl = `${origin}/portal`;
+    const portalUrl = import.meta.env.PUBLIC_PORTAL_URL || `${origin}/portal`;
     
     await sendAccessEmail({
       toEmail: email,
@@ -109,7 +109,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Update rate limit timestamp
     lastResendByUid[uid] = now;
 
-    console.log(`[Resend] Email sent to ${email} with ${resources.length} resources`);
+    console.log(`[Resend] Email sent to ${email} with ${resources.length} resources (portalUrl=${portalUrl})`);
 
     return jsonResponse({ ok: true });
 

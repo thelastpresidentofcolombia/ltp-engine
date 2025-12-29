@@ -103,7 +103,7 @@ export const POST: APIRoute = async ({ request }) => {
   // === SEND FULFILLMENT EMAIL ===
   try {
     if (customerEmail) {
-      // Get origin from request for portal URL
+      // Get origin from request for fallback portal URL
       const origin = new URL(request.url).origin;
       
       // Build resource for email
@@ -114,10 +114,12 @@ export const POST: APIRoute = async ({ request }) => {
       }];
       
       // Send "Your access is ready" email via shared function
+      const portalUrl = import.meta.env.PUBLIC_PORTAL_URL || `${origin}/portal`;
+
       await sendAccessEmail({
         toEmail: customerEmail,
         resources,
-        portalUrl: `${origin}/portal`,
+        portalUrl,
       });
 
       console.log(`[Webhook] Fulfillment email sent to ${customerEmail} for ${operatorId}/${productId || offerId}`);

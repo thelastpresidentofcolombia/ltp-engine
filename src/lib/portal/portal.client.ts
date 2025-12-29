@@ -96,12 +96,16 @@ async function completeEmailLinkIfPresent() {
   await signInWithEmailLink(auth, email, href);
 
   clearEmailStorage();
-  window.history.replaceState({}, document.title, "/portal");
+  // After completing sign-in, strip query params but keep the
+  // current base path (works for /en/portal locally and /portal in prod).
+  window.history.replaceState({}, document.title, window.location.pathname);
 }
 
 async function sendLink(email: string) {
   const actionCodeSettings = {
-    url: `${window.location.origin}/portal`,
+    // Send magic link back to the exact path the user is on
+    // (e.g. /en/portal in dev, /portal in production).
+    url: `${window.location.origin}${window.location.pathname}`,
     handleCodeInApp: true,
   };
 
@@ -288,7 +292,7 @@ async function loadPortal() {
     </div>
 
     <div class="section-header">
-      <h3 class="section-title">Your Access</h3>
+      <h3 class="section-title">Your Programs & Access</h3>
       ${totalEntitlements > 0 ? `<span class="section-count">${totalEntitlements} item${totalEntitlements !== 1 ? 's' : ''}</span>` : ''}
     </div>
     ${entitlementsHtml}

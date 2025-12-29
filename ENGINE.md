@@ -21,7 +21,7 @@ Portal now looks like a polished product, not a prototype:
 | Status | No indicator | Pills: Active (green), Expired (red) |
 | Empty State | Plain text | Icon, title, helpful description |
 | User Header | Just email | Avatar with initials, styled layout |
-| Sections | No header | "Your Access" with item count |
+| Sections | No header | "Your Programs & Access" with item count |
 
 **New Files:**
 - `src/data/operators/index.ts` — Operator branding registry for portal

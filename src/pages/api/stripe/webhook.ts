@@ -368,7 +368,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   // === SEND FULFILLMENT EMAIL ===
   // Use shared sendAccessEmail for consistent premium template
-  // ENGINE INVARIANT: Portal URL defaults to engine domain until custom domains configured
+  // ENGINE INVARIANT: Portal URL uses PUBLIC_PORTAL_URL root when configured,
+  // falling back to the engine domain /portal route.
   const portalUrl = import.meta.env.PUBLIC_PORTAL_URL || 'https://ltp-engine.vercel.app/portal';
 
   if (customerEmail) {

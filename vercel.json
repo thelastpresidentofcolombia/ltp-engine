@@ -5,31 +5,37 @@
     {
       "source": "/",
       "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
-      "destination": "/portal",
+      "destination": "/en/portal",
       "permanent": false
     },
     {
       "source": "/en",
       "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
-      "destination": "/portal",
+      "destination": "/en/portal",
       "permanent": false
     },
     {
       "source": "/en/",
       "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
-      "destination": "/portal",
+      "destination": "/en/portal",
       "permanent": false
     },
     {
       "source": "/es",
       "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
-      "destination": "/portal",
+      "destination": "/es/portal",
       "permanent": false
     },
     {
       "source": "/es/",
       "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
-      "destination": "/portal",
+      "destination": "/es/portal",
+      "permanent": false
+    },
+    {
+      "source": "/portal",
+      "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
+      "destination": "/en/portal",
       "permanent": false
     }
   ]

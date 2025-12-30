@@ -1,4 +1,36 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "astro"
+  "framework": "astro",
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
+      "destination": "/portal",
+      "permanent": false
+    },
+    {
+      "source": "/en",
+      "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
+      "destination": "/portal",
+      "permanent": false
+    },
+    {
+      "source": "/en/",
+      "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
+      "destination": "/portal",
+      "permanent": false
+    },
+    {
+      "source": "/es",
+      "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
+      "destination": "/portal",
+      "permanent": false
+    },
+    {
+      "source": "/es/",
+      "has": [{ "type": "host", "value": "portal.lovethisplace.co" }],
+      "destination": "/portal",
+      "permanent": false
+    }
+  ]
 }

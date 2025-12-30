@@ -8,6 +8,8 @@
  * Route: /en/ or /es/
  */
 
+export const prerender = true;
+
 import type { GetStaticPaths } from 'astro';
 import { SUPPORTED_LANGUAGES, LANGUAGE_NAMES, seoConfig, getAlternateLanguage, buildUrl } from '@config/seo';
 import type { SupportedLanguage } from '@/types/operator';

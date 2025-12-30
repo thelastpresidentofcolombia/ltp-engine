@@ -4,9 +4,8 @@ import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
-  // Astro 5: static output now supports on-demand rendering per-page
-  // API routes and pages with export const prerender = false will be serverless
-  output: 'static',
+  // Astro 5: Use server output to enable middleware on all routes including static pages
+  output: 'server',
   adapter: vercel(),
   
   // i18n configuration for multilingual support

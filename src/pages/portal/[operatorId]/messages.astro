@@ -1,0 +1,680 @@
+---
+/**
+ * /portal/messages — Messaging Page
+ *
+ * ENGINE CONTRACT:
+ * - Two-panel layout: conversation list (left) + message thread (right)
+ * - Realtime message updates via Firestore onSnapshot
+ * - All mutations through API routes (full guard stack)
+ * - Feature-gated: hidden if 'messaging' not in resolved features
+ * - "Start conversation" if no conversations exist
+ * - Mobile: full-width panels with slide transition
+ *
+ * UX v1 SCOPE:
+ *   ✅ Conversation list
+ *   ✅ Message thread
+ *   ✅ Send box (text only)
+ *   ✅ Unread badges
+ *   ✅ "Start conversation" if none exist
+ *   ✅ Realtime message delivery
+ *   ⬜ Attachments (v2)
+ *   ⬜ Typing indicators (v2)
+ *   ⬜ Reactions (v2)
+ */
+import PortalLayout from '@/layouts/PortalLayout.astro';
+import { getIcon } from '@/lib/ui/icons';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Messages" activeSection="messaging" operatorId={operatorId!}>
+  <div id="messaging-container" class="messaging-container">
+
+    <!-- ── Conversation List Panel ── -->
+    <aside id="convo-list-panel" class="convo-list-panel">
+      <div class="convo-list-header">
+        <h2 class="section-title">Conversations</h2>
+        <button id="btn-new-convo" class="btn-icon" title="New conversation"><Fragment set:html={getIcon('plus', 'btn-icon-svg')} /></button>
+      </div>
+      <div id="convo-list" class="convo-list">
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      </div>
+    </aside>
+
+    <!-- ── Message Thread Panel ── -->
+    <main id="thread-panel" class="thread-panel">
+      <!-- Thread header -->
+      <div id="thread-header" class="thread-header" style="display:none;">
+        <button id="btn-back" class="btn-icon" title="Back to conversations"><Fragment set:html={getIcon('arrow-left', 'btn-icon-svg')} /></button>
+        <div class="thread-header-info">
+          <span id="thread-title" class="thread-title"></span>
+        </div>
+      </div>
+
+      <!-- Messages area -->
+      <div id="thread-messages" class="thread-messages">
+        <div id="thread-empty" class="empty-state">
+          <div class="empty-state-icon"><Fragment set:html={getIcon('message', 'empty-state-svg')} /></div>
+          <div class="empty-state-title">No Conversation Selected</div>
+          <div class="empty-state-desc">Select a conversation to start messaging</div>
+        </div>
+      </div>
+
+      <!-- Send box -->
+      <div id="send-box" class="send-box" style="display:none;">
+        <input
+          id="message-input"
+          type="text"
+          class="message-input"
+          placeholder="Type a message…"
+          maxlength="2000"
+          autocomplete="off"
+        />
+        <button id="btn-send" class="btn-send" title="Send">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </div>
+    </main>
+  </div>
+</PortalLayout>
+
+<style is:global>
+  /* ── Container: two-panel flex layout ── */
+  .messaging-container {
+    display: flex;
+    height: calc(100vh - 80px);
+    overflow: hidden;
+    background: var(--portal-bg, #0d0d12);
+    border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    border-radius: 12px;
+  }
+
+  /* ── Conversation List Panel ── */
+  .convo-list-panel {
+    width: 320px;
+    min-width: 280px;
+    border-right: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    display: flex;
+    flex-direction: column;
+    background: var(--portal-surface, #1a1a2e);
+  }
+  .convo-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1rem 0.75rem;
+    border-bottom: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+  }
+  .convo-list-header .section-title { margin: 0; }
+  .convo-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+  }
+
+  /* ── Conversation Item ── */
+  .convo-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    color: var(--portal-text, #ececf1);
+    transition: all var(--portal-transition, 150ms ease-out);
+    margin-bottom: 2px;
+  }
+  .convo-item:hover {
+    background: rgba(255,255,255,0.04);
+  }
+  .convo-item:focus-visible {
+    outline: 2px solid var(--portal-accent, #6366f1);
+    outline-offset: 2px;
+  }
+  .convo-item.active {
+    background: rgba(99,102,241,0.12);
+    border-color: rgba(99,102,241,0.25);
+  }
+  .convo-item-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--portal-bg, #0d0d12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .convo-item-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .convo-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .convo-item-preview {
+    font-size: 0.8rem;
+    color: var(--portal-text-secondary, #9da0b0);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .convo-badge {
+    background: var(--portal-accent, #6366f1);
+    color: var(--portal-bg, #0d0d12);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  /* ── Thread Panel ── */
+  .thread-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .thread-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    background: var(--portal-surface, #1a1a2e);
+  }
+  #btn-back {
+    display: none; /* shown on mobile via media query */
+  }
+  .thread-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--portal-text, #ececf1);
+  }
+
+  /* ── Messages Area ── */
+  .thread-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* ── Message Bubbles ── */
+  .message {
+    display: flex;
+    max-width: 75%;
+  }
+  .message-mine {
+    align-self: flex-end;
+  }
+  .message-theirs {
+    align-self: flex-start;
+  }
+  .message-bubble {
+    padding: 0.6rem 0.9rem;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .message-mine .message-bubble {
+    background: var(--portal-accent, #6366f1);
+    color: var(--portal-bg, #0d0d12);
+    border-bottom-right-radius: 4px;
+  }
+  .message-theirs .message-bubble {
+    background: var(--portal-surface, #1a1a2e);
+    color: var(--portal-text, #ececf1);
+    border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    border-bottom-left-radius: 4px;
+  }
+  .message-text {
+    white-space: pre-wrap;
+  }
+  .message-time {
+    font-size: 0.65rem;
+    margin-top: 4px;
+    opacity: 0.6;
+  }
+  .message-mine .message-time {
+    text-align: right;
+    color: rgba(13,13,18,0.6);
+  }
+  .message-theirs .message-time {
+    color: var(--portal-text-secondary, #9da0b0);
+  }
+
+  /* ── Send Box ── */
+  .send-box {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    background: var(--portal-surface, #1a1a2e);
+  }
+  .message-input {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--portal-border-strong, rgba(255,255,255,0.12));
+    background: var(--portal-bg, #0d0d12);
+    color: var(--portal-text, #ececf1);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color var(--portal-transition, 150ms ease-out),
+                box-shadow var(--portal-transition, 150ms ease-out);
+  }
+  .message-input:focus {
+    border-color: var(--portal-accent, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
+  .message-input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  }
+  .message-input::placeholder {
+    color: var(--portal-text-muted, #6b7280);
+  }
+  .btn-send {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--portal-accent, #6366f1);
+    color: var(--portal-bg, #0d0d12);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--portal-transition, 150ms ease-out),
+                transform var(--portal-transition, 150ms ease-out),
+                opacity var(--portal-transition, 150ms ease-out);
+    flex-shrink: 0;
+  }
+  .btn-send:hover { background: var(--portal-accent-hover, #818cf8); }
+  .btn-send:active { transform: scale(0.93); }
+  .btn-send:focus-visible {
+    outline: 2px solid var(--portal-accent, #6366f1);
+    outline-offset: 2px;
+  }
+  .btn-send:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+  /* ── Empty & Loading States ── */
+  /* empty-state, skeleton-row, shimmer → portal-system.css */
+  .loading-messages {
+    text-align: center;
+    color: var(--portal-text-secondary, #9da0b0);
+    padding: 2rem;
+  }
+
+  /* ── SVG Icon Sizing ── */
+  .btn-icon-svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+  .convo-avatar-icon {
+    width: 22px;
+    height: 22px;
+    stroke: var(--portal-text-secondary, #9da0b0);
+  }
+  .alert-icon-svg {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    stroke: var(--portal-error, #ef4444);
+  }
+
+  /* ── Mobile Responsive ── */
+  @media (max-width: 768px) {
+    .convo-list-panel {
+      width: 100%;
+      min-width: 0;
+    }
+    .thread-panel {
+      display: none;
+    }
+    .messaging-container.show-thread .convo-list-panel {
+      display: none;
+    }
+    .messaging-container.show-thread .thread-panel {
+      display: flex;
+    }
+    #btn-back {
+      display: flex;
+    }
+    .messaging-container {
+      height: calc(100vh - 80px - 70px);
+    }
+    .btn-send {
+      width: 44px;
+      height: 44px;
+    }
+    .message-input {
+      min-height: 44px;
+      font-size: 1rem;
+    }
+    .convo-item {
+      min-height: 56px;
+    }
+  }
+</style>
+
+<script>
+  import { initPortal } from '@/lib/portal/portalAuth.client';
+  import { getIcon, emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
+  import {
+    listConversations,
+    getOrCreateConversation,
+    subscribeToMessages,
+    sendMessage,
+    markConversationRead,
+  } from '@/lib/portal/messaging.client';
+  import type { PortalBootstrapV2 } from '@/types/portal';
+  import type { ConversationSummary, MessageDoc } from '@/types/messaging';
+
+  // ── State ──
+  let bootstrap: PortalBootstrapV2;
+  let conversations: ConversationSummary[] = [];
+  let activeConvoId: string | null = null;
+  let unsubscribeMessages: (() => void) | null = null;
+
+  // ============================================================
+  // INIT
+  // ============================================================
+
+  async function init() {
+    try {
+      bootstrap = await initPortal();
+
+      if (!bootstrap.features.includes('messaging')) {
+        const container = document.getElementById('messaging-container');
+        if (container) {
+          container.innerHTML =
+            emptyStateHtml({ icon: 'shield', title: 'Messaging Not Available', desc: 'Messaging is not enabled for your account. Contact your coach for access.' });
+        }
+        return;
+      }
+
+      await refreshConversations();
+    } catch (err) {
+      console.error('[Messaging] Init failed:', err);
+      const container = document.getElementById('messaging-container');
+      if (container) {
+        container.innerHTML =
+          errorStateHtml({ title: 'Unable to Load Messages', desc: 'Something went wrong. Please try again.', retry: { label: 'Reload Page', id: 'btn-reload-messages' } });
+        document.getElementById('btn-reload-messages')?.addEventListener('click', () => location.reload());
+      }
+    }
+  }
+
+  // ============================================================
+  // CONVERSATION LIST
+  // ============================================================
+
+  async function refreshConversations() {
+    try {
+      conversations = await listConversations();
+      renderConversationList();
+
+      // Auto-select first conversation if none active
+      if (conversations.length > 0 && !activeConvoId) {
+        selectConversation(conversations[0].id);
+      }
+    } catch (err) {
+      console.error('[Messaging] Load conversations failed:', err);
+      const list = document.getElementById('convo-list');
+      if (list) {
+        list.innerHTML = errorStateHtml({ title: 'Could Not Load', desc: 'Failed to load conversations.', retry: { label: 'Retry', id: 'btn-retry-convos' } });
+        document.getElementById('btn-retry-convos')?.addEventListener('click', () => refreshConversations());
+      }
+    }
+  }
+
+  function renderConversationList() {
+    const list = document.getElementById('convo-list')!;
+
+    if (conversations.length === 0) {
+      list.innerHTML = emptyStateHtml({ icon: 'message', title: 'No Conversations', desc: 'Start your first conversation with your coach!', action: { label: 'Start a Conversation', id: 'btn-start-first' } });
+      document.getElementById('btn-start-first')?.addEventListener('click', startNewConversation);
+      return;
+    }
+
+    list.innerHTML = conversations.map((c) => `
+      <button class="convo-item ${c.id === activeConvoId ? 'active' : ''}" data-convo-id="${c.id}">
+        <div class="convo-item-avatar">${getIcon('message', 'convo-avatar-icon')}</div>
+        <div class="convo-item-content">
+          <div class="convo-item-name">${escapeHtml(c.operatorBrandName)}</div>
+          <div class="convo-item-preview">${escapeHtml(c.lastMessagePreview || 'No messages yet')}</div>
+        </div>
+        ${c.unreadCount > 0 ? `<span class="convo-badge">${c.unreadCount}</span>` : ''}
+      </button>
+    `).join('');
+
+    // Bind click handlers
+    list.querySelectorAll('.convo-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const id = (item as HTMLElement).dataset.convoId;
+        if (id) selectConversation(id);
+      });
+    });
+  }
+
+  // ============================================================
+  // CONVERSATION SELECTION + REALTIME
+  // ============================================================
+
+  async function selectConversation(convoId: string) {
+    // Unsubscribe from previous conversation
+    if (unsubscribeMessages) {
+      unsubscribeMessages();
+      unsubscribeMessages = null;
+    }
+
+    activeConvoId = convoId;
+    renderConversationList(); // highlight active
+
+    // Show thread UI
+    const convo = conversations.find((c) => c.id === convoId);
+    const headerEl = document.getElementById('thread-header')!;
+    const titleEl = document.getElementById('thread-title')!;
+    const sendBoxEl = document.getElementById('send-box')!;
+    const emptyEl = document.getElementById('thread-empty');
+    const messagesEl = document.getElementById('thread-messages')!;
+
+    headerEl.style.display = 'flex';
+    titleEl.textContent = convo?.operatorBrandName || 'Conversation';
+    sendBoxEl.style.display = 'flex';
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    // Show loading state
+    messagesEl.innerHTML = '<div class="loading-messages">Loading messages…</div>';
+
+    // Subscribe to realtime messages via Firestore onSnapshot
+    // First snapshot = initial load. Subsequent = realtime updates.
+    unsubscribeMessages = subscribeToMessages(convoId, (messages) => {
+      renderMessages(messages);
+    });
+
+    // Mark as read if there are unreads
+    if (convo && convo.unreadCount > 0) {
+      markConversationRead(convoId).catch(console.error);
+      convo.unreadCount = 0;
+      renderConversationList();
+    }
+
+    // Mobile: show thread panel
+    document.getElementById('messaging-container')!.classList.add('show-thread');
+
+    // Focus input
+    setTimeout(() => {
+      (document.getElementById('message-input') as HTMLInputElement)?.focus();
+    }, 100);
+  }
+
+  // ============================================================
+  // MESSAGE RENDERING
+  // ============================================================
+
+  function renderMessages(messages: MessageDoc[]) {
+    const container = document.getElementById('thread-messages')!;
+
+    if (messages.length === 0) {
+      container.innerHTML = emptyStateHtml({ icon: 'wave', title: 'No Messages Yet', desc: 'Say hello to start the conversation!' });
+      return;
+    }
+
+    container.innerHTML = messages.map((msg) => {
+      const isMe = msg.senderUid === bootstrap.actor.uid;
+      const time = formatTime(msg.createdAt);
+      return `
+        <div class="message ${isMe ? 'message-mine' : 'message-theirs'}">
+          <div class="message-bubble">
+            <div class="message-text">${escapeHtml(msg.body)}</div>
+            <div class="message-time">${time}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Scroll to bottom (latest message)
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // ============================================================
+  // SEND MESSAGE
+  // ============================================================
+
+  async function handleSend() {
+    const input = document.getElementById('message-input') as HTMLInputElement;
+    const text = input.value.trim();
+    if (!text || !activeConvoId) return;
+
+    // Clear input immediately for snappy feel
+    input.value = '';
+    input.focus();
+
+    try {
+      await sendMessage(activeConvoId, text);
+      // onSnapshot will pick up the new message automatically.
+      // Also refresh conversation list to update preview + order.
+      refreshConversations().catch(console.error);
+    } catch (err: any) {
+      console.error('[Messaging] Send failed:', err);
+      // Restore text so user can retry
+      input.value = text;
+      // Show inline error
+      const messagesEl = document.getElementById('thread-messages')!;
+      const errorEl = document.createElement('div');
+      errorEl.className = 'message message-mine';
+      errorEl.innerHTML = `
+        <div class="message-bubble" style="background:rgba(239,68,68,0.2);color:var(--portal-error, #ef4444);border:1px solid rgba(239,68,68,0.3);">
+          <div class="message-text">${getIcon('alert', 'alert-icon-svg')} Failed to send. Press Enter to retry.</div>
+        </div>
+      `;
+      messagesEl.appendChild(errorEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+  }
+
+  // ============================================================
+  // NEW CONVERSATION
+  // ============================================================
+
+  async function startNewConversation() {
+    const opId = bootstrap.actor.operatorIds[0];
+    if (!opId) {
+      const list = document.getElementById('convo-list');
+      if (list) {
+        list.innerHTML = emptyStateHtml({ icon: 'alert', title: 'No Operator Found', desc: 'Your account is not linked to an operator.' });
+      }
+      return;
+    }
+
+    try {
+      const convo = await getOrCreateConversation(opId);
+      await refreshConversations();
+      selectConversation(convo.id);
+    } catch (err: any) {
+      console.error('[Messaging] Start conversation failed:', err);
+      const list = document.getElementById('convo-list');
+      if (list) {
+        list.innerHTML = errorStateHtml({ title: 'Could Not Start Conversation', desc: err.message || 'Please try again.', retry: { label: 'Retry', id: 'btn-retry-new-convo' } });
+        document.getElementById('btn-retry-new-convo')?.addEventListener('click', () => startNewConversation());
+      }
+    }
+  }
+
+  // ============================================================
+  // EVENT WIRING
+  // ============================================================
+
+  document.getElementById('btn-send')?.addEventListener('click', handleSend);
+
+  document.getElementById('message-input')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  });
+
+  document.getElementById('btn-new-convo')?.addEventListener('click', startNewConversation);
+
+  document.getElementById('btn-back')?.addEventListener('click', () => {
+    document.getElementById('messaging-container')!.classList.remove('show-thread');
+    // Don't clear activeConvoId — keep it highlighted in list
+  });
+
+  // ============================================================
+  // FORMATTING HELPERS
+  // ============================================================
+
+  function formatTime(iso: string): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+
+    if (isToday) {
+      return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    const isThisYear = d.getFullYear() === now.getFullYear();
+    if (isThisYear) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+        ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) +
+      ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function escapeHtml(s: string): string {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ── Kick off ──
+  init();
+</script>
+

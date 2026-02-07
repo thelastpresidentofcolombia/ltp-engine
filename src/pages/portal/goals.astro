@@ -1,0 +1,10 @@
+---
+export const prerender = false;
+---
+<html><head><meta charset="UTF-8" /><title>Redirecting…</title></head><body>
+<script is:inline>
+(function(){var o;try{o=sessionStorage.getItem('cp:lastOperatorId')}catch(e){}if(!o){try{var r=sessionStorage.getItem('ltp_portal_bootstrap');if(r){var d=JSON.parse(r).data,k=d&&d.operators?Object.keys(d.operators):[];if(k.length===1)o=k[0]}}catch(e){}}var p=window.location.pathname.replace(/^\/portal\/?/,'');if(o){window.location.replace('/portal/'+o+'/'+p+window.location.search+window.location.hash)}else{window.location.replace('/portal')}})();
+</script>
+<noscript><meta http-equiv="refresh" content="0;url=/portal" /></noscript>
+<p style="font-family:system-ui;color:#888;text-align:center;margin-top:40vh;">Redirecting…</p>
+</body></html>

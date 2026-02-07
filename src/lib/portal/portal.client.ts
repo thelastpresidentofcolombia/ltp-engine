@@ -14,6 +14,7 @@ import {
   onAuthStateChanged,
   signOut,
 } from "../firebase/client.client";
+import { getIcon } from '../ui/icons';
 
 const root = document.getElementById("portal-root");
 
@@ -246,7 +247,7 @@ async function loadPortal() {
     entitlementsHtml = `
       <div class="card">
         <div class="empty-state">
-          <div class="empty-icon">📦</div>
+          <div class="empty-icon">${getIcon('package', 'empty-icon-svg')}</div>
           <h3 class="empty-title">No Active Access Yet</h3>
           <p class="empty-desc">
             Once you purchase a program or get access granted, your content will appear here.
@@ -279,7 +280,7 @@ async function loadPortal() {
                   </div>
                   ${description ? `<div class="entitlement-desc">${description}</div>` : ''}
                 </div>
-                <div class="entitlement-arrow">${isExternal ? '↗' : '→'}</div>
+                <div class="entitlement-arrow">${isExternal ? getIcon('external-link', 'arrow-icon') : getIcon('arrow-right', 'arrow-icon')}</div>
               </div>
             </a>
           `;
@@ -348,7 +349,7 @@ async function loadPortal() {
     ${entitlementsHtml}
 
     <div class="card help-card">
-      <h3>Need Help? 💬</h3>
+      <h3>Need Help? ${getIcon('message', 'help-icon')}</h3>
       <p>Contact your coach directly via WhatsApp or email for support.</p>
     </div>
   `);
@@ -363,7 +364,7 @@ async function loadPortal() {
 function renderLogin() {
   render(`
     <div class="card">
-      <h3 style="text-transform: none; letter-spacing: normal; font-size: 1.25rem; color: #0f172a;">Welcome Back ✨</h3>
+      <h3 style="text-transform: none; letter-spacing: normal; font-size: 1.25rem; color: #0f172a;">Welcome Back ${getIcon('sparkle', 'welcome-icon')}</h3>
       <p>Get a magic link sent to your email — no password needed.</p>
       <input id="email" type="email" placeholder="you@email.com" />
       <button id="send" class="btn-primary">Send login link</button>

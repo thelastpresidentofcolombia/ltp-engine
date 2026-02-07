@@ -11,6 +11,10 @@
     "preview": "astro preview",
     "astro": "astro",
     "validate": "tsx scripts/validate-operators.ts && tsx scripts/validate-vibes.ts",
+    "canary": "tsx scripts/validate-canary.ts",
+    "canary:selftest": "tsx scripts/validate-canary.selftest.ts",
+    "gate": "npm run validate && npm run canary && astro check && astro build",
+    "gate:strict": "tsx scripts/gate-strict.ts",
     "prebuild": "npm run validate",
     "lint": "eslint src --ext .ts,.astro",
     "format": "prettier --write ."

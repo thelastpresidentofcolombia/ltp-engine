@@ -1,0 +1,1020 @@
+---
+/**
+ * /portal/dashboard — Client Dashboard Page (v2 — Widget-Based Bento)
+ *
+ * ENGINE CONTRACT:
+ * - Astro SSG shell with PortalLayout.
+ * - Dashboard is driven by a widget registry (dashboardWidgets.ts).
+ * - Operator config determines which widgets to show.
+ * - Uses bento grid layout with world-class glass-card design.
+ * - Staff/admin get extra widgets automatically.
+ */
+
+import PortalLayout from '@/layouts/PortalLayout.astro';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Dashboard" activeSection="dashboard" operatorId={operatorId!}>
+  <style is:global>
+    /* ========================================
+       SECTIONAL LAYOUT
+       ======================================== */
+    .dash-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    /* Tier 1: Hero (Focus) */
+    .dash-hero {
+      width: 100%;
+      padding-bottom: 8px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .dash-hero .w-cell {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      overflow: visible;
+      padding: 0;
+    }
+    .dash-hero .w-welcome {
+      background: transparent;
+      padding: 0;
+      border: none;
+    }
+    .dash-hero .w-welcome::before { display: none; }
+    .dash-hero .w-welcome-greeting {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(to right, #ececf1, #9da0b0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .dash-hero .w-welcome-sub {
+      font-size: 1rem;
+      margin-top: 6px;
+    }
+    .dash-hero .w-welcome-avatar { display: none; }
+    .dash-hero .w-mini-stat {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      padding: 12px 16px;
+      border-radius: var(--portal-radius, 14px);
+      min-width: 100px;
+    }
+    .dash-hero .w-welcome-stats { gap: 12px; }
+
+    /* ========================================
+       POLYMORPHIC HERO — Vertical Dispatched
+       ======================================== */
+
+    /* Shared hero layout */
+    .dash-hero .hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .dash-hero .hero-intro {
+      flex: 1;
+      min-width: 0;
+    }
+    .dash-hero .hero-next {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      border-radius: var(--portal-radius-sm, 8px);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--portal-text-secondary, #9da0b0);
+    }
+    .dash-hero .hero-next-icon {
+      display: flex;
+      color: var(--portal-accent, #6366f1);
+    }
+    .dash-hero .hero-next-icon svg { width: 16px; height: 16px; }
+
+    /* Fitness Hero: Engagement Ring + Metric Cards */
+    .dash-hero .hero-ring-wrap {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      flex-shrink: 0;
+    }
+    .dash-hero .hero-ring { width: 100%; height: 100%; }
+    .hero-ring-fg {
+      animation: hero-ring-fill 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s backwards;
+    }
+    @keyframes hero-ring-fill {
+      from { stroke-dashoffset: 339.29; }
+    }
+    .dash-hero .hero-ring-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .dash-hero .hero-ring-val {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--portal-text, #ececf1);
+      line-height: 1;
+    }
+    .dash-hero .hero-ring-val small {
+      font-size: 0.7em;
+      font-weight: 600;
+      opacity: 0.7;
+    }
+    .dash-hero .hero-ring-state {
+      font-size: 0.95rem !important;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .dash-hero .hero-ring-sub {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--portal-text-secondary, #9da0b0);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+    .dash-hero .hero-metrics {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .dash-hero .hero-metric {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      border-radius: var(--portal-radius, 14px);
+      text-align: center;
+      text-decoration: none;
+      transition: all var(--portal-transition, 150ms ease-out);
+    }
+    .dash-hero .hero-metric:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
+    }
+    .dash-hero .hero-metric:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .dash-hero .hero-metric-icon {
+      color: var(--portal-accent, #6366f1);
+      opacity: 0.8;
+    }
+    .dash-hero .hero-metric-icon svg { width: 20px; height: 20px; }
+    .dash-hero .hero-metric-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--portal-text, #ececf1);
+      line-height: 1;
+    }
+    .dash-hero .hero-metric-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--portal-text-secondary, #9da0b0);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Consultancy Hero: Status Badge + Stat Cards */
+    .dash-hero .hero-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      border-radius: 99px;
+      flex-shrink: 0;
+    }
+    .dash-hero .hero-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .dash-hero .hero-status-active .hero-status-dot {
+      background: var(--portal-success, #10b981);
+      box-shadow: 0 0 8px rgba(16,185,129,0.5);
+      animation: hero-pulse 2s ease-in-out infinite;
+    }
+    .dash-hero .hero-status-idle .hero-status-dot {
+      background: var(--portal-warning, #f59e0b);
+      box-shadow: 0 0 8px rgba(245,158,11,0.4);
+    }
+    @keyframes hero-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .dash-hero .hero-status-text {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--portal-text, #ececf1);
+    }
+    .dash-hero .hero-stat-grid {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .dash-hero .hero-stat-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      border-radius: var(--portal-radius, 14px);
+      text-decoration: none;
+      transition: all var(--portal-transition, 150ms ease-out);
+    }
+    .dash-hero .hero-stat-card:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
+    }
+    .dash-hero .hero-stat-card:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .dash-hero .hero-stat-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dash-hero .hero-stat-icon {
+      color: var(--portal-accent, #6366f1);
+      opacity: 0.8;
+    }
+    .dash-hero .hero-stat-icon svg { width: 18px; height: 18px; }
+    .dash-hero .hero-stat-val {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--portal-text, #ececf1);
+      line-height: 1;
+    }
+    .dash-hero .hero-stat-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--portal-text-secondary, #9da0b0);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Hero Responsive */
+    @media (max-width: 768px) {
+      .dash-hero .hero-top { flex-direction: column; gap: 16px; }
+      .dash-hero .hero-ring-wrap { align-self: center; }
+      .dash-hero .hero-metrics,
+      .dash-hero .hero-stat-grid { flex-wrap: wrap; }
+      .dash-hero .hero-metric,
+      .dash-hero .hero-stat-card { min-width: calc(50% - 6px); }
+      .w-action {
+        min-height: 44px;
+        padding: 14px 8px;
+      }
+      .w-goals-cta {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .w-card-inner {
+        padding: 18px;
+      }
+    }
+
+    /* Tier 2: Dock (Action Bar) */
+    .dash-dock .w-cell {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .dash-dock .w-card-header { display: none; }
+    .dash-dock .w-card-inner { padding: 0; }
+    .dash-dock .w-actions-grid {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .dash-dock .w-action {
+      flex-direction: row;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 10px 16px;
+      min-width: auto;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+    .dash-dock .w-action:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-1px);
+    }
+    .dash-dock .w-action-icon {
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border-radius: 0;
+    }
+    .dash-dock .w-action-icon .w-icon-svg { width: 16px; height: 16px; }
+    .dash-dock .w-action span:last-child {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--portal-text);
+    }
+
+    /* Tier 3: Grid (Deep Data) — uses .bento-grid + .bento-* from portal-system.css */
+
+    /* ========================================
+       WIDGET CARD BASE (Glassmorphism Upgrade)
+       ======================================== */
+    .w-cell {
+      background: rgba(255,255,255,0.015);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      border-top: 1px solid var(--portal-border-strong, rgba(255,255,255,0.12));
+      border-radius: 20px;
+      box-shadow: 0 4px 24px -1px rgba(0,0,0,0.15);
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      animation: portal-enter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    }
+    .w-cell:nth-child(1) { animation-delay: 0.05s; }
+    .w-cell:nth-child(2) { animation-delay: 0.1s; }
+    .w-cell:nth-child(3) { animation-delay: 0.15s; }
+    .w-cell:nth-child(4) { animation-delay: 0.2s; }
+    .w-cell:nth-child(5) { animation-delay: 0.25s; }
+    .w-cell:nth-child(6) { animation-delay: 0.3s; }
+
+    /* @keyframes w-enter — deleted, uses portal-enter from portal-system.css */ 
+
+    .w-cell:hover {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.15);
+      border-top-color: rgba(255,255,255,0.25);
+      box-shadow: 0 12px 32px -4px rgba(0,0,0,0.25);
+      transform: translateY(-2px);
+    }
+    .w-cell:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .w-card-inner {
+      padding: 24px;
+    }
+    .w-card-compact .w-card-inner,
+    .w-card-compact {
+      padding: 20px;
+    }
+
+    /* ========================================
+       WELCOME BANNER
+       ======================================== */
+    .w-welcome {
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      background:
+        linear-gradient(135deg,
+          rgba(99,102,241,0.12) 0%,
+          rgba(139,92,246,0.06) 50%,
+          transparent 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .w-welcome::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--w-accent, var(--portal-accent)) 0%, transparent 70%);
+      opacity: 0.06;
+      pointer-events: none;
+    }
+    .w-welcome-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 1;
+    }
+    .w-welcome-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--portal-radius, 14px);
+      background: var(--w-accent, var(--portal-accent));
+      color: var(--portal-bg, #0d0d12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .w-welcome-greeting {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .w-welcome-sub {
+      font-size: 0.85rem;
+      color: var(--portal-text-secondary);
+      margin: 2px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    /* .w-role-badge — deleted, uses .portal-badge.portal-badge-accent from portal-system.css */
+    .w-welcome-stats {
+      display: flex;
+      gap: 20px;
+      z-index: 1;
+    }
+    .w-mini-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .w-mini-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--portal-text);
+      line-height: 1;
+    }
+    .w-mini-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--portal-text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .w-welcome { flex-direction: column; align-items: flex-start; padding: 24px; }
+      .w-welcome-stats { gap: 16px; }
+    }
+
+    /* ========================================
+       CARD HEADERS + ICONOGRAPHY
+       ======================================== */
+    .w-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .w-card-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--portal-radius-sm, 8px);
+      background: rgba(255,255,255,0.04);
+      color: var(--portal-accent);
+      flex-shrink: 0;
+    }
+    .w-icon-svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2px;
+    }
+    .w-card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--portal-text);
+      letter-spacing: -0.01em;
+    }
+    .w-card-empty {
+      color: var(--portal-text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+    .w-card-link {
+      display: inline-block;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--portal-accent);
+      text-decoration: none;
+      transition: opacity var(--portal-transition, 150ms ease-out);
+    }
+    .w-card-link:hover { opacity: 0.8; }
+
+    /* ========================================
+       UPCOMING WIDGET
+       ======================================== */
+    .w-upcoming-time {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--portal-text);
+      margin-top: 4px;
+    }
+    .w-upcoming-full {
+      font-size: 0.8rem;
+      color: var(--portal-text-secondary);
+      margin-top: 2px;
+    }
+    .w-upcoming-count {
+      font-size: 0.75rem;
+      color: var(--portal-text-muted);
+      margin-top: 8px;
+    }
+
+    /* ========================================
+       QUICK ACTIONS
+       ======================================== */
+    .w-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+    }
+    .w-action {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 8px;
+      border-radius: var(--portal-radius, 14px);
+      border: 1px solid rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.015);
+      color: var(--portal-text-secondary);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 500;
+      transition: all var(--portal-transition, 150ms ease-out);
+      text-align: center;
+    }
+    .w-action:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.15);
+      color: var(--portal-text);
+      transform: translateY(-2px);
+    }
+    .w-action:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .w-action-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--portal-radius, 14px);
+      background: rgba(255,255,255,0.05);
+      color: var(--portal-text);
+      transition: color var(--portal-transition, 150ms ease-out), background var(--portal-transition, 150ms ease-out);
+    }
+    .w-action:hover .w-action-icon {
+      background: var(--portal-accent);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+    .w-action-icon .w-icon-svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* ========================================
+       ACTIVITY FEED
+       ======================================== */
+    .w-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .w-feed-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .w-feed-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+    .w-feed-content { flex: 1; }
+    .w-feed-text {
+      font-size: 0.85rem;
+      color: var(--portal-text);
+    }
+    .w-feed-time {
+      font-size: 0.75rem;
+      color: var(--portal-text-muted);
+      margin-top: 1px;
+    }
+    .w-feed-empty {
+      color: var(--portal-text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
+      padding: 12px 0;
+    }
+
+    /* ========================================
+       METRICS SNAPSHOT
+       ======================================== */
+    .w-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+    .w-metric-card {
+      padding: 14px;
+      border-radius: var(--portal-radius-sm, 8px);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .w-metric-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--portal-text-muted);
+      margin-bottom: 4px;
+    }
+    .w-metric-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--portal-text);
+    }
+    .w-metric-unit {
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--portal-text-muted);
+      margin-left: 3px;
+    }
+    .w-metric-change {
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .w-change-up { color: var(--portal-success); }
+    .w-change-down { color: var(--portal-error); }
+    .w-metric-sparkline {
+      margin-top: 8px;
+    }
+
+    /* ========================================
+       GOALS WIDGET
+       ======================================== */
+    .w-goals-placeholder, .w-goals-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 0;
+    }
+    .w-goals-label {
+      font-size: 0.8rem;
+      color: var(--portal-text-muted);
+    }
+    .w-goals-cta {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 16px;
+      border-radius: var(--portal-radius-sm, 8px);
+      background: rgba(255,255,255,0.06);
+      color: var(--portal-accent);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background var(--portal-transition, 150ms ease-out);
+    }
+    .w-goals-cta:hover { background: rgba(255,255,255,0.1); }
+    .w-goals-cta:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .w-goals-list {
+      display: grid;
+      gap: 10px;
+    }
+    .w-goal-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 12px;
+      border-radius: var(--portal-radius-sm, 8px);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      transition: border-color var(--portal-transition, 150ms ease-out);
+    }
+    .w-goal-card:hover { border-color: rgba(255,255,255,0.1); }
+    .w-goal-ring {
+      position: relative;
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+    .w-goal-pct {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--portal-text);
+    }
+    .w-goal-info {
+      min-width: 0;
+    }
+    .w-goal-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--portal-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .w-goal-meta {
+      font-size: 0.75rem;
+      color: var(--portal-text-muted);
+      margin-top: 2px;
+    }
+
+    /* ========================================
+       STREAK
+       ======================================== */
+    .w-streak-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--portal-text-muted);
+      line-height: 1;
+      margin-top: 8px;
+      transition: color var(--portal-transition, 150ms ease-out);
+    }
+    .w-streak-value.w-streak-warm {
+      color: var(--portal-accent, #6366f1);
+    }
+    .w-streak-value.w-streak-fire {
+      color: var(--portal-success, #10b981);
+      text-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+    }
+    .w-streak-label {
+      font-size: 0.8rem;
+      color: var(--portal-text-muted);
+      margin-top: 4px;
+    }
+
+    /* Metric percentage badge */
+    .w-metric-pct {
+      font-size: 0.65rem;
+      opacity: 0.7;
+      margin-left: 2px;
+    }
+
+    /* ========================================
+       ACTIVITY FEED NUDGES
+       ======================================== */
+    .w-feed-nudge {
+      background: color-mix(in srgb, var(--portal-accent, #6366f1) 6%, transparent);
+      border-radius: var(--portal-radius-sm, 8px);
+      padding: 8px 10px;
+      margin: -4px -6px 4px -6px;
+    }
+
+    /* ========================================
+       LOADING SKELETON
+       ======================================== */
+
+    /* ========================================
+       ONBOARDING ZERO-STATE
+       ======================================== */
+    .w-welcome-onboard {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 24px;
+      padding: 32px;
+    }
+    .w-onboard-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .w-onboard-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .w-onboard-lead {
+      font-size: 0.9rem;
+      color: var(--portal-text-secondary);
+      margin: 0;
+    }
+    .w-onboard-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .w-onboard-step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-radius: var(--portal-radius, 14px);
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+      text-decoration: none;
+      color: var(--portal-text);
+      transition: all var(--portal-transition, 150ms ease-out);
+    }
+    .w-onboard-step:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: var(--portal-accent);
+      transform: translateX(4px);
+    }
+    .w-onboard-step:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .w-onboard-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--portal-accent);
+      color: var(--portal-text, #ececf1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .w-onboard-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .w-onboard-text strong {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .w-onboard-hint {
+      font-size: 0.78rem;
+      color: var(--portal-text-muted);
+    }
+    .w-onboard-arrow {
+      color: var(--portal-text-muted);
+      transition: color var(--portal-transition, 150ms ease-out);
+    }
+    .w-onboard-step:hover .w-onboard-arrow {
+      color: var(--portal-accent);
+    }
+    .w-onboard-arrow svg { width: 16px; height: 16px; }
+
+    .bento-skeleton {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+    }
+    .bento-skeleton .skel-full  { grid-column: span 6; height: 100px; }
+    .bento-skeleton .skel-half  { grid-column: span 3; height: 160px; }
+    @media (max-width: 900px) {
+      .bento-skeleton { grid-template-columns: 1fr 1fr; }
+      .bento-skeleton .skel-full  { grid-column: span 2; }
+      .bento-skeleton .skel-half  { grid-column: span 1; }
+    }
+    @media (max-width: 540px) {
+      .bento-skeleton { grid-template-columns: 1fr; }
+      .bento-skeleton .skel-full, .bento-skeleton .skel-half { grid-column: span 1; }
+    }
+  </style>
+
+  <script>
+    import { initPortal } from '@/lib/portal/portalAuth.client';
+    import { errorStateHtml } from '@/lib/ui/icons';
+    import type { PortalBootstrapV2 } from '@/types/portal';
+    import {
+      resolveWidgets,
+      getWidgetSizeClass,
+      WIDGET_REGISTRY,
+      type WidgetContext,
+    } from '@/lib/portal/dashboardWidgets';
+
+    function renderDashboard(data: PortalBootstrapV2) {
+      const content = document.getElementById('portal-content');
+      if (!content) return;
+
+      const opIds = Object.keys(data.operators);
+      const primaryOpId = opIds[0] || null;
+      const primaryOp = primaryOpId ? data.operators[primaryOpId] : null;
+
+      // Derive vertical from scoped operator.
+      // Single-op: use that operator's vertical directly.
+      // Multi-op: neutralize to 'multi' so hero falls back to generic
+      // until a proper operator scope selector is implemented (Phase 3).
+      const derivedVertical = opIds.length === 1
+        ? ((primaryOp as any)?.vertical || 'fitness')
+        : 'multi';
+
+      // Build widget context
+      const portal = (primaryOp as any)?.portal ?? null;
+      const ctx: WidgetContext = {
+        bootstrap: data,
+        portal,
+        operatorId: primaryOpId,
+        operatorName: primaryOp?.brandName || 'Portal',
+        accentColor: primaryOp?.accentColor || '#6366f1',
+        role: data.actor.role,
+        greeting: data.actor.email.split('@')[0],
+        vertical: derivedVertical,
+      };
+
+      // Resolve which widgets to show
+      const widgetIds = resolveWidgets(portal, data.actor.role, data.features);
+
+      // Build Sectional Layout
+      content.innerHTML = `
+        <div class="dash-layout">
+          <div id="dash-hero" class="dash-hero"></div>
+          <div id="dash-dock" class="dash-dock"></div>
+          <div class="bento-grid" id="bento-grid"></div>
+        </div>
+      `;
+      
+      const heroContainer = document.getElementById('dash-hero')!;
+      const dockContainer = document.getElementById('dash-dock')!;
+      const grid = document.getElementById('bento-grid')!;
+
+      for (const wid of widgetIds) {
+        const renderer = WIDGET_REGISTRY[wid];
+        if (!renderer) continue;
+
+        // Route special widgets to special containers
+        if (wid === 'welcome') {
+          const cell = document.createElement('div');
+          cell.className = 'w-cell bento-full'; // Full width but styled transparent by CSS
+          heroContainer.appendChild(cell);
+          renderer(cell, ctx);
+          continue;
+        }
+
+        if (wid === 'quick-actions') {
+          const cell = document.createElement('div');
+          cell.className = 'w-cell bento-full';
+          dockContainer.appendChild(cell);
+          renderer(cell, ctx);
+          continue;
+        }
+
+        // Standard Grid Widgets
+        const cell = document.createElement('div');
+        cell.className = `w-cell ${getWidgetSizeClass(wid)}`;
+        cell.dataset.widget = wid;
+        
+        // Add staggered animation delay based on grid position
+        const index = grid.children.length;
+        cell.style.animationDelay = `${0.1 + (index * 0.05)}s`;
+        
+        grid.appendChild(cell);
+
+        try {
+          renderer(cell, ctx);
+        } catch (err) {
+          console.error(`[Dashboard] Widget "${wid}" render failed:`, err);
+          cell.innerHTML = `<div class="w-card-inner">${errorStateHtml({ title: 'Widget Error', desc: 'This widget failed to load.' })}</div>`;
+        }
+      }
+    }
+
+    // Boot
+    initPortal()
+      .then(renderDashboard)
+      .catch((err) => {
+        console.error('[Dashboard] Failed:', err);
+        const content = document.getElementById('portal-content');
+        if (content) {
+          content.innerHTML = errorStateHtml({ title: 'Unable to Load Dashboard', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-dashboard' } });
+          document.getElementById('btn-reload-dashboard')?.addEventListener('click', () => location.reload());
+        }
+      });
+  </script>
+</PortalLayout>

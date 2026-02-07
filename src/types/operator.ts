@@ -14,6 +14,7 @@ import type {
   LocalIntelContent, 
   RuleCard 
 } from './tours';
+import type { PortalConfig } from './portal';
 
 // =============================================================================
 // PRIMITIVES
@@ -189,6 +190,10 @@ export interface OperatorCore {
     }>;
   };
   
+  // Portal configuration (feature flags, session/entry settings)
+  // All fields optional — engine defaults via resolvePortalFeatures()
+  portal?: PortalConfig;
+
   // Optional variant overrides
   overrides?: {
     heroVariant?: string;
@@ -374,6 +379,7 @@ export interface Operator {
   modules: string[];
   media: OperatorCore['media'];
   stripe?: OperatorCore['stripe'];
+  portal?: OperatorCore['portal'];
   overrides?: OperatorCore['overrides'];
   
   // From Lang

@@ -1,47 +1,99 @@
 ---
 /**
- * Language Landing Page
- * 
- * Shows available operators for this language or acts as a portal.
- * In v1, this can be a simple redirect or placeholder.
- * 
+ * Language Landing Page — Operator Showcase
+ *
+ * ENGINE CONTRACT:
+ * - Lists every operator site built on the engine.
+ * - Data resolved at build time via loadAllOperatorPaths().
+ * - Each card links to the operator's full site.
+ *
  * Route: /en/ or /es/
  */
 
 import type { GetStaticPaths } from 'astro';
-import { SUPPORTED_LANGUAGES, LANGUAGE_NAMES, seoConfig, getAlternateLanguage, buildUrl } from '@config/seo';
+import { SUPPORTED_LANGUAGES, seoConfig, getAlternateLanguage, buildUrl } from '@config/seo';
+import { loadAllOperatorPaths, loadOperator } from '@/lib/engine/loadOperator';
 import type { SupportedLanguage } from '@/types/operator';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  return SUPPORTED_LANGUAGES.map((lang) => ({
-    params: { lang },
-  }));
+  return SUPPORTED_LANGUAGES.map((lang) => ({ params: { lang } }));
 };
-
-interface Props {
-  lang: SupportedLanguage;
-}
 
 const { lang } = Astro.params as { lang: string };
 const alternateLang = getAlternateLanguage(lang as SupportedLanguage);
 
-// Content by language
-const content = {
-  en: {
-    title: 'Welcome',
-    subtitle: 'Premium operator experiences powered by LTP Engine',
-    cta: 'Explore Operators',
-    switchLang: 'Ver en Español',
-  },
-  es: {
-    title: 'Bienvenido',
-    subtitle: 'Experiencias de operador premium impulsadas por LTP Engine',
-    cta: 'Explorar Operadores',
-    switchLang: 'View in English',
-  },
-};
+// ── Load all operators ──
+const allPaths = loadAllOperatorPaths();
+const operatorsForLang = allPaths
+  .filter((p) => p.lang === lang)
+  .map((p) => {
+    const op = loadOperator(p.vertical, p.slug, p.lang);
+    return op ? { vertical: p.vertical, slug: p.slug, operator: op } : null;
+  })
+  .filter(Boolean) as Array<{ vertical: string; slug: string; operator: any }>;
 
-const t = content[lang as keyof typeof content] || content.en;
+// ── Image resolver ──
+const publicDir = path.resolve(process.cwd(), 'public');
+function resolveHero(raw: string): string {
+  if (!raw) return '';
+  if (raw.startsWith('http')) return raw;
+  return fs.existsSync(path.join(publicDir, raw)) ? raw : '';
+}
+
+// ── Hex→HSL for mesh gradients ──
+function hexToHSL(hex: string) {
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+  }
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+const verticalIcons: Record<string, string> = { fitness: '⚡', consultancy: '◆', tours: '✦' };
+
+const cards = operatorsForLang.map(({ vertical, slug, operator }) => {
+  const brandName = operator.brand?.name ?? operator.id ?? slug;
+  const tagline = operator.brand?.tagline ?? '';
+  const accent = operator.vibe?.tokens?.accent ?? '#667eea';
+  const heroImage = resolveHero(operator.media?.heroImage ?? '');
+  const city = operator.location?.city?.replace(/-/g, ' ') ?? '';
+  const country = operator.location?.country ?? '';
+  const href = `/${lang}/v/${vertical}/${slug}`;
+  const icon = verticalIcons[vertical] ?? '●';
+  const verticalLabel = {
+    fitness: 'Fitness',
+    consultancy: lang === 'es' ? 'Consultoría' : 'Consultancy',
+    tours: lang === 'es' ? 'Tours' : 'Nightlife & Tours',
+  }[vertical] ?? vertical;
+  const hsl = hexToHSL(accent);
+  const mesh = `radial-gradient(ellipse at 20% 80%, hsla(${hsl.h},${Math.min(hsl.s+20,100)}%,${Math.min(hsl.l+5,35)}%,0.6) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%, hsla(${(hsl.h+40)%360},${hsl.s}%,${Math.min(hsl.l+8,30)}%,0.5) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%, hsla(${(hsl.h+80)%360},${Math.max(hsl.s-10,20)}%,10%,0.4) 0%,transparent 70%),linear-gradient(135deg,hsl(${hsl.h},${Math.max(hsl.s-15,10)}%,7%) 0%,hsl(${(hsl.h+20)%360},${Math.max(hsl.s-20,5)}%,4%) 100%)`;
+  return { brandName, tagline, accent, heroImage, city, country, href, vertical, verticalLabel, icon, mesh };
+});
+
+// Put cards with images first so they get visual prominence
+cards.sort((a, b) => (b.heroImage ? 1 : 0) - (a.heroImage ? 1 : 0));
+
+// Only the first card with an image gets hero treatment
+const heroIdx = cards.findIndex((c) => c.heroImage);
+
+const totalSites = cards.length;
+
+const t = lang === 'es'
+  ? { pre: 'Plataforma', h1_1: 'Sitios que', h1_2: 'convierten.', sub: `${totalSites} negocios en vivo — construidos con el motor.`, cta: 'Portal', switchLang: 'English', visit: 'Visitar', copy: `© ${new Date().getFullYear()} LTP Engine` }
+  : { pre: 'Platform', h1_1: 'Sites that', h1_2: 'convert.', sub: `${totalSites} live businesses — built on the engine.`, cta: 'Portal', switchLang: 'Español', visit: 'Visit', copy: `© ${new Date().getFullYear()} LTP Engine` };
 ---
 
 <!DOCTYPE html>
@@ -49,134 +101,376 @@ const t = content[lang as keyof typeof content] || content.en;
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{t.title} | {seoConfig.siteName}</title>
-  <meta name="description" content={t.subtitle} />
-  
-  <!-- Canonical & Hreflang -->
+  <title>{seoConfig.siteName}</title>
+  <meta name="description" content={t.sub} />
   <link rel="canonical" href={buildUrl(`/${lang}/`)} />
   <link rel="alternate" hreflang={lang} href={buildUrl(`/${lang}/`)} />
   <link rel="alternate" hreflang={alternateLang} href={buildUrl(`/${alternateLang}/`)} />
   <link rel="alternate" hreflang="x-default" href={buildUrl('/en/')} />
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
-      color: #fff;
-      padding: 2rem;
-    }
-    
-    .container {
-      text-align: center;
-      max-width: 600px;
-    }
-    
-    .logo {
-      font-size: 1rem;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #667eea;
-      margin-bottom: 2rem;
-    }
-    
-    h1 {
-      font-size: 3.5rem;
-      font-weight: 800;
-      line-height: 1.1;
-      margin-bottom: 1rem;
-      background: linear-gradient(135deg, #fff 0%, #a0aec0 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    .subtitle {
-      font-size: 1.25rem;
-      color: #a0aec0;
-      margin-bottom: 3rem;
-      line-height: 1.6;
-    }
-    
-    .actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 1rem 2rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
-    }
-    
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-    }
-    
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
-    }
-    
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-    
-    .footer {
-      margin-top: 4rem;
-      padding-top: 2rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 0.875rem;
-      color: #64748b;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap" rel="stylesheet" />
 </head>
+
 <body>
-  <div class="container">
-    <div class="logo">LTP Engine</div>
-    <h1>{t.title}</h1>
-    <p class="subtitle">{t.subtitle}</p>
-    
-    <div class="actions">
-      <a href={`/${lang}/v/consultancy/demo`} class="btn btn-primary">
-        {t.cta}
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-          <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
-      </a>
-      <a href={`/${alternateLang}/`} class="btn btn-secondary">
-        {t.switchLang}
-      </a>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href={`/${lang}/`} class="nav-logo">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 19h20L12 2z"/></svg>
+      LTP Engine
+    </a>
+    <div class="nav-r">
+      <a href={`/${alternateLang}/`} class="nav-link">{t.switchLang}</a>
+      <a href="/portal/dashboard" class="nav-btn">{t.cta} →</a>
     </div>
-    
-    <div class="footer">
-      <p>© {new Date().getFullYear()} {seoConfig.siteName}. All rights reserved.</p>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-orbs" aria-hidden="true">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
     </div>
-  </div>
+    <div class="hero-c">
+      <span class="pill">{t.pre}</span>
+      <h1>{t.h1_1}<br/><span class="grad">{t.h1_2}</span></h1>
+      <p>{t.sub}</p>
+    </div>
+  </header>
+
+  <!-- CARDS -->
+  <main class="main">
+    {cards.map((c, i) => (
+      <a class={`card ${i === heroIdx ? 'card-hero' : ''} ${!c.heroImage ? 'card-noimg' : ''}`} href={c.href} style={`--accent:${c.accent};--i:${i}`}>
+        {/* Visual — THIS creates the height */}
+        <div class="card-vis">
+          {c.heroImage
+            ? <img src={c.heroImage} alt="" loading={i < 2 ? 'eager' : 'lazy'} />
+            : <div class="card-mesh" style={`background:${c.mesh}`}></div>
+          }
+        </div>
+        {/* Overlay content */}
+        <div class={`card-over ${!c.heroImage ? 'card-over--center' : ''}`}>
+          <div class="card-top">
+            <span class="card-tag">{c.icon} {c.verticalLabel}</span>
+            {c.city && <span class="card-loc">{c.city}{c.country ? `, ${c.country}` : ''}</span>}
+          </div>
+          <div class="card-bot">
+            <h2>{c.brandName}</h2>
+            {c.tagline && <p>{c.tagline}</p>}
+          </div>
+          <span class="card-go">
+            {t.visit}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          </span>
+        </div>
+      </a>
+    ))}
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="foot">
+    <span>{t.copy}</span>
+    <div class="foot-r">
+      <a href="/portal/dashboard">{t.cta}</a>
+      <a href={`/${alternateLang}/`}>{t.switchLang}</a>
+    </div>
+  </footer>
+
 </body>
+
+<style>
+  /* ── Reset ── */
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#07070a;color:#d4d4d8;min-height:100vh;overflow-x:hidden}
+
+  /* ── Nav ── */
+  .nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;justify-content:space-between;align-items:center;
+    max-width:1200px;margin:0 auto;
+    padding:0 2rem;height:56px;
+    background:rgba(7,7,10,0.65);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+  }
+  @supports not (backdrop-filter:blur(1px)){
+    .nav{background:rgba(7,7,10,0.95)}
+  }
+  @supports not (backdrop-filter:blur(1px)){
+    .nav{background:rgba(7,7,10,0.95)}
+  }
+  .nav-logo{
+    display:flex;align-items:center;gap:0.5rem;
+    text-decoration:none;color:rgba(255,255,255,0.5);
+    font-size:0.75rem;font-weight:700;
+    letter-spacing:0.1em;text-transform:uppercase;
+  }
+  .nav-logo svg{color:#fff;opacity:0.8}
+  .nav-r{display:flex;align-items:center;gap:0.35rem}
+  .nav-link{
+    font-size:0.75rem;font-weight:500;color:rgba(255,255,255,0.3);
+    text-decoration:none;padding:0.35rem 0.65rem;border-radius:6px;
+    transition:color .15s;
+  }
+  .nav-link:hover{color:rgba(255,255,255,0.7)}
+  .nav-btn{
+    font-size:0.75rem;font-weight:600;
+    color:#07070a;background:#fff;
+    padding:0.35rem 0.9rem;border-radius:7px;
+    text-decoration:none;transition:background .15s;
+  }
+  .nav-btn:hover{background:#e4e4e7}
+
+  /* ── Hero ── */
+  .hero{
+    position:relative;
+    padding:6.5rem 2rem 3rem;
+    text-align:center;
+    overflow:hidden;
+  }
+  .hero-orbs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .orb{
+    position:absolute;border-radius:50%;
+    filter:blur(90px);opacity:0.25;
+    animation:drift 14s ease-in-out infinite alternate;
+  }
+  .orb-1{width:360px;height:360px;top:-15%;left:15%;background:#667eea}
+  .orb-2{width:300px;height:300px;bottom:0;right:10%;background:#f472b6;animation-delay:-5s}
+  .orb-3{width:240px;height:240px;top:25%;left:50%;background:#a78bfa;animation-delay:-9s}
+  @keyframes drift{
+    to{transform:translate(25px,-18px) scale(1.06)}
+  }
+  .hero-c{position:relative;z-index:1;max-width:600px;margin:0 auto}
+  .pill{
+    display:inline-block;
+    font-size:0.62rem;font-weight:600;
+    letter-spacing:0.25em;text-transform:uppercase;
+    color:rgba(255,255,255,0.35);
+    border:1px solid rgba(255,255,255,0.07);
+    padding:0.25rem 0.85rem;border-radius:999px;
+    margin-bottom:1rem;
+  }
+  .hero-c h1{
+    font-size:clamp(2.5rem,6vw,4.2rem);
+    font-weight:900;line-height:1;
+    letter-spacing:-0.04em;color:#fff;
+    margin-bottom:1rem;
+  }
+  .grad{
+    background:linear-gradient(135deg,#667eea,#a78bfa 40%,#f472b6 75%,#fb923c);
+    background-size:200% 200%;
+    animation:gShift 5s ease-in-out infinite alternate;
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  @keyframes gShift{to{background-position:100% 50%}}
+  .hero-c p{
+    font-size:1rem;color:rgba(255,255,255,0.35);
+    line-height:1.6;max-width:380px;margin:0 auto;
+  }
+
+  /* ── Main Grid ── */
+  .main{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+    max-width:1200px;margin:0 auto;
+    padding:0 2rem 5rem;
+  }
+  .card-hero{grid-column:1/-1}
+
+  /* ── Card ── */
+  .card{
+    position:relative;
+    border-radius:16px;
+    overflow:hidden;
+    text-decoration:none;color:inherit;
+    cursor:pointer;
+    transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s;
+  }
+  .card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 48px -8px rgba(0,0,0,0.5);
+  }
+
+  /* Visual layer — padding-top trick gives reliable height */
+  .card-vis{
+    position:relative;
+    width:100%;
+    padding-top:62.5%; /* ~16:10 */
+    overflow:hidden;
+  }
+  .card-hero .card-vis{
+    padding-top:42.8%; /* ~21:9 */
+  }
+  .card-vis img{
+    position:absolute;top:0;left:0;
+    width:100%;height:100%;
+    object-fit:cover;
+    transition:transform .5s cubic-bezier(.22,1,.36,1);
+  }
+  .card:hover .card-vis img{transform:scale(1.04)}
+  .card-mesh{
+    position:absolute;top:0;left:0;
+    width:100%;height:100%;
+    transition:transform .5s cubic-bezier(.22,1,.36,1);
+  }
+  .card:hover .card-mesh{transform:scale(1.03)}
+
+  /* No-image cards: shorter */
+  .card-noimg .card-vis{
+    padding-top:50%;
+  }
+
+  /* Content overlay — covers the visual */
+  .card-over{
+    position:absolute;inset:0;z-index:1;
+    display:flex;flex-direction:column;
+    justify-content:flex-end;
+    padding:1.5rem;
+    background:linear-gradient(
+      to top,
+      rgba(7,7,10,0.92) 0%,
+      rgba(7,7,10,0.5) 40%,
+      rgba(7,7,10,0.05) 100%
+    );
+  }
+  .card-hero .card-over{padding:2rem}
+
+  /* Centered overlay for no-image cards */
+  .card-over--center{
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    background:none;
+  }
+  .card-over--center .card-bot h2{
+    font-size:1.75rem;
+  }
+  .card-over--center .card-bot p{
+    max-width:280px;margin:0 auto;
+  }
+
+  /* Top meta */
+  .card-top{
+    position:absolute;top:1.25rem;left:1.5rem;
+    display:flex;align-items:center;gap:0.5rem;
+  }
+  .card-hero .card-top{top:1.5rem;left:2rem}
+  .card-tag{
+    font-size:0.62rem;font-weight:700;
+    letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--accent,#667eea);
+  }
+  .card-loc{
+    font-size:0.65rem;font-weight:500;
+    color:rgba(255,255,255,0.25);
+    text-transform:capitalize;
+  }
+
+  /* Bottom text */
+  .card-bot h2{
+    font-size:1.4rem;font-weight:800;
+    letter-spacing:-0.02em;line-height:1.15;
+    color:#fff;margin-bottom:0.2rem;
+  }
+  .card-hero .card-bot h2{font-size:1.8rem}
+  .card-bot p{
+    font-size:0.82rem;font-weight:400;
+    color:rgba(255,255,255,0.38);
+    line-height:1.5;max-width:340px;
+  }
+
+  /* Visit pill */
+  .card-go{
+    position:absolute;top:1.25rem;right:1.5rem;
+    display:inline-flex;align-items:center;gap:0.3rem;
+    font-size:0.68rem;font-weight:600;
+    color:rgba(255,255,255,0.18);
+    padding:0.25rem 0.65rem;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,0.06);
+    background:rgba(255,255,255,0.03);
+    backdrop-filter:blur(6px);
+    transition:all .2s;
+  }
+  .card-hero .card-go{top:1.5rem;right:2rem}
+  .card:hover .card-go{
+    color:var(--accent,#667eea);
+    border-color:color-mix(in srgb,var(--accent,#667eea) 40%,transparent);
+    background:rgba(255,255,255,0.05);
+  }
+  .card-go svg{transition:transform .2s}
+  .card:hover .card-go svg{transform:translate(1px,-1px)}
+
+  /* Accent bar */
+  .card::after{
+    content:'';position:absolute;
+    bottom:0;left:0;right:0;height:3px;z-index:2;
+    background:linear-gradient(90deg,var(--accent,#667eea),transparent);
+    transform:scaleX(0);transform-origin:left;
+    transition:transform .35s cubic-bezier(.22,1,.36,1);
+  }
+  .card:hover::after{transform:scaleX(1)}
+
+  /* ── Footer ── */
+  .foot{
+    max-width:1200px;margin:0 auto;
+    padding:1.25rem 2rem;
+    display:flex;justify-content:space-between;align-items:center;
+    border-top:1px solid rgba(255,255,255,0.04);
+    font-size:0.7rem;color:rgba(255,255,255,0.18);
+  }
+  .foot-r{display:flex;gap:1.25rem}
+  .foot-r a{
+    font-size:0.7rem;font-weight:500;
+    color:rgba(255,255,255,0.25);text-decoration:none;
+    transition:color .15s;
+  }
+  .foot-r a:hover{color:#fff}
+
+  /* ── Responsive ── */
+  @media(max-width:768px){
+    .main{grid-template-columns:1fr;gap:10px;padding:0 1rem 3.5rem}
+    .card-hero{grid-column:1}
+    .card-hero .card-vis{padding-top:62.5%}
+    .hero{padding:5.5rem 1.25rem 2rem}
+    .hero-c h1{font-size:clamp(2rem,9vw,3rem)}
+    .nav{padding:0 1rem}
+    .card-over{padding:1.25rem}
+    .card-hero .card-over{padding:1.25rem}
+    .card-top{top:1rem;left:1.25rem}
+    .card-hero .card-top{top:1rem;left:1.25rem}
+    .card-go{top:1rem;right:1.25rem}
+    .card-hero .card-go{top:1rem;right:1.25rem}
+    .card-bot h2{font-size:1.25rem}
+    .card-hero .card-bot h2{font-size:1.4rem}
+  }
+  @media(max-width:480px){
+    .nav-logo span{display:none}
+    .foot{flex-direction:column;gap:0.5rem;text-align:center}
+  }
+
+  /* ── Entrance ── */
+  @media(prefers-reduced-motion:no-preference){
+    .pill,.hero-c h1,.hero-c p{
+      animation:up .7s cubic-bezier(.22,1,.36,1) both;
+    }
+    .pill{animation-delay:.05s}
+    .hero-c h1{animation-delay:.12s}
+    .hero-c p{animation-delay:.2s}
+    .card{
+      animation:up .6s cubic-bezier(.22,1,.36,1) both;
+      animation-delay:calc(.25s + var(--i)*.06s);
+    }
+    @keyframes up{
+      from{opacity:0;transform:translateY(18px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+  }
+</style>
 </html>

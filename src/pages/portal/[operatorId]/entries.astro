@@ -1,0 +1,577 @@
+---
+/**
+ * /portal/entries — Entries Page
+ *
+ * ENGINE CONTRACT:
+ * - Dynamic metric input form driven by operator's MetricDefinition[]
+ * - Entry history list with primary metric, category badge, coach feedback indicator
+ * - Feature-gated: hidden if 'entries' not in resolved features
+ * - All data loaded client-side via portalAuth + entries API
+ */
+import PortalLayout from '@/layouts/PortalLayout.astro';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Updates" activeSection="entries" operatorId={operatorId!}>
+  <!-- ── New Entry Form ── -->
+  <section id="entry-form-section" class="portal-card" style="display:none;">
+    <h2 class="section-title">Log an Update</h2>
+
+    <!-- Category selector -->
+    <div class="form-row">
+      <label class="form-label">Entry Type</label>
+      <div id="category-chips" class="chip-group"></div>
+    </div>
+
+    <!-- Date picker -->
+    <div class="form-row">
+      <label class="form-label" for="entry-date">Date</label>
+      <input type="date" id="entry-date" class="form-input" />
+    </div>
+
+    <!-- Dynamic metric inputs (generated from MetricDefinition[]) -->
+    <div id="metrics-form" class="metrics-grid"></div>
+
+    <!-- Self-report sliders -->
+    <div id="self-report-form" class="metrics-grid"></div>
+
+    <!-- Notes -->
+    <div class="form-row">
+      <label class="form-label" for="entry-notes">Notes (optional)</label>
+      <textarea id="entry-notes" rows="3" class="form-input" placeholder="How are you feeling? Any observations…"></textarea>
+    </div>
+
+    <!-- Submit -->
+    <div class="btn-row">
+      <button id="btn-submit-entry" class="btn-primary" disabled>Submit Update</button>
+    </div>
+
+    <!-- Result banner -->
+    <div id="entry-result" style="display:none;" class="result-banner"></div>
+  </section>
+
+  <!-- ── Recent Entries ── -->
+  <section class="portal-card">
+    <h2 class="section-title">Recent Updates</h2>
+    <div id="entries-list" class="entries-list">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+    <div id="load-more-row" style="display:none;" class="load-more-row">
+      <button id="btn-load-more" class="btn-ghost">Load More</button>
+    </div>
+  </section>
+</PortalLayout>
+
+<style is:global>
+  /* ── Page-specific styles only (shared classes in portal-system.css) ── */
+
+  /* ── Metrics Grid ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .metric-field { display: flex; flex-direction: column; }
+  .metric-unit {
+    font-size: 0.7rem;
+    color: var(--portal-text-muted, #6b7280);
+    margin-left: 0.3rem;
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .slider-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--portal-accent, #6366f1);
+    min-width: 1.5rem;
+    text-align: center;
+  }
+  input[type="range"] {
+    flex: 1;
+    accent-color: var(--portal-accent, #6366f1);
+  }
+
+  /* ── Entry List ── */
+  .entries-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .entry-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    border-radius: var(--portal-radius-sm, 8px);
+    background: var(--portal-bg, #0d0d12);
+  }
+  .entry-info { flex: 1; }
+  .entry-date {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--portal-text, #ececf1);
+  }
+  .entry-meta {
+    font-size: 0.8rem;
+    color: var(--portal-text-muted, #6b7280);
+    margin-top: 0.2rem;
+  }
+  .entry-metric {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--portal-accent, #6366f1);
+    text-align: right;
+  }
+  .entry-metric-unit {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--portal-text-muted, #6b7280);
+    margin-left: 0.2rem;
+  }
+  .load-more-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  /* ── Mobile Responsive ── */
+  @media (max-width: 768px) {
+    .metrics-grid {
+      grid-template-columns: 1fr;
+    }
+    .entry-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .entry-metric {
+      text-align: left;
+    }
+  }
+</style>
+
+<script>
+  import { initPortal, getAuthed, postAuthed, getBootstrap, cachedGet, clearApiCache } from '@/lib/portal/portalAuth.client';
+  import { getIcon, emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
+  import type { PortalBootstrapV2 } from '@/types/portal';
+
+  // ── Types for client-side ──
+  interface MetricDef {
+    key: string;
+    label: string;
+    unit: string;
+    inputType: 'number' | 'slider' | 'select';
+    chartColor?: string;
+    direction?: 'up' | 'down' | 'stable';
+    range?: { min: number; max: number } | [number, number];
+  }
+
+  interface EntrySummary {
+    id: string;
+    date: string;
+    category: string;
+    primaryMetric?: { key: string; value: number; unit?: string };
+    hasCoachFeedback: boolean;
+    hasPhotos: boolean;
+  }
+
+  // ── State ──
+  let bootstrap: PortalBootstrapV2;
+  let metricDefs: MetricDef[] = [];
+  let selectedCategory: string | null = 'metrics';
+  let allEntries: EntrySummary[] = [];
+  let cursor: string | undefined;
+  let hasMore = false;
+  let selectedOperatorId: string | null = null;
+
+  const CATEGORIES = ['metrics', 'narrative', 'composite'];
+
+  /** Get the resolved portal config for the selected (or primary) operator. */
+  function getOperatorPortal() {
+    const opIds = Object.keys(bootstrap.operators);
+    const opId = selectedOperatorId || opIds[0];
+    if (!opId) return null;
+    selectedOperatorId = opId;
+    return bootstrap.operators[opId]?.portal ?? null;
+  }
+
+  async function init() {
+    try {
+      bootstrap = await initPortal();
+
+    if (!bootstrap.features.includes('entries')) {
+      document.getElementById('entry-form-section')!.style.display = 'block';
+      document.getElementById('entry-form-section')!.innerHTML =
+        emptyStateHtml({ icon: 'shield', title: 'Updates Not Available', desc: 'Entries are not enabled for your account. Contact your coach for access.' });
+      return;
+    }
+
+    // Multi-operator: require operator selection for entries
+    const opIds = Object.keys(bootstrap.operators);
+    if (opIds.length > 1) {
+      renderOperatorSelector(opIds);
+    } else if (opIds.length === 1) {
+      selectedOperatorId = opIds[0];
+    }
+
+    if (!selectedOperatorId && opIds.length > 1) {
+      // Wait for operator selection
+      return;
+    }
+
+    bootEntryForm();
+    } catch (err) {
+      console.error('[Entries] Init failed:', err);
+      document.getElementById('entries-list')!.innerHTML =
+        errorStateHtml({ title: 'Unable to Load', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-entries' } });
+      document.getElementById('btn-reload-entries')?.addEventListener('click', () => location.reload());
+    }
+  }
+
+  function renderOperatorSelector(opIds: string[]) {
+    const section = document.getElementById('entry-form-section')!;
+    section.style.display = 'block';
+    section.innerHTML = `
+      <h2 class="section-title">Select Operator</h2>
+      <p style="color:var(--portal-text-muted,#6b7280);margin-bottom:1rem;font-size:0.9rem;">Choose which account to log an entry for:</p>
+      <div class="chip-group" id="op-selector">
+        ${opIds.map(id => {
+          const op = bootstrap.operators[id];
+          return `<button class="chip" data-op="${id}">${op?.brandName || id}</button>`;
+        }).join('')}
+      </div>
+    `;
+    document.getElementById('op-selector')!.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.chip') as HTMLElement;
+      if (!btn) return;
+      selectedOperatorId = btn.dataset.op || null;
+      bootEntryForm();
+    });
+  }
+
+  function bootEntryForm() {
+    // Re-render the form section
+    const section = document.getElementById('entry-form-section')!;
+    section.style.display = 'block';
+    section.innerHTML = `
+      <h2 class="section-title">Log an Update</h2>
+      <div class="form-row">
+        <label class="form-label">Entry Type</label>
+        <div id="category-chips" class="chip-group"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="entry-date">Date</label>
+        <input type="date" id="entry-date" class="form-input" />
+      </div>
+      <div id="metrics-form" class="metrics-grid"></div>
+      <div id="self-report-form" class="metrics-grid"></div>
+      <div class="form-row">
+        <label class="form-label" for="entry-notes">Notes (optional)</label>
+        <textarea id="entry-notes" rows="3" class="form-input" placeholder="How are you feeling? Any observations\u2026"></textarea>
+      </div>
+      <div class="btn-row">
+        <button id="btn-submit-entry" class="btn-primary" disabled>Submit Update</button>
+      </div>
+      <div id="entry-result" style="display:none;" class="result-banner"></div>
+    `;
+
+    // Set default date to today
+    const dateInput = document.getElementById('entry-date') as HTMLInputElement;
+    dateInput.value = toDateStr(new Date());
+
+    // Load metric definitions from operator portal config
+    loadMetricDefs();
+    renderCategoryChips();
+    wireSubmitButton();
+    loadEntries();
+  }
+
+  function loadMetricDefs() {
+    // Load metric definitions from the operator's resolved portal config
+    const portal = getOperatorPortal();
+    const configMetrics = portal?.entries?.metrics;
+
+    if (configMetrics && configMetrics.length > 0) {
+      metricDefs = configMetrics.map((m: any) => ({
+        key: m.key,
+        label: m.label,
+        unit: m.unit,
+        inputType: m.inputType || 'number',
+        chartColor: m.chartColor,
+        direction: m.direction,
+        range: m.range,
+      }));
+    } else {
+      // No metrics configured — entries are narrative-only for this operator
+      metricDefs = [];
+      selectedCategory = 'narrative';
+    }
+
+    renderMetricsForm();
+  }
+
+  function renderCategoryChips() {
+    const container = document.getElementById('category-chips')!;
+    container.innerHTML = CATEGORIES.map((cat) =>
+      `<button class="chip ${cat === selectedCategory ? 'active' : ''}" data-cat="${cat}">
+        ${cat === 'metrics' ? getIcon('chart', 'chip-icon') + ' Metrics' : cat === 'narrative' ? getIcon('file-text', 'chip-icon') + ' Notes' : getIcon('chart', 'chip-icon') + getIcon('file-text', 'chip-icon') + ' Both'}
+      </button>`
+    ).join('');
+
+    container.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.chip') as HTMLElement;
+      if (!btn) return;
+      container.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCategory = btn.dataset.cat || null;
+      updateSubmitBtn();
+
+      // Show/hide metrics form based on category
+      const metricsForm = document.getElementById('metrics-form')!;
+      const selfReportForm = document.getElementById('self-report-form')!;
+      if (selectedCategory === 'narrative') {
+        metricsForm.style.display = 'none';
+        selfReportForm.style.display = 'none';
+      } else {
+        metricsForm.style.display = 'grid';
+        selfReportForm.style.display = 'grid';
+      }
+    });
+  }
+
+  function renderMetricsForm() {
+    const metricsForm = document.getElementById('metrics-form')!;
+    const selfReportForm = document.getElementById('self-report-form')!;
+
+    const numberMetrics = metricDefs.filter((m) => m.inputType === 'number');
+    const sliderMetrics = metricDefs.filter((m) => m.inputType === 'slider');
+
+    // Number inputs
+    metricsForm.innerHTML = numberMetrics.map((m) =>
+      `<div class="metric-field">
+        <label class="form-label">${escapeHtml(m.label)}<span class="metric-unit">(${escapeHtml(m.unit)})</span></label>
+        <input type="number" step="0.1" class="form-input" data-key="${m.key}" placeholder="—" />
+      </div>`
+    ).join('');
+
+    // Slider inputs
+    selfReportForm.innerHTML = sliderMetrics.map((m) => {
+      const range = normalizeRange(m.range);
+      const mid = Math.round((range.min + range.max) / 2);
+      return `<div class="metric-field">
+        <label class="form-label">${escapeHtml(m.label)}<span class="metric-unit">(${escapeHtml(m.unit)})</span></label>
+        <div class="slider-row">
+          <span class="slider-value" id="val-${m.key}">${mid}</span>
+          <input type="range" min="${range.min}" max="${range.max}" value="${mid}" data-key="${m.key}" />
+        </div>
+      </div>`;
+    }).join('');
+
+    // Slider value display
+    selfReportForm.querySelectorAll('input[type="range"]').forEach((input) => {
+      input.addEventListener('input', (e) => {
+        const el = e.target as HTMLInputElement;
+        const key = el.dataset.key!;
+        document.getElementById(`val-${key}`)!.textContent = el.value;
+      });
+    });
+
+    // Enable submit when any metric has a value
+    metricsForm.querySelectorAll('.form-input').forEach((input) => {
+      input.addEventListener('input', () => updateSubmitBtn());
+    });
+
+    updateSubmitBtn();
+  }
+
+  function normalizeRange(range: MetricDef['range']): { min: number; max: number } {
+    if (Array.isArray(range)) return { min: range[0], max: range[1] };
+    if (range && typeof range === 'object') return range;
+    return { min: 1, max: 10 };
+  }
+
+  function updateSubmitBtn() {
+    const btn = document.getElementById('btn-submit-entry') as HTMLButtonElement;
+    const dateVal = (document.getElementById('entry-date') as HTMLInputElement).value;
+
+    if (!selectedCategory || !dateVal) {
+      btn.disabled = true;
+      return;
+    }
+
+    // For metrics category, at least one metric must have a value
+    if (selectedCategory !== 'narrative') {
+      const hasAnyMetric = Array.from(document.querySelectorAll('#metrics-form .form-input')).some(
+        (inp) => (inp as HTMLInputElement).value !== ''
+      );
+      const hasSliders = document.querySelectorAll('input[type="range"]').length > 0;
+      btn.disabled = !(hasAnyMetric || hasSliders);
+    } else {
+      // Narrative only — just need a date
+      btn.disabled = false;
+    }
+  }
+
+  // ── Entry loading ──
+  async function loadEntries(append = false) {
+    try {
+      const params = new URLSearchParams({ limit: '20' });
+      if (cursor && append) params.set('cursor', cursor);
+
+      const resp = await cachedGet(`/api/portal/entries?${params}`);
+      const data = await resp.json();
+
+      if (append) {
+        allEntries = [...allEntries, ...(data.entries || [])];
+      } else {
+        allEntries = data.entries || [];
+      }
+      hasMore = data.hasMore ?? false;
+      cursor = data.cursor;
+
+      renderEntryList();
+
+      // Show/hide load more
+      const loadMoreRow = document.getElementById('load-more-row')!;
+      loadMoreRow.style.display = hasMore ? 'flex' : 'none';
+    } catch (err) {
+      console.error('[Entries] Load failed:', err);
+      document.getElementById('entries-list')!.innerHTML =
+        errorStateHtml({ title: 'Could Not Load Entries', desc: 'Please check your connection and try again.', retry: { label: 'Retry', id: 'btn-retry-entries' } });
+      document.getElementById('btn-retry-entries')?.addEventListener('click', () => loadEntries());
+    }
+  }
+
+  function renderEntryList() {
+    const container = document.getElementById('entries-list')!;
+
+    if (allEntries.length === 0) {
+      container.innerHTML = emptyStateHtml({ icon: 'clipboard', title: 'No Updates Yet', desc: 'Log your first update above to start tracking your progress!' });
+      return;
+    }
+
+    container.innerHTML = allEntries.map((entry) => {
+      const badges: string[] = [];
+      if (entry.hasCoachFeedback) badges.push('<span class="portal-badge portal-badge-success">✓ Coach Feedback</span>');
+      if (entry.hasPhotos) badges.push(`<span class="portal-badge portal-badge-accent">${getIcon('camera', 'chip-icon')} Photos</span>`);
+
+      return `
+        <div class="entry-card">
+          <div class="entry-info">
+            <div class="entry-date">${formatDateLabel(entry.date)}</div>
+            <div class="entry-meta">
+              ${entry.category}
+              ${badges.join(' ')}
+            </div>
+          </div>
+          ${entry.primaryMetric
+            ? `<div class="entry-metric">
+                ${entry.primaryMetric.value}
+                <span class="entry-metric-unit">${entry.primaryMetric.unit ?? ''}</span>
+              </div>`
+            : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── Submit entry ──
+  function wireSubmitButton() {
+    document.getElementById('btn-submit-entry')?.addEventListener('click', async () => {
+      if (!selectedCategory) return;
+
+      const btn = document.getElementById('btn-submit-entry') as HTMLButtonElement;
+      const resultEl = document.getElementById('entry-result')!;
+      btn.disabled = true;
+      btn.textContent = 'Submitting\u2026';
+
+      const opId = selectedOperatorId || bootstrap.actor.operatorIds[0];
+      const date = (document.getElementById('entry-date') as HTMLInputElement).value;
+      const notes = (document.getElementById('entry-notes') as HTMLTextAreaElement).value;
+
+    // Collect metrics
+    const metrics: Record<string, number | null> = {};
+    document.querySelectorAll('#metrics-form .form-input').forEach((inp) => {
+      const el = inp as HTMLInputElement;
+      const key = el.dataset.key!;
+      if (el.value !== '') {
+        metrics[key] = parseFloat(el.value);
+      }
+    });
+
+    // Collect self-report (sliders)
+    const selfReport: Record<string, number> = {};
+    document.querySelectorAll('input[type="range"]').forEach((inp) => {
+      const el = inp as HTMLInputElement;
+      const key = el.dataset.key!;
+      selfReport[key] = parseInt(el.value);
+    });
+
+    try {
+      const resp = await postAuthed('/api/portal/entries', {
+        operatorId: opId,
+        date,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        category: selectedCategory,
+        metrics: Object.keys(metrics).length > 0 ? metrics : undefined,
+        selfReport: Object.keys(selfReport).length > 0 ? selfReport : undefined,
+        notes: notes || undefined,
+      });
+
+      if (resp.ok) {
+        resultEl.style.display = 'block';
+        resultEl.className = 'result-banner result-success';
+        resultEl.textContent = 'Update logged successfully!';
+
+        // Reset form
+        document.querySelectorAll('#metrics-form .form-input').forEach((inp) => {
+          (inp as HTMLInputElement).value = '';
+        });
+        (document.getElementById('entry-notes') as HTMLTextAreaElement).value = '';
+
+        // Reload entries
+        cursor = undefined;
+        clearApiCache('/api/portal/entries');
+        await loadEntries();
+      } else {
+        const err = await resp.json();
+        resultEl.style.display = 'block';
+        resultEl.className = 'result-banner result-error';
+        resultEl.textContent = err.error || 'Failed to submit';
+      }
+    } catch (err) {
+      resultEl.style.display = 'block';
+      resultEl.className = 'result-banner result-error';
+      resultEl.textContent = 'Network error — please try again.';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Submit Update';
+  });
+
+  // Load More
+  document.getElementById('btn-load-more')?.addEventListener('click', () => loadEntries(true));
+  }
+
+  // ── Formatting helpers ──
+  function toDateStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function formatDateLabel(isoDate: string): string {
+    const d = new Date(isoDate + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function escapeHtml(s: string): string {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ── Kick off ──
+  init();
+</script>

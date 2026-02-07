@@ -1,0 +1,813 @@
+---
+/**
+ * /portal/goals — Goal Management Page
+ *
+ * ENGINE CONTRACT:
+ * - List active/completed/abandoned goals with progress rings.
+ * - Create goals from templates or custom.
+ * - Update progress manually.
+ * - Archive / complete goals.
+ * - Feature-gated on 'goals' in operator config.
+ * - Glass-card design matching dashboard/profile language.
+ */
+
+import PortalLayout from '@/layouts/PortalLayout.astro';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Goals" activeSection="goals" operatorId={operatorId!}>
+  <style is:global>
+    .g-card-title-icon { font-size: 1rem; }
+
+    /* ========================================
+       HEADER + SUMMARY
+       ======================================== */
+    .g-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 24px 28px;
+      background:
+        linear-gradient(135deg,
+          rgba(99,102,241,0.08) 0%,
+          rgba(139,92,246,0.04) 50%,
+          transparent 100%);
+    }
+    .g-header h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .g-header-sub {
+      font-size: 0.85rem;
+      color: var(--portal-text-secondary);
+      margin-top: 2px;
+    }
+    .g-summary-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+    }
+    .g-summary-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: var(--portal-radius-sm, 8px);
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(255,255,255,0.04);
+      color: var(--portal-text-secondary);
+    }
+    .g-summary-badge .val {
+      font-weight: 800;
+      color: var(--portal-text);
+    }
+
+    /* ========================================
+       GOAL LIST
+       ======================================== */
+    .g-goals-list {
+      display: grid;
+      gap: 12px;
+    }
+    .g-goal-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      border-radius: var(--portal-radius-sm, 8px);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      transition: border-color var(--portal-transition, 150ms ease-out), background var(--portal-transition, 150ms ease-out);
+      cursor: pointer;
+    }
+    .g-goal-item:hover {
+      border-color: var(--portal-border-strong, rgba(255,255,255,0.12));
+      background: rgba(255,255,255,0.035);
+    }
+    .g-goal-item:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .g-goal-item.completed {
+      opacity: 0.6;
+    }
+    .g-goal-ring {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+    .g-goal-pct {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--portal-text);
+    }
+    .g-goal-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .g-goal-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .g-goal-progress-text {
+      font-size: 0.8rem;
+      color: var(--portal-text-secondary);
+      margin-top: 2px;
+    }
+    .g-goal-bar-track {
+      margin-top: 8px;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .g-goal-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .g-goal-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .g-tag {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.04);
+      color: var(--portal-text-muted);
+    }
+    .g-tag-error {
+      color: var(--portal-error, #ef4444);
+    }
+    .g-goal-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* ========================================
+       CREATE GOAL MODAL
+       ======================================== */
+    .g-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .g-modal-overlay.active { display: flex; }
+    .g-modal {
+      background: var(--portal-bg, #0d0d12);
+      border: 1px solid var(--portal-border-strong, rgba(255,255,255,0.12));
+      border-radius: var(--portal-radius, 14px);
+      width: 90%;
+      max-width: 520px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 16px 64px rgba(0,0,0,0.5);
+    }
+    .g-modal h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0 0 20px;
+    }
+    .g-form { display: grid; gap: 14px; }
+    .g-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ========================================
+       TEMPLATES
+       ======================================== */
+    .g-templates {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }
+    .g-template {
+      padding: 14px;
+      border-radius: var(--portal-radius-sm, 8px);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      cursor: pointer;
+      transition: all var(--portal-transition, 150ms ease-out);
+      text-align: center;
+    }
+    .g-template:hover {
+      border-color: var(--portal-accent);
+      background: rgba(255,255,255,0.04);
+    }
+    .g-template:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .g-template-icon {
+      font-size: 1.5rem;
+      margin-bottom: 6px;
+    }
+    .g-template-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .g-template-meta {
+      font-size: 0.7rem;
+      color: var(--portal-text-muted);
+      margin-top: 2px;
+    }
+
+    /* ========================================
+       TABS
+       ======================================== */
+    .g-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.03);
+      border-radius: var(--portal-radius-sm, 8px);
+      padding: 3px;
+      margin-bottom: 16px;
+    }
+    .g-tab {
+      padding: 7px 16px;
+      border-radius: var(--portal-radius-sm, 8px);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--portal-text-muted);
+      cursor: pointer;
+      transition: all var(--portal-transition, 150ms ease-out);
+      border: none;
+      background: transparent;
+    }
+    .g-tab.active {
+      background: rgba(255,255,255,0.08);
+      color: var(--portal-text);
+    }
+    .g-tab:hover:not(.active) { color: var(--portal-text-secondary); }
+    .g-tab:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+      .g-row { grid-template-columns: 1fr; }
+      .g-header { padding: 20px 18px; }
+      .g-header h2 { font-size: 1.1rem; }
+      .g-summary-row { flex-wrap: wrap; gap: 8px; }
+      .g-tab {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+      }
+      .g-modal { padding: 20px; }
+      .g-goal-item { padding: 14px; gap: 12px; }
+      .g-goal-ring { width: 44px; height: 44px; }
+      .g-goal-actions { gap: 6px; }
+      .g-templates {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      }
+    }
+
+
+  </style>
+
+  <script>
+    import { initPortal, getAuthed, postAuthed, cachedGet, clearApiCache } from '@/lib/portal/portalAuth.client';
+    import { getIcon, emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
+    import type { PortalBootstrapV2 } from '@/types/portal';
+    import type { GoalSummary, GoalTemplate, GoalCategory, GoalDirection } from '@/types/goals';
+
+    function esc(s: string): string {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    // ── State ──
+    let bootstrap: PortalBootstrapV2;
+    let operatorId: string;
+    let goals: GoalSummary[] = [];
+    let templates: GoalTemplate[] = [];
+    let goalsConfig: any = {};
+    let currentTab: 'active' | 'completed' | 'all' = 'active';
+
+    // ── Boot ──
+    async function renderGoalsPage(data: PortalBootstrapV2) {
+      bootstrap = data;
+      const content = document.getElementById('portal-content');
+      if (!content) return;
+
+      const opIds = Object.keys(data.operators);
+      operatorId = opIds[0] || '';
+      const primaryOp = operatorId ? data.operators[operatorId] : null;
+      const portal = (primaryOp as any)?.portal;
+      goalsConfig = portal?.goals || {};
+      templates = goalsConfig.templates || [];
+
+      content.innerHTML = `
+        <div class="bento-grid">
+          <!-- Header -->
+          <div class="portal-card-glass bento-full g-header" id="goals-header">
+            <div>
+              <h2>${getIcon('target', 'header-icon')} Goals</h2>
+              <div class="g-header-sub">Track your progress toward what matters</div>
+              <div class="g-summary-row" id="goals-summary"></div>
+            </div>
+            <button class="btn-primary" id="btn-new-goal">+ New Goal</button>
+          </div>
+
+          <!-- Status Banner -->
+          <div class="bento-full">
+            <div class="result-banner" id="goals-status"></div>
+          </div>
+
+          <!-- Templates (if any) -->
+          ${templates.length > 0 ? `
+            <div class="portal-card-glass bento-full" id="templates-section">
+              <div class="portal-card-title"><span class="g-card-title-icon">${getIcon('zap', 'section-icon')}</span> Quick Start from Template</div>
+              <div class="g-templates" id="templates-grid"></div>
+            </div>
+          ` : ''}
+
+          <!-- Goal List -->
+          <div class="portal-card-glass bento-full" id="goals-list-section">
+            <div class="g-tabs" id="goals-tabs">
+              <button class="g-tab active" data-tab="active">Active</button>
+              <button class="g-tab" data-tab="completed">Completed</button>
+              <button class="g-tab" data-tab="all">All</button>
+            </div>
+            <div id="goals-list" class="g-goals-list"></div>
+          </div>
+        </div>
+
+        <!-- Create Goal Modal -->
+        <div class="g-modal-overlay" id="goal-modal">
+          <div class="g-modal">
+            <h3 id="modal-title">Create New Goal</h3>
+            <form id="goal-form" class="g-form">
+              <div>
+                <label class="form-label">Goal Title</label>
+                <input id="goal-title" type="text" placeholder="e.g., Reach 80kg" class="form-input" required />
+              </div>
+              <div class="g-row">
+                <div>
+                  <label class="form-label">Category</label>
+                  <select id="goal-category" class="form-input">
+                    <option value="performance">Performance</option>
+                    <option value="body">Body / Physical</option>
+                    <option value="habit">Habit / Consistency</option>
+                    <option value="milestone">Milestone</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">Direction</label>
+                  <select id="goal-direction" class="form-input">
+                    <option value="increase">Increase</option>
+                    <option value="decrease">Decrease</option>
+                    <option value="exact">= Exact</option>
+                  </select>
+                </div>
+              </div>
+              <div class="g-row">
+                <div>
+                  <label class="form-label">Starting Value</label>
+                  <input id="goal-start" type="number" step="any" placeholder="0" class="form-input" />
+                </div>
+                <div>
+                  <label class="form-label">Target Value</label>
+                  <input id="goal-target" type="number" step="any" placeholder="10" class="form-input" required />
+                </div>
+              </div>
+              <div class="g-row">
+                <div>
+                  <label class="form-label">Unit</label>
+                  <input id="goal-unit" type="text" placeholder="kg, %, sessions" class="form-input" required />
+                </div>
+                <div>
+                  <label class="form-label">Deadline (optional)</label>
+                  <input id="goal-deadline" type="date" class="form-input" />
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Linked Metric (optional)</label>
+                <select id="goal-metric" class="form-input">
+                  <option value="">None — update manually</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                <button type="button" class="btn-ghost" id="btn-cancel-goal">Cancel</button>
+                <button type="submit" class="btn-primary" id="btn-submit-goal">Create Goal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      // Wire up
+      wireModal();
+      wireTabs();
+      renderTemplates();
+      populateMetricDropdown();
+      await loadGoals();
+    }
+
+    // ── Templates ──
+    function renderTemplates() {
+      const grid = document.getElementById('templates-grid');
+      if (!grid || templates.length === 0) return;
+
+      grid.innerHTML = templates.map((t) => `
+        <div class="g-template" data-template-id="${t.id}">
+          <div class="g-template-icon">${getIcon('target', 'goal-icon')}</div>
+          <div class="g-template-name">${esc(t.title)}</div>
+          <div class="g-template-meta">${t.defaultTarget} ${esc(t.unit)} · ${t.direction}</div>
+        </div>
+      `).join('');
+
+      grid.querySelectorAll('.g-template').forEach((el) => {
+        el.addEventListener('click', () => {
+          const tId = (el as HTMLElement).dataset.templateId;
+          const template = templates.find((t) => t.id === tId);
+          if (!template) return;
+
+          // Pre-fill form from template
+          (document.getElementById('goal-title') as HTMLInputElement).value = template.title;
+          (document.getElementById('goal-category') as HTMLSelectElement).value = template.category;
+          (document.getElementById('goal-direction') as HTMLSelectElement).value = template.direction;
+          (document.getElementById('goal-target') as HTMLInputElement).value = String(template.defaultTarget);
+          (document.getElementById('goal-unit') as HTMLInputElement).value = template.unit;
+          (document.getElementById('goal-start') as HTMLInputElement).value = '0';
+          if (template.linkedMetricKey) {
+            (document.getElementById('goal-metric') as HTMLSelectElement).value = template.linkedMetricKey;
+          }
+
+          openModal();
+        });
+      });
+    }
+
+    // ── Metric dropdown ──
+    function populateMetricDropdown() {
+      const select = document.getElementById('goal-metric') as HTMLSelectElement;
+      if (!select) return;
+
+      const portal = operatorId ? (bootstrap.operators[operatorId] as any)?.portal : null;
+      const metrics = portal?.entries?.metrics || [];
+
+      for (const m of metrics) {
+        const opt = document.createElement('option');
+        opt.value = m.key;
+        opt.textContent = `${m.label} (${m.unit})`;
+        select.appendChild(opt);
+      }
+    }
+
+    // ── Modal ──
+    function wireModal() {
+      const modal = document.getElementById('goal-modal')!;
+      const form = document.getElementById('goal-form')!;
+
+      document.getElementById('btn-new-goal')?.addEventListener('click', openModal);
+      document.getElementById('btn-cancel-goal')?.addEventListener('click', closeModal);
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await createGoal();
+      });
+    }
+
+    function openModal() {
+      document.getElementById('goal-modal')?.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('goal-modal')?.classList.remove('active');
+      (document.getElementById('goal-form') as HTMLFormElement)?.reset();
+    }
+
+    // ── Tabs ──
+    function wireTabs() {
+      document.querySelectorAll('.g-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          currentTab = (tab as HTMLElement).dataset.tab as typeof currentTab;
+          document.querySelectorAll('.g-tab').forEach((t) => t.classList.remove('active'));
+          tab.classList.add('active');
+          renderGoalList();
+        });
+      });
+    }
+
+    // ── Load Goals ──
+    async function loadGoals() {
+      try {
+        const url = operatorId
+          ? `/api/portal/goals?operatorId=${encodeURIComponent(operatorId)}`
+          : '/api/portal/goals';
+        const resp = await cachedGet(url);
+        if (!resp.ok) {
+          showStatus('Failed to load goals', true);
+          return;
+        }
+        const data = await resp.json();
+        goals = data.goals || [];
+        updateSummary(data.totalActive, data.totalCompleted);
+        renderGoalList();
+      } catch (err: any) {
+        showStatus('Error loading goals: ' + (err.message || ''), true);
+      }
+    }
+
+    // ── Update Summary ──
+    function updateSummary(active: number, completed: number) {
+      const el = document.getElementById('goals-summary');
+      if (!el) return;
+      el.innerHTML = `
+        <div class="g-summary-badge"><span class="val">${active}</span> active</div>
+        <div class="g-summary-badge"><span class="val">${completed}</span> completed</div>
+        <div class="g-summary-badge"><span class="val">${goals.length}</span> total</div>
+      `;
+    }
+
+    // ── Render Goal List ──
+    function renderGoalList() {
+      const container = document.getElementById('goals-list');
+      if (!container) return;
+
+      let filtered = goals;
+      if (currentTab === 'active') filtered = goals.filter((g) => g.status === 'active');
+      else if (currentTab === 'completed') filtered = goals.filter((g) => g.status === 'completed');
+
+      if (filtered.length === 0) {
+        const emptyHtml = currentTab === 'active'
+          ? emptyStateHtml({ icon: 'target', title: 'No Active Goals', desc: 'Set a goal to start tracking your progress!', action: { label: '+ New Goal', id: 'btn-empty-new-goal' } })
+          : currentTab === 'completed'
+          ? emptyStateHtml({ icon: 'trophy', title: 'No Completed Goals', desc: 'Keep working toward your targets — you\'ll get there!' })
+          : emptyStateHtml({ icon: 'target', title: 'No Goals Found', desc: 'Create your first goal to get started.', action: { label: '+ New Goal', id: 'btn-empty-new-goal' } });
+        container.innerHTML = emptyHtml;
+        document.getElementById('btn-empty-new-goal')?.addEventListener('click', openModal);
+        return;
+      }
+
+      container.innerHTML = filtered.map((g) => {
+        const pct = Math.max(0, Math.min(100, g.progressPct));
+        const color = g.color || 'var(--portal-accent)';
+        const circumference = 2 * Math.PI * 22;
+        const dashOffset = circumference - (pct / 100) * circumference;
+        const isCompleted = g.status === 'completed';
+        const isAbandoned = g.status === 'abandoned';
+
+        return `
+          <div class="g-goal-item ${isCompleted ? 'completed' : ''}" data-goal-id="${g.id}">
+            <div class="g-goal-ring">
+              <svg width="56" height="56" viewBox="0 0 56 56">
+                <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="4"/>
+                <circle cx="28" cy="28" r="22" fill="none" stroke="${isCompleted ? 'var(--portal-success)' : color}" stroke-width="4"
+                        stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"
+                        stroke-linecap="round" transform="rotate(-90 28 28)"
+                        style="transition: stroke-dashoffset 0.6s ease;"/>
+              </svg>
+              <span class="g-goal-pct">${isCompleted ? '✓' : pct + '%'}</span>
+            </div>
+            <div class="g-goal-body">
+              <div class="g-goal-name">${g.icon ? g.icon + ' ' : ''}${esc(g.title)}</div>
+              <div class="g-goal-progress-text">
+                ${g.currentValue} / ${g.targetValue} ${esc(g.unit)}
+                ${g.deadline ? ` · Due ${new Date(g.deadline).toLocaleDateString()}` : ''}
+              </div>
+              <div class="g-goal-bar-track">
+                <div class="g-goal-bar-fill" style="width:${pct}%;background:${isCompleted ? 'var(--portal-success)' : color};"></div>
+              </div>
+              <div class="g-goal-badges">
+                <span class="g-tag">${g.category}</span>
+                ${g.linkedMetricKey ? `<span class="g-tag">${getIcon('chart', 'badge-icon')} auto-track</span>` : ''}
+                ${isAbandoned ? `<span class="g-tag g-tag-error">archived</span>` : ''}
+              </div>
+            </div>
+            <div class="g-goal-actions">
+              ${g.status === 'active' ? `
+                <button class="btn-ghost btn-sm btn-update" data-goal-id="${g.id}" title="Update progress">${getIcon('pencil', 'badge-icon')}</button>
+                <button class="btn-ghost btn-sm btn-complete" data-goal-id="${g.id}" title="Mark complete">✓</button>
+                <button class="btn-danger btn-sm btn-archive" data-goal-id="${g.id}" title="Archive">✕</button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Wire action buttons
+      container.querySelectorAll('.btn-update').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          promptUpdateGoal((btn as HTMLElement).dataset.goalId!);
+        });
+      });
+      container.querySelectorAll('.btn-complete').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          completeGoal((btn as HTMLElement).dataset.goalId!);
+        });
+      });
+      container.querySelectorAll('.btn-archive').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          archiveGoal((btn as HTMLElement).dataset.goalId!);
+        });
+      });
+    }
+
+    // ── Create Goal ──
+    async function createGoal() {
+      const title = (document.getElementById('goal-title') as HTMLInputElement).value.trim();
+      const category = (document.getElementById('goal-category') as HTMLSelectElement).value as GoalCategory;
+      const direction = (document.getElementById('goal-direction') as HTMLSelectElement).value as GoalDirection;
+      const startValue = parseFloat((document.getElementById('goal-start') as HTMLInputElement).value) || 0;
+      const targetValue = parseFloat((document.getElementById('goal-target') as HTMLInputElement).value);
+      const unit = (document.getElementById('goal-unit') as HTMLInputElement).value.trim();
+      const deadline = (document.getElementById('goal-deadline') as HTMLInputElement).value || undefined;
+      const linkedMetricKey = (document.getElementById('goal-metric') as HTMLSelectElement).value || undefined;
+
+      if (!title || !unit || isNaN(targetValue)) {
+        showStatus('Please fill in title, target value, and unit.', true);
+        return;
+      }
+
+      try {
+        const resp = await postAuthed('/api/portal/goals', {
+          operatorId,
+          title,
+          category,
+          direction,
+          startValue,
+          targetValue,
+          unit,
+          deadline,
+          linkedMetricKey,
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          showStatus(err.error || `Failed to create goal (${resp.status})`, true);
+          return;
+        }
+
+        closeModal();
+        showStatus('Goal created!', false);
+        clearApiCache('/api/portal/goals');
+        await loadGoals();
+      } catch (err: any) {
+        showStatus('Error: ' + (err.message || 'Unknown'), true);
+      }
+    }
+
+    // ── Update Goal Progress ──
+    async function promptUpdateGoal(goalId: string) {
+      const goal = goals.find((g) => g.id === goalId);
+      if (!goal) return;
+
+      const input = prompt(
+        `Update "${goal.title}"\nCurrent: ${goal.currentValue} ${goal.unit}\nTarget: ${goal.targetValue} ${goal.unit}\n\nEnter new value:`,
+        String(goal.currentValue)
+      );
+      if (input === null) return;
+
+      const newValue = parseFloat(input);
+      if (isNaN(newValue)) {
+        showStatus('Invalid number', true);
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/portal/goals', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await getToken()}`,
+          },
+          body: JSON.stringify({ goalId, currentValue: newValue }),
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          showStatus(err.error || 'Failed to update', true);
+          return;
+        }
+
+        const data = await resp.json();
+        if (data.goal?.status === 'completed') {
+          showStatus(`Goal "${goal.title}" completed!`, false);
+        } else {
+          showStatus('Progress updated!', false);
+        }
+        clearApiCache('/api/portal/goals');
+        await loadGoals();
+      } catch (err: any) {
+        showStatus('Error: ' + (err.message || 'Unknown'), true);
+      }
+    }
+
+    // ── Complete Goal ──
+    async function completeGoal(goalId: string) {
+      const goal = goals.find((g) => g.id === goalId);
+      if (!goal) return;
+      if (!confirm(`Mark "${goal.title}" as complete?`)) return;
+
+      try {
+        const resp = await fetch('/api/portal/goals', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await getToken()}`,
+          },
+          body: JSON.stringify({ goalId, status: 'completed' }),
+        });
+
+        if (resp.ok) {
+          showStatus(`"${goal.title}" completed!`, false);
+          clearApiCache('/api/portal/goals');
+          await loadGoals();
+        }
+      } catch {
+        showStatus('Failed to complete goal', true);
+      }
+    }
+
+    // ── Archive Goal ──
+    async function archiveGoal(goalId: string) {
+      const goal = goals.find((g) => g.id === goalId);
+      if (!goal) return;
+      if (!confirm(`Archive "${goal.title}"? You can view it in the "All" tab.`)) return;
+
+      try {
+        const resp = await fetch(`/api/portal/goals?goalId=${encodeURIComponent(goalId)}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${await getToken()}`,
+          },
+        });
+
+        if (resp.ok) {
+          showStatus('Goal archived', false);
+          clearApiCache('/api/portal/goals');
+          await loadGoals();
+        }
+      } catch {
+        showStatus('Failed to archive goal', true);
+      }
+    }
+
+    // ── Helpers ──
+    async function getToken(): Promise<string> {
+      const { auth } = await import('@/lib/firebase/client.client');
+      const user = auth.currentUser;
+      return user ? await user.getIdToken() : '';
+    }
+
+    function showStatus(message: string, isError: boolean) {
+      const el = document.getElementById('goals-status');
+      if (!el) return;
+      el.className = `result-banner ${isError ? 'result-error' : 'result-success'}`;
+      el.textContent = message;
+      if (!isError) {
+        setTimeout(() => { el.className = 'result-banner'; }, 4000);
+      }
+    }
+
+    // Boot
+    initPortal()
+      .then(renderGoalsPage)
+      .catch((err) => {
+        console.error('[Goals] Failed:', err);
+        const content = document.getElementById('portal-content');
+        if (content) {
+          content.innerHTML = errorStateHtml({ title: 'Unable to Load Goals', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-goals' } });
+          document.getElementById('btn-reload-goals')?.addEventListener('click', () => location.reload());
+        }
+      });
+  </script>
+</PortalLayout>

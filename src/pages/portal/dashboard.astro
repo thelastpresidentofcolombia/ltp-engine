@@ -1,0 +1,41 @@
+---
+/**
+ * /portal/dashboard → /portal/{operatorId}/dashboard (redirect stub)
+ *
+ * ENGINE CONTRACT:
+ * - Legacy bookmarks and stale links hit this page.
+ * - Reads last known operatorId from sessionStorage, then redirects.
+ * - If no operatorId found, redirects to /portal (login/bootstrap).
+ */
+export const prerender = false;
+---
+
+<html>
+<head><meta charset="UTF-8" /><title>Redirecting…</title></head>
+<body>
+<script is:inline>
+(function() {
+  var opId;
+  try { opId = sessionStorage.getItem('cp:lastOperatorId'); } catch(e) {}
+  if (!opId) {
+    try {
+      var raw = sessionStorage.getItem('ltp_portal_bootstrap');
+      if (raw) {
+        var d = JSON.parse(raw).data;
+        var ops = d && d.operators ? Object.keys(d.operators) : [];
+        if (ops.length === 1) opId = ops[0];
+      }
+    } catch(e) {}
+  }
+  var page = window.location.pathname.replace(/^\/portal\/?/, '') || 'dashboard';
+  if (opId) {
+    window.location.replace('/portal/' + opId + '/' + page + window.location.search + window.location.hash);
+  } else {
+    window.location.replace('/portal');
+  }
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0;url=/portal" /></noscript>
+<p style="font-family:system-ui;color:#888;text-align:center;margin-top:40vh;">Redirecting…</p>
+</body>
+</html>

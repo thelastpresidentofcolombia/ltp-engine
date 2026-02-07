@@ -38,6 +38,10 @@ export default defineConfig({
       },
     },
   },
+  prefetch: {
+    defaultStrategy: 'hover',
+    prefetchAll: false,
+  },
   site: process.env.SITE_URL || 'https://ltp-engine.vercel.app',
   compressHTML: true,
   build: {

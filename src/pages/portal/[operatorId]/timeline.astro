@@ -1,0 +1,447 @@
+---
+/**
+ * /portal/timeline — Timeline Page
+ *
+ * ENGINE CONTRACT:
+ * - Chart visualization of metrics over time
+ * - Driven by MetricDefinition[] from operator config
+ * - Range picker (7d, 30d, 90d, all)
+ * - Stat cards showing change, min, max, avg per metric
+ * - Lightweight canvas charts (zero external deps)
+ * - Feature-gated: hidden if 'timeline' not in resolved features
+ * - All data loaded client-side via portalAuth + timeline API
+ */
+import PortalLayout from '@/layouts/PortalLayout.astro';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Timeline" activeSection="timeline" operatorId={operatorId!}>
+  <!-- ── Range Picker ── -->
+  <section class="portal-card range-bar">
+    <div id="range-chips" class="chip-group"></div>
+  </section>
+
+  <!-- ── Stat Cards ── -->
+  <section id="stats-section" class="stats-grid" style="display:none;"></section>
+
+  <!-- ── Charts ── -->
+  <section id="charts-section" class="charts-section" style="display:none;"></section>
+
+  <!-- ── Empty State ── -->
+  <section id="empty-state" class="portal-card" style="display:none;">
+    <div id="empty-state-content"></div>
+  </section>
+
+  <!-- ── Loading ── -->
+  <section id="loading-state" class="portal-card">
+    <div class="skeleton-chart"></div>
+  </section>
+</PortalLayout>
+
+<style is:global>
+  /* ── Page-specific styles only (shared classes in portal-system.css) ── */
+
+  /* ── Range bar ── */
+  .range-bar { padding: 1rem 1.5rem; }
+  .range-bar .chip-group { margin-bottom: 0; }
+
+  /* ── Stats Grid ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--portal-surface, #1a1a2e);
+    border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    border-radius: var(--portal-radius, 14px);
+    padding: 1.2rem;
+  }
+  .portal-stat-label { margin-bottom: 0.4rem; }
+  .portal-stat-change { margin-top: 0.3rem; }
+  .stat-detail {
+    font-size: 0.7rem;
+    color: var(--portal-text-muted, #6b7280);
+    margin-top: 0.3rem;
+  }
+
+  /* ── Charts ── */
+  .charts-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .chart-card {
+    background: var(--portal-surface, #1a1a2e);
+    border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    border-radius: var(--portal-radius, 14px);
+    padding: 1.5rem;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .chart-title-unit {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--portal-text-muted, #6b7280);
+    margin-left: 0.3rem;
+  }
+  .chart-canvas {
+    width: 100%;
+    height: 200px;
+    display: block;
+  }
+
+  /* ── Empty + Loading ── */
+  .skeleton-chart {
+    height: 200px;
+    background: var(--portal-bg, #0d0d12);
+    border-radius: var(--portal-radius-sm, 8px);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  /* ── Mobile Responsive ── */
+  @media (max-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+    .chart-card {
+      padding: 1rem;
+    }
+    .range-bar {
+      padding: 0.75rem 1rem;
+    }
+  }
+</style>
+
+<script>
+  import { initPortal, cachedGet } from '@/lib/portal/portalAuth.client';
+  import { emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
+  import type { PortalBootstrapV2 } from '@/types/portal';
+
+  // ── Types ──
+  interface TimelinePoint { date: string; value: number; }
+  interface TimelineSeries {
+    key: string; label: string; unit: string;
+    color: string; direction: string; points: TimelinePoint[];
+  }
+  interface TimelineStats {
+    key: string; label: string; unit: string;
+    start: number | null; current: number | null;
+    change: number | null; changePercent: number | null;
+    min: number | null; max: number | null; avg: number | null;
+  }
+  interface TimelineView {
+    series: TimelineSeries[];
+    range: { from: string; to: string };
+    entryCount: number;
+    stats: TimelineStats[];
+  }
+
+  // ── State ──
+  let bootstrap: PortalBootstrapV2;
+  let currentRange = '30d';
+  let RANGES = ['7d', '30d', '90d', 'all'];
+
+  /** Get the resolved portal config for the primary operator. */
+  function getOperatorPortal() {
+    const opIds = Object.keys(bootstrap.operators);
+    const opId = opIds[0];
+    if (!opId) return null;
+    return bootstrap.operators[opId]?.portal ?? null;
+  }
+
+  async function init() {
+    try {
+      bootstrap = await initPortal();
+    } catch (err) {
+      console.error('[Timeline] Init failed:', err);
+      document.getElementById('loading-state')!.style.display = 'none';
+      document.getElementById('empty-state')!.style.display = 'block';
+      document.getElementById('empty-state-content')!.innerHTML =
+        errorStateHtml({ title: 'Unable to Load', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-timeline' } });
+      document.getElementById('btn-reload-timeline')?.addEventListener('click', () => location.reload());
+      return;
+    }
+
+    if (!bootstrap.features.includes('timeline')) {
+      document.getElementById('loading-state')!.style.display = 'none';
+      document.getElementById('empty-state')!.style.display = 'block';
+      document.getElementById('empty-state-content')!.innerHTML =
+        emptyStateHtml({ icon: 'shield', title: 'Timeline Not Available', desc: 'Timeline is not enabled for your account. Contact your coach for access.' });
+      return;
+    }
+
+    // Load timeline config from operator portal config
+    const portal = getOperatorPortal();
+    if (portal?.timeline?.availableRanges?.length) {
+      RANGES = portal.timeline.availableRanges;
+    }
+    if (portal?.timeline?.defaultRange) {
+      currentRange = portal.timeline.defaultRange;
+    }
+
+    renderRangeChips();
+    await loadTimeline();
+  }
+
+  function renderRangeChips() {
+    const container = document.getElementById('range-chips')!;
+    container.innerHTML = RANGES.map((r) =>
+      `<button class="chip ${r === currentRange ? 'active' : ''}" data-range="${r}">
+        ${formatRangeLabel(r)}
+      </button>`
+    ).join('');
+
+    container.addEventListener('click', async (e) => {
+      const btn = (e.target as HTMLElement).closest('.chip') as HTMLElement;
+      if (!btn) return;
+      container.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+      btn.classList.add('active');
+      currentRange = btn.dataset.range || '30d';
+      await loadTimeline();
+    });
+  }
+
+  function formatRangeLabel(r: string): string {
+    switch (r) {
+      case '7d': return '7 Days';
+      case '30d': return '30 Days';
+      case '90d': return '90 Days';
+      case 'all': return 'All Time';
+      default: return r;
+    }
+  }
+
+  async function loadTimeline() {
+    document.getElementById('loading-state')!.style.display = 'block';
+    document.getElementById('charts-section')!.style.display = 'none';
+    document.getElementById('stats-section')!.style.display = 'none';
+    document.getElementById('empty-state')!.style.display = 'none';
+
+    try {
+      const resp = await cachedGet(`/api/portal/timeline?range=${currentRange}`);
+      const data: TimelineView = await resp.json();
+
+      document.getElementById('loading-state')!.style.display = 'none';
+
+      if (data.entryCount === 0 || data.series.every((s) => s.points.length === 0)) {
+        document.getElementById('empty-state')!.style.display = 'block';
+        document.getElementById('empty-state-content')!.innerHTML =
+          emptyStateHtml({ icon: 'chart', title: 'No Timeline Data', desc: 'Start logging updates to see your progress over time!', action: { label: 'Log an Update', href: '/portal/entries' } });
+        return;
+      }
+
+      renderStats(data.stats);
+      renderCharts(data.series);
+    } catch (err) {
+      console.error('[Timeline] Load failed:', err);
+      document.getElementById('loading-state')!.style.display = 'none';
+      document.getElementById('empty-state')!.style.display = 'block';
+      document.getElementById('empty-state-content')!.innerHTML =
+        errorStateHtml({ title: 'Could Not Load Timeline', desc: 'Failed to load your timeline data. Please try again.', retry: { label: 'Retry', id: 'btn-retry-timeline' } });
+      document.getElementById('btn-retry-timeline')?.addEventListener('click', () => loadTimeline());
+    }
+  }
+
+  // ── Stats Rendering ──
+  function renderStats(stats: TimelineStats[]) {
+    const section = document.getElementById('stats-section')!;
+    const withData = stats.filter((s) => s.current != null);
+
+    if (withData.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.innerHTML = withData.map((s) => {
+      const changeClass = getChangeClass(s.change, s.key, stats);
+      const changeStr = s.change != null
+        ? `${s.change > 0 ? '+' : ''}${s.change} ${s.unit} (${s.changePercent != null ? (s.changePercent > 0 ? '+' : '') + s.changePercent + '%' : '—'})`
+        : '—';
+
+      return `
+        <div class="stat-card">
+          <div class="portal-stat-label">${escapeHtml(s.label)}</div>
+          <div class="portal-stat-value">
+            ${s.current != null ? s.current : '—'}
+            <span class="portal-stat-unit">${escapeHtml(s.unit)}</span>
+          </div>
+          <div class="portal-stat-change ${changeClass}">${changeStr}</div>
+          <div class="stat-detail">
+            Range: ${s.min ?? '—'} – ${s.max ?? '—'} · Avg: ${s.avg ?? '—'}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    section.style.display = 'grid';
+  }
+
+  function getChangeClass(change: number | null, key: string, allStats: TimelineStats[]): string {
+    if (change == null || change === 0) return 'neutral';
+    // Try to find direction from the series data (not available here, so use heuristic)
+    // Positive change: green if direction is 'up', red if 'down'
+    // For simplicity, show green for positive, red for negative
+    return change > 0 ? 'positive' : 'negative';
+  }
+
+  // ── Chart Rendering (lightweight canvas) ──
+  function renderCharts(series: TimelineSeries[]) {
+    const section = document.getElementById('charts-section')!;
+    const withPoints = series.filter((s) => s.points.length >= 2);
+
+    if (withPoints.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.innerHTML = withPoints.map((s, i) =>
+      `<div class="chart-card">
+        <div class="chart-header">
+          <span class="section-title">${escapeHtml(s.label)}<span class="chart-title-unit">(${escapeHtml(s.unit)})</span></span>
+        </div>
+        <canvas id="chart-${i}" class="chart-canvas"></canvas>
+      </div>`
+    ).join('');
+
+    section.style.display = 'flex';
+
+    // Draw each chart after DOM is ready
+    requestAnimationFrame(() => {
+      withPoints.forEach((s, i) => {
+        const canvas = document.getElementById(`chart-${i}`) as HTMLCanvasElement;
+        if (canvas) drawLineChart(canvas, s);
+      });
+    });
+  }
+
+  /**
+   * Lightweight line chart on canvas. No dependencies.
+   * Draws: line, area fill, dots, Y-axis labels, X-axis date labels.
+   */
+  function drawLineChart(canvas: HTMLCanvasElement, series: TimelineSeries) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(dpr, dpr);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { top: 15, right: 15, bottom: 30, left: 50 };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+
+    const points = series.points;
+    if (points.length < 2) return;
+
+    const values = points.map((p) => p.value);
+    let minVal = Math.min(...values);
+    let maxVal = Math.max(...values);
+    if (minVal === maxVal) {
+      minVal -= 1;
+      maxVal += 1;
+    }
+    const valRange = maxVal - minVal;
+
+    // Map point to canvas coordinates
+    const toX = (i: number) => pad.left + (i / (points.length - 1)) * plotW;
+    const toY = (v: number) => pad.top + plotH - ((v - minVal) / valRange) * plotH;
+
+    // ── Area fill ──
+    ctx.beginPath();
+    ctx.moveTo(toX(0), toY(points[0].value));
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(toX(i), toY(points[i].value));
+    }
+    ctx.lineTo(toX(points.length - 1), pad.top + plotH);
+    ctx.lineTo(toX(0), pad.top + plotH);
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+    grad.addColorStop(0, hexToRgba(series.color, 0.25));
+    grad.addColorStop(1, hexToRgba(series.color, 0.02));
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // ── Line ──
+    ctx.beginPath();
+    ctx.moveTo(toX(0), toY(points[0].value));
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(toX(i), toY(points[i].value));
+    }
+    ctx.strokeStyle = series.color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // ── Dots ──
+    for (let i = 0; i < points.length; i++) {
+      ctx.beginPath();
+      ctx.arc(toX(i), toY(points[i].value), 3, 0, Math.PI * 2);
+      ctx.fillStyle = series.color;
+      ctx.fill();
+    }
+
+    // ── Y-axis labels ──
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    const ySteps = 4;
+    for (let i = 0; i <= ySteps; i++) {
+      const val = minVal + (valRange * i) / ySteps;
+      const y = toY(val);
+      ctx.fillText(val.toFixed(1), pad.left - 6, y + 3);
+
+      // Grid line
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(w - pad.right, y);
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // ── X-axis date labels ──
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'center';
+    const maxLabels = Math.min(points.length, 6);
+    const step = Math.max(1, Math.floor(points.length / maxLabels));
+    for (let i = 0; i < points.length; i += step) {
+      ctx.fillText(formatChartDate(points[i].date), toX(i), h - 5);
+    }
+    // Always show last label
+    if ((points.length - 1) % step !== 0) {
+      ctx.fillText(formatChartDate(points[points.length - 1].date), toX(points.length - 1), h - 5);
+    }
+  }
+
+  function hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function formatChartDate(dateStr: string): string {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function escapeHtml(s: string): string {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ── Kick off ──
+  init();
+</script>

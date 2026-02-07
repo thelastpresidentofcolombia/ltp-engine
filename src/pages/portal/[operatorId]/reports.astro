@@ -1,0 +1,1153 @@
+---
+/**
+ * /portal/reports — Client Reports Page
+ *
+ * ENGINE CONTRACT:
+ * - Generates vertical-agnostic client-deliverable reports.
+ * - Operator config drives which report types + sections are available.
+ * - Data aggregated from existing APIs (goals, sessions, entries, timeline).
+ * - Renders beautiful branded HTML with @media print for PDF output.
+ * - "Download PDF" uses browser print dialog — zero server cost.
+ */
+
+import PortalLayout from '@/layouts/PortalLayout.astro';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Reports" activeSection="reports" operatorId={operatorId!}>
+  <style>
+    /* ============================================
+       REPORTS — CONFIGURATOR
+       ============================================ */
+    .r-config {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .r-config-full { grid-column: 1 / -1; }
+    .r-type-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }
+    .r-type-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 12px;
+      border-radius: var(--portal-radius);
+      background: var(--portal-surface-card);
+      border: 1.5px solid var(--portal-border);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      text-align: center;
+    }
+    .r-type-card:hover {
+      border-color: var(--portal-accent);
+      background: rgba(99,102,241,0.05);
+    }
+    .r-type-card.selected {
+      border-color: var(--portal-accent);
+      background: rgba(99,102,241,0.08);
+      transform: scale(1.02);
+    }
+    .r-type-card .r-type-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--portal-accent);
+    }
+    .r-type-card .r-type-icon .w-icon-svg {
+      width: 28px;
+      height: 28px;
+    }
+    .r-type-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--portal-text);
+    }
+    .r-type-desc {
+      font-size: 0.72rem;
+      color: var(--portal-text-muted);
+      line-height: 1.3;
+    }
+    .r-date-row {
+      display: flex;
+      gap: 10px;
+      align-items: end;
+    }
+    .r-date-row .form-input {
+      flex: 1;
+    }
+    .r-sections-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .r-section-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1.5px solid var(--portal-border);
+      background: var(--portal-surface-card);
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--portal-text-secondary);
+      transition: all 0.15s;
+    }
+    .r-section-toggle.active {
+      border-color: var(--portal-accent);
+      background: rgba(99,102,241,0.08);
+      color: var(--portal-text);
+    }
+    .r-section-toggle .w-icon-svg {
+      width: 14px;
+      height: 14px;
+    }
+    .r-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .r-actions .btn-primary { min-width: 140px; }
+    .r-gen-status {
+      font-size: 0.8rem;
+      color: var(--portal-text-muted);
+    }
+
+    /* ============================================
+       REPORTS — REPORT VIEWER (inline preview)
+       ============================================ */
+    .r-viewer {
+      display: none;
+      margin-top: 24px;
+    }
+    .r-viewer.active { display: block; }
+    .r-viewer-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .r-viewer-toolbar h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--portal-text);
+    }
+    .r-viewer-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .r-viewer-actions .btn-ghost {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+    }
+    .r-viewer-actions .btn-ghost .w-icon-svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ── Report Document ── */
+    .r-doc {
+      background: #fff;
+      color: #1a1a2e;
+      border-radius: var(--portal-radius);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    }
+    .r-doc-header {
+      padding: 32px 36px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid var(--report-accent, #6366f1);
+    }
+    .r-doc-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .r-doc-brand-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--report-accent, #6366f1);
+    }
+    .r-doc-brand-tagline {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    .r-doc-brand-logo img {
+      max-height: 40px;
+      object-fit: contain;
+    }
+    .r-doc-meta {
+      text-align: right;
+      font-size: 0.78rem;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+    .r-doc-meta strong {
+      color: #1a1a2e;
+      font-weight: 600;
+    }
+    .r-doc-title {
+      padding: 24px 36px 8px;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1a1a2e;
+    }
+    .r-doc-subtitle {
+      padding: 0 36px 20px;
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+    .r-doc-body {
+      padding: 0 36px 32px;
+    }
+
+    /* ── Report Sections ── */
+    .r-section {
+      margin-bottom: 28px;
+    }
+    .r-section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--report-accent, #6366f1);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1.5px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .r-section-title .w-icon-svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ── Overview KPIs ── */
+    .r-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+    .r-kpi {
+      padding: 14px;
+      border-radius: 8px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      text-align: center;
+    }
+    .r-kpi-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #1a1a2e;
+    }
+    .r-kpi-label {
+      font-size: 0.72rem;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    .r-kpi-change {
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .r-kpi-change.up { color: #10b981; }
+    .r-kpi-change.down { color: #ef4444; }
+    .r-kpi-change.stable { color: #6b7280; }
+
+    /* ── Goals Section ── */
+    .r-goal {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .r-goal:last-child { border-bottom: none; }
+    .r-goal-info { flex: 1; }
+    .r-goal-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    .r-goal-meta {
+      font-size: 0.72rem;
+      color: #6b7280;
+    }
+    .r-goal-bar {
+      width: 120px;
+      height: 6px;
+      border-radius: 3px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+    .r-goal-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .r-goal-pct {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      min-width: 40px;
+      text-align: right;
+    }
+    .r-goal-status {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .r-goal-status.active { background: rgba(99,102,241,0.1); color: #6366f1; }
+    .r-goal-status.completed { background: rgba(16,185,129,0.1); color: #10b981; }
+
+    /* ── Metrics Table ── */
+    .r-metrics-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .r-metrics-table th {
+      text-align: left;
+      font-weight: 600;
+      color: #6b7280;
+      padding: 8px 10px;
+      border-bottom: 2px solid #e5e7eb;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .r-metrics-table td {
+      padding: 10px;
+      border-bottom: 1px solid #f3f4f6;
+      color: #1a1a2e;
+    }
+    .r-metrics-table .r-change-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .r-change-pill.up { background: rgba(16,185,129,0.1); color: #10b981; }
+    .r-change-pill.down { background: rgba(239,68,68,0.1); color: #ef4444; }
+    .r-change-pill.stable { background: rgba(107,114,128,0.1); color: #6b7280; }
+
+    /* ── Sessions Table ── */
+    .r-sessions-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .r-sessions-table th {
+      text-align: left;
+      font-weight: 600;
+      color: #6b7280;
+      padding: 8px 10px;
+      border-bottom: 2px solid #e5e7eb;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .r-sessions-table td {
+      padding: 10px;
+      border-bottom: 1px solid #f3f4f6;
+      color: #1a1a2e;
+    }
+    .r-sessions-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .r-sessions-status.completed { background: rgba(16,185,129,0.1); color: #10b981; }
+    .r-sessions-status.confirmed { background: rgba(99,102,241,0.1); color: #6366f1; }
+    .r-sessions-status.pending { background: rgba(245,158,11,0.1); color: #f59e0b; }
+    .r-sessions-status.cancelled { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+    /* ── Entries Section ── */
+    .r-entry-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 0.82rem;
+    }
+    .r-entry-row:last-child { border-bottom: none; }
+    .r-entry-date {
+      font-weight: 600;
+      color: #1a1a2e;
+      min-width: 90px;
+    }
+    .r-entry-cat {
+      color: #6b7280;
+      font-size: 0.72rem;
+      text-transform: capitalize;
+    }
+    .r-entry-metric {
+      font-weight: 600;
+      color: var(--report-accent, #6366f1);
+    }
+    .r-entry-feedback {
+      font-size: 0.72rem;
+      color: #10b981;
+    }
+
+    /* ── Footer ── */
+    .r-doc-footer {
+      padding: 16px 36px;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
+    /* ============================================
+       PRINT STYLES
+       ============================================ */
+    @media print {
+      /* Hide everything except the report document */
+      .portal-sidebar,
+      .portal-page-header,
+      .r-config-section,
+      .r-viewer-toolbar,
+      .mobile-tab-bar,
+      #portal-skeleton {
+        display: none !important;
+      }
+      .portal-main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+      }
+      .r-viewer {
+        display: block !important;
+        margin: 0 !important;
+      }
+      .r-doc {
+        box-shadow: none;
+        border-radius: 0;
+      }
+      .r-doc-header { padding: 20px 24px 16px; }
+      .r-doc-title { padding: 16px 24px 4px; font-size: 1.3rem; }
+      .r-doc-subtitle { padding: 0 24px 16px; }
+      .r-doc-body { padding: 0 24px 20px; }
+      .r-doc-footer { padding: 12px 24px; }
+      .r-kpi { break-inside: avoid; }
+      .r-goal { break-inside: avoid; }
+      .r-section { break-inside: avoid; }
+      @page {
+        margin: 0.5in;
+        size: A4 portrait;
+      }
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 768px) {
+      .r-config { grid-template-columns: 1fr; }
+      .r-doc-header { flex-direction: column; gap: 12px; }
+      .r-doc-meta { text-align: left; }
+      .r-doc-title { font-size: 1.2rem; padding: 16px 20px 4px; }
+      .r-doc-subtitle { padding: 0 20px 16px; }
+      .r-doc-body { padding: 0 20px 24px; }
+      .r-doc-header { padding: 20px; }
+      .r-doc-footer { padding: 12px 20px; flex-direction: column; gap: 4px; }
+      .r-kpis { grid-template-columns: repeat(2, 1fr); }
+      .r-goal-bar { width: 80px; }
+      .r-metrics-table, .r-sessions-table { font-size: 0.75rem; }
+    }
+  </style>
+
+  <div id="reports-page">
+    <div class="portal-page-header">
+      <h1 id="reports-title">Reports</h1>
+      <p class="portal-page-desc">Generate branded progress reports. Download as PDF.</p>
+    </div>
+
+    <!-- Configurator -->
+    <div class="portal-card-glass r-config-section" id="reports-config">
+      <div class="r-config">
+        <!-- Report Type -->
+        <div class="r-config-full">
+          <label class="form-label">Report Type</label>
+          <div class="r-type-cards" id="report-types"></div>
+        </div>
+
+        <!-- Date Range -->
+        <div>
+          <label class="form-label">Period</label>
+          <div class="chip-group" id="period-chips"></div>
+        </div>
+
+        <!-- Custom Range -->
+        <div id="custom-range" style="display:none;">
+          <label class="form-label">Custom Range</label>
+          <div class="r-date-row">
+            <input type="date" id="range-from" class="form-input" />
+            <span style="color:var(--portal-text-muted);">to</span>
+            <input type="date" id="range-to" class="form-input" />
+          </div>
+        </div>
+
+        <!-- Sections -->
+        <div class="r-config-full">
+          <label class="form-label">Sections</label>
+          <div class="r-sections-grid" id="section-toggles"></div>
+        </div>
+
+        <!-- Generate -->
+        <div class="r-config-full r-actions">
+          <button class="btn-primary" id="btn-generate" disabled>Generate Report</button>
+          <span class="r-gen-status" id="gen-status"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Viewer -->
+    <div class="r-viewer" id="report-viewer">
+      <div class="r-viewer-toolbar">
+        <h3>Report Preview</h3>
+        <div class="r-viewer-actions">
+          <button class="btn-ghost" id="btn-download" title="Download PDF">
+            <span id="download-icon"></span> Download PDF
+          </button>
+          <button class="btn-ghost" id="btn-new-report" title="New Report">
+            <span id="new-icon"></span> New Report
+          </button>
+        </div>
+      </div>
+      <div id="report-document"></div>
+    </div>
+  </div>
+
+  <script>
+    import { initPortal, getAuthed, cachedGet } from '@/lib/portal/portalAuth.client';
+    import { getIcon, emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
+    import type { PortalBootstrapV2 } from '@/types/portal';
+    import type { ReportType, ReportPeriod, ReportSectionId, ReportData, ReportSections } from '@/types/reports';
+
+    // ── State ──
+    let bootstrap: PortalBootstrapV2;
+    let selectedType: ReportType = 'progress';
+    let selectedPeriod: ReportPeriod = '30d';
+    let selectedSections: Set<ReportSectionId> = new Set(['overview', 'goals', 'metrics', 'sessions']);
+    let reportData: ReportData | null = null;
+
+    // ── Report type definitions (vertical-agnostic) ──
+    const REPORT_TYPES: Array<{ id: ReportType; name: string; desc: string; icon: string }> = [
+      { id: 'progress', name: 'Progress Report',  desc: 'Full overview with metrics, goals, and sessions', icon: 'trending-up' },
+      { id: 'summary',  name: 'Period Summary',   desc: 'Compact snapshot of key numbers',                icon: 'chart' },
+      { id: 'goals',    name: 'Goals Report',      desc: 'Detailed goal progress and milestones',          icon: 'target' },
+    ];
+
+    const PERIODS: Array<{ id: ReportPeriod; label: string }> = [
+      { id: '7d',  label: '7 Days' },
+      { id: '30d', label: '30 Days' },
+      { id: '90d', label: '90 Days' },
+      { id: '6m',  label: '6 Months' },
+      { id: '1y',  label: '1 Year' },
+      { id: 'custom', label: 'Custom' },
+    ];
+
+    const ALL_SECTIONS: Array<{ id: ReportSectionId; label: string; icon: string }> = [
+      { id: 'overview',  label: 'Overview',  icon: 'grid' },
+      { id: 'goals',     label: 'Goals',     icon: 'target' },
+      { id: 'metrics',   label: 'Metrics',   icon: 'chart' },
+      { id: 'sessions',  label: 'Sessions',  icon: 'calendar' },
+      { id: 'entries',   label: 'Entries',    icon: 'file-text' },
+      { id: 'timeline',  label: 'Timeline',  icon: 'trending-up' },
+    ];
+
+    // ── Init ──
+    async function init() {
+      try {
+        bootstrap = await initPortal();
+
+        if (!bootstrap.features.includes('reports')) {
+          document.getElementById('reports-config')!.innerHTML =
+            emptyStateHtml({ icon: 'shield', title: 'Reports Not Available', desc: 'Reports are not enabled for your account. Contact your provider for access.' });
+          return;
+        }
+
+        // Load config from operator
+        const opIds = Object.keys(bootstrap.operators);
+        const primaryOp = opIds[0] ? bootstrap.operators[opIds[0]] : null;
+        const reportsCfg = (primaryOp as any)?.portal?.reports;
+
+        if (reportsCfg?.defaultPeriod) selectedPeriod = reportsCfg.defaultPeriod;
+        if (reportsCfg?.sections) selectedSections = new Set(reportsCfg.sections);
+
+        renderConfigurator(reportsCfg);
+        wireEvents();
+      } catch (err) {
+        console.error('[Reports] Init failed:', err);
+        document.getElementById('reports-config')!.innerHTML =
+          errorStateHtml({ title: 'Unable to Load', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-reports' } });
+        document.getElementById('btn-reload-reports')?.addEventListener('click', () => location.reload());
+      }
+    }
+
+    // ── Render Configurator ──
+    function renderConfigurator(cfg: any) {
+      // Report types (filter by config if set)
+      const allowedTypes = cfg?.types || REPORT_TYPES.map(t => t.id);
+      const types = REPORT_TYPES.filter(t => allowedTypes.includes(t.id));
+
+      document.getElementById('report-types')!.innerHTML = types.map(t => `
+        <div class="r-type-card ${t.id === selectedType ? 'selected' : ''}" data-type="${t.id}">
+          <div class="r-type-icon">${getIcon(t.icon as any)}</div>
+          <div class="r-type-name">${t.name}</div>
+          <div class="r-type-desc">${t.desc}</div>
+        </div>
+      `).join('');
+
+      // Period chips
+      document.getElementById('period-chips')!.innerHTML = PERIODS.map(p => `
+        <button class="chip ${p.id === selectedPeriod ? 'active' : ''}" data-period="${p.id}">${p.label}</button>
+      `).join('');
+
+      // Section toggles
+      document.getElementById('section-toggles')!.innerHTML = ALL_SECTIONS.map(s => `
+        <button class="r-section-toggle ${selectedSections.has(s.id) ? 'active' : ''}" data-section="${s.id}">
+          ${getIcon(s.icon as any)} ${s.label}
+        </button>
+      `).join('');
+
+      // Download/new icons
+      document.getElementById('download-icon')!.innerHTML = getIcon('download');
+      document.getElementById('new-icon')!.innerHTML = getIcon('plus');
+
+      updateGenerateBtn();
+    }
+
+    // ── Wire Events ──
+    function wireEvents() {
+      // Type selection
+      document.getElementById('report-types')!.addEventListener('click', (e) => {
+        const card = (e.target as HTMLElement).closest('.r-type-card') as HTMLElement;
+        if (!card) return;
+        document.querySelectorAll('.r-type-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedType = card.dataset.type as ReportType;
+        updateGenerateBtn();
+      });
+
+      // Period selection
+      document.getElementById('period-chips')!.addEventListener('click', (e) => {
+        const chip = (e.target as HTMLElement).closest('.chip') as HTMLElement;
+        if (!chip) return;
+        document.querySelectorAll('#period-chips .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        selectedPeriod = chip.dataset.period as ReportPeriod;
+        document.getElementById('custom-range')!.style.display = selectedPeriod === 'custom' ? '' : 'none';
+        updateGenerateBtn();
+      });
+
+      // Section toggles
+      document.getElementById('section-toggles')!.addEventListener('click', (e) => {
+        const toggle = (e.target as HTMLElement).closest('.r-section-toggle') as HTMLElement;
+        if (!toggle) return;
+        const id = toggle.dataset.section as ReportSectionId;
+        if (selectedSections.has(id)) {
+          selectedSections.delete(id);
+          toggle.classList.remove('active');
+        } else {
+          selectedSections.add(id);
+          toggle.classList.add('active');
+        }
+        updateGenerateBtn();
+      });
+
+      // Generate
+      document.getElementById('btn-generate')!.addEventListener('click', generateReport);
+
+      // Download PDF
+      document.getElementById('btn-download')!.addEventListener('click', () => window.print());
+
+      // New report
+      document.getElementById('btn-new-report')!.addEventListener('click', () => {
+        document.getElementById('report-viewer')!.classList.remove('active');
+        reportData = null;
+      });
+    }
+
+    function updateGenerateBtn() {
+      const btn = document.getElementById('btn-generate') as HTMLButtonElement;
+      btn.disabled = selectedSections.size === 0;
+    }
+
+    // ── Date Range Calculation ──
+    function getDateRange(): { from: string; to: string } {
+      const now = new Date();
+      const to = now.toISOString().split('T')[0];
+
+      if (selectedPeriod === 'custom') {
+        const from = (document.getElementById('range-from') as HTMLInputElement).value || to;
+        const toVal = (document.getElementById('range-to') as HTMLInputElement).value || to;
+        return { from, to: toVal };
+      }
+
+      const days: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '6m': 180, '1y': 365 };
+      const d = new Date(now);
+      d.setDate(d.getDate() - (days[selectedPeriod] || 30));
+      return { from: d.toISOString().split('T')[0], to };
+    }
+
+    // ── Generate Report ──
+    async function generateReport() {
+      const btn = document.getElementById('btn-generate') as HTMLButtonElement;
+      const status = document.getElementById('gen-status')!;
+      btn.disabled = true;
+      status.textContent = 'Aggregating data…';
+
+      try {
+        const range = getDateRange();
+        const opIds = Object.keys(bootstrap.operators);
+        const operatorId = opIds[0] || '';
+        const primaryOp = bootstrap.operators[operatorId];
+
+        // Build branding
+        const branding = {
+          brandName: primaryOp?.brandName || 'Portal',
+          logo: primaryOp?.logo,
+          accentColor: primaryOp?.accentColor || '#6366f1',
+          tagline: primaryOp?.tagline,
+          footerText: ((primaryOp as any)?.portal?.reports?.branding?.footerText) || undefined,
+        };
+
+        // Build actor
+        const actor = {
+          name: bootstrap.actor.email.split('@')[0],
+          email: bootstrap.actor.email,
+        };
+
+        // Build meta
+        const meta = {
+          reportType: selectedType,
+          period: range,
+          generatedAt: new Date().toISOString(),
+          operatorId,
+        };
+
+        // ── Fetch data for selected sections in parallel ──
+        const sections: ReportSections = {};
+        const fetches: Promise<void>[] = [];
+
+        // Timeline range mapping
+        const timelineRange = selectedPeriod === 'custom' ? 'all'
+          : selectedPeriod === '6m' ? '6m'
+          : selectedPeriod === '1y' ? '1y'
+          : selectedPeriod;
+
+        if (selectedSections.has('overview') || selectedSections.has('metrics') || selectedSections.has('timeline')) {
+          fetches.push(
+            cachedGet(`/api/portal/timeline?range=${timelineRange}`).then(async (resp) => {
+              if (!resp.ok) return;
+              const data = await resp.json();
+
+              if (selectedSections.has('overview')) {
+                const highlights = (data.stats || []).map((s: any) => ({
+                  label: s.label,
+                  value: s.current != null ? `${s.current} ${s.unit}` : '—',
+                  change: s.change != null ? `${s.change > 0 ? '+' : ''}${s.change} ${s.unit}` : undefined,
+                  direction: s.change != null ? (s.change > 0 ? 'up' : s.change < 0 ? 'down' : 'stable') : 'stable',
+                }));
+                sections.overview = {
+                  totalSessions: bootstrap.summary.upcomingSessions,
+                  totalEntries: data.entryCount || bootstrap.summary.recentEntries,
+                  activeGoals: bootstrap.summary.activeGoals || 0,
+                  completedGoals: 0,
+                  currentStreak: 0,
+                  highlights,
+                };
+              }
+
+              if (selectedSections.has('metrics')) {
+                sections.metrics = {
+                  metrics: (data.stats || []).map((s: any) => ({
+                    key: s.key,
+                    label: s.label,
+                    unit: s.unit,
+                    current: s.current,
+                    start: s.start,
+                    change: s.change,
+                    changePct: s.changePercent,
+                    direction: s.change != null ? (s.change > 0 ? 'up' : s.change < 0 ? 'down' : 'stable') : 'stable',
+                    color: '#6366f1',
+                  })),
+                };
+              }
+
+              if (selectedSections.has('timeline')) {
+                sections.timeline = {
+                  stats: (data.stats || []).map((s: any) => ({
+                    label: s.label,
+                    unit: s.unit,
+                    start: s.start,
+                    current: s.current,
+                    change: s.change,
+                    changePct: s.changePercent,
+                    min: s.min,
+                    max: s.max,
+                    avg: s.avg,
+                  })),
+                };
+              }
+            })
+          );
+        }
+
+        if (selectedSections.has('goals')) {
+          const goalsUrl = operatorId
+            ? `/api/portal/goals?operatorId=${encodeURIComponent(operatorId)}`
+            : '/api/portal/goals';
+          fetches.push(
+            cachedGet(goalsUrl).then(async (resp) => {
+              if (!resp.ok) return;
+              const data = await resp.json();
+              const goals = data.goals || [];
+              sections.goals = {
+                goals: goals.map((g: any) => ({
+                  title: g.title,
+                  status: g.status,
+                  progressPct: g.progressPct,
+                  currentValue: g.currentValue,
+                  targetValue: g.targetValue,
+                  unit: g.unit,
+                  direction: g.direction,
+                  deadline: g.deadline,
+                })),
+              };
+              // Update overview counts
+              if (sections.overview) {
+                sections.overview.activeGoals = data.totalActive || 0;
+                sections.overview.completedGoals = data.totalCompleted || 0;
+              }
+            })
+          );
+        }
+
+        if (selectedSections.has('sessions')) {
+          fetches.push(
+            cachedGet('/api/portal/sessions').then(async (resp) => {
+              if (!resp.ok) return;
+              const data = await resp.json();
+              const allSessions = data.sessions || [];
+              // Filter to date range
+              const filtered = allSessions.filter((s: any) => {
+                const d = (s.startTime || s.createdAt || '').slice(0, 10);
+                return d >= range.from && d <= range.to;
+              });
+              sections.sessions = {
+                sessions: filtered.map((s: any) => ({
+                  date: (s.startTime || s.createdAt || '').slice(0, 10),
+                  category: s.category || 'standard',
+                  delivery: s.delivery || 'virtual',
+                  status: s.status || 'confirmed',
+                  durationMin: s.durationMin || 60,
+                })),
+                totalCompleted: filtered.filter((s: any) => s.status === 'completed').length,
+                totalCancelled: filtered.filter((s: any) => s.status === 'cancelled').length,
+              };
+              // Update overview
+              if (sections.overview) {
+                sections.overview.totalSessions = filtered.filter((s: any) => s.status === 'completed' || s.status === 'confirmed').length;
+              }
+            })
+          );
+        }
+
+        if (selectedSections.has('entries')) {
+          fetches.push(
+            cachedGet('/api/portal/entries?limit=100').then(async (resp) => {
+              if (!resp.ok) return;
+              const data = await resp.json();
+              const allEntries = data.entries || [];
+              const filtered = allEntries.filter((e: any) => {
+                return e.date >= range.from && e.date <= range.to;
+              });
+              sections.entries = {
+                entries: filtered.map((e: any) => ({
+                  date: e.date,
+                  category: e.category || 'metrics',
+                  primaryMetric: e.primaryMetric,
+                  hasCoachFeedback: e.hasCoachFeedback || false,
+                  notes: undefined,
+                })),
+                totalEntries: filtered.length,
+              };
+              // Update overview
+              if (sections.overview) {
+                sections.overview.totalEntries = filtered.length;
+              }
+            })
+          );
+        }
+
+        status.textContent = 'Fetching data…';
+        await Promise.all(fetches);
+
+        reportData = { meta, branding, actor, sections };
+
+        status.textContent = '';
+        btn.disabled = false;
+
+        renderReport(reportData);
+      } catch (err: any) {
+        console.error('[Reports] Generate failed:', err);
+        status.textContent = 'Failed to generate report.';
+        btn.disabled = false;
+      }
+    }
+
+    // ── Render Report Document ──
+    function renderReport(data: ReportData) {
+      const { meta, branding, actor, sections } = data;
+      const accent = branding.accentColor;
+
+      const reportTitle: Record<ReportType, string> = {
+        progress: 'Progress Report',
+        summary: 'Period Summary',
+        goals: 'Goals Report',
+      };
+
+      const fmtDate = (d: string) => {
+        try { return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+        catch { return d; }
+      };
+
+      const fmtDateTime = (d: string) => {
+        try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+        catch { return d; }
+      };
+
+      let html = '';
+
+      // ── Header ──
+      html += `
+        <div class="r-doc" style="--report-accent:${accent};">
+          <div class="r-doc-header">
+            <div class="r-doc-brand">
+              ${branding.logo ? `<div class="r-doc-brand-logo"><img src="${branding.logo}" alt="${esc(branding.brandName)}" /></div>` : ''}
+              <div class="r-doc-brand-name">${esc(branding.brandName)}</div>
+              ${branding.tagline ? `<div class="r-doc-brand-tagline">${esc(branding.tagline)}</div>` : ''}
+            </div>
+            <div class="r-doc-meta">
+              <strong>${esc(actor.name)}</strong><br/>
+              ${esc(actor.email)}<br/>
+              ${fmtDate(meta.period.from)} – ${fmtDate(meta.period.to)}
+            </div>
+          </div>
+          <div class="r-doc-title">${reportTitle[meta.reportType]}</div>
+          <div class="r-doc-subtitle">Period: ${fmtDate(meta.period.from)} – ${fmtDate(meta.period.to)} · Generated ${fmtDateTime(meta.generatedAt)}</div>
+          <div class="r-doc-body">
+      `;
+
+      // ── Overview Section ──
+      if (sections.overview) {
+        const o = sections.overview;
+        html += `
+          <div class="r-section">
+            <div class="r-section-title">${getIcon('grid')} Overview</div>
+            <div class="r-kpis">
+              <div class="r-kpi">
+                <div class="r-kpi-value">${o.totalSessions}</div>
+                <div class="r-kpi-label">Sessions</div>
+              </div>
+              <div class="r-kpi">
+                <div class="r-kpi-value">${o.totalEntries}</div>
+                <div class="r-kpi-label">Entries</div>
+              </div>
+              <div class="r-kpi">
+                <div class="r-kpi-value">${o.activeGoals}</div>
+                <div class="r-kpi-label">Active Goals</div>
+              </div>
+              <div class="r-kpi">
+                <div class="r-kpi-value">${o.completedGoals}</div>
+                <div class="r-kpi-label">Completed</div>
+              </div>
+              ${o.highlights.map(h => `
+                <div class="r-kpi">
+                  <div class="r-kpi-value">${esc(h.value)}</div>
+                  <div class="r-kpi-label">${esc(h.label)}</div>
+                  ${h.change ? `<div class="r-kpi-change ${h.direction || 'stable'}">${esc(h.change)}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // ── Goals Section ──
+      if (sections.goals && sections.goals.goals.length > 0) {
+        html += `<div class="r-section">
+          <div class="r-section-title">${getIcon('target')} Goals</div>`;
+        for (const g of sections.goals.goals) {
+          const color = g.status === 'completed' ? '#10b981' : accent;
+          html += `
+            <div class="r-goal">
+              <div class="r-goal-info">
+                <div class="r-goal-title">${esc(g.title)}</div>
+                <div class="r-goal-meta">${g.currentValue} / ${g.targetValue} ${esc(g.unit)}${g.deadline ? ` · Due ${fmtDate(g.deadline)}` : ''}</div>
+              </div>
+              <div class="r-goal-bar"><div class="r-goal-bar-fill" style="width:${g.progressPct}%;background:${color};"></div></div>
+              <div class="r-goal-pct">${g.progressPct}%</div>
+              <span class="r-goal-status ${g.status}">${g.status}</span>
+            </div>
+          `;
+        }
+        html += `</div>`;
+      }
+
+      // ── Metrics Section ──
+      if (sections.metrics && sections.metrics.metrics.length > 0) {
+        html += `<div class="r-section">
+          <div class="r-section-title">${getIcon('chart')} Metrics</div>
+          <table class="r-metrics-table">
+            <thead><tr>
+              <th>Metric</th><th>Current</th><th>Start</th><th>Change</th><th>Range</th>
+            </tr></thead>
+            <tbody>`;
+        for (const m of sections.metrics.metrics) {
+          const dir = m.direction || 'stable';
+          const changeTxt = m.change != null ? `${m.change > 0 ? '+' : ''}${m.change} ${m.unit}` : '—';
+          html += `<tr>
+            <td><strong>${esc(m.label)}</strong></td>
+            <td>${m.current != null ? `${m.current} ${esc(m.unit)}` : '—'}</td>
+            <td>${m.start != null ? `${m.start} ${esc(m.unit)}` : '—'}</td>
+            <td><span class="r-change-pill ${dir}">${changeTxt}</span></td>
+            <td style="color:#6b7280;">—</td>
+          </tr>`;
+        }
+        html += `</tbody></table></div>`;
+      }
+
+      // ── Timeline Stats Section ──
+      if (sections.timeline && sections.timeline.stats.length > 0) {
+        html += `<div class="r-section">
+          <div class="r-section-title">${getIcon('trending-up')} Detailed Statistics</div>
+          <table class="r-metrics-table">
+            <thead><tr>
+              <th>Metric</th><th>Start</th><th>Current</th><th>Change</th><th>Min</th><th>Max</th><th>Avg</th>
+            </tr></thead>
+            <tbody>`;
+        for (const s of sections.timeline.stats) {
+          const changeTxt = s.change != null ? `${s.change > 0 ? '+' : ''}${s.change}` : '—';
+          const dir = s.change != null ? (s.change > 0 ? 'up' : s.change < 0 ? 'down' : 'stable') : 'stable';
+          html += `<tr>
+            <td><strong>${esc(s.label)}</strong> <span style="color:#9ca3af;">(${esc(s.unit)})</span></td>
+            <td>${s.start ?? '—'}</td>
+            <td>${s.current ?? '—'}</td>
+            <td><span class="r-change-pill ${dir}">${changeTxt}</span></td>
+            <td>${s.min ?? '—'}</td>
+            <td>${s.max ?? '—'}</td>
+            <td>${s.avg != null ? s.avg.toFixed(1) : '—'}</td>
+          </tr>`;
+        }
+        html += `</tbody></table></div>`;
+      }
+
+      // ── Sessions Section ──
+      if (sections.sessions && sections.sessions.sessions.length > 0) {
+        html += `<div class="r-section">
+          <div class="r-section-title">${getIcon('calendar')} Sessions (${sections.sessions.sessions.length})</div>
+          <table class="r-sessions-table">
+            <thead><tr>
+              <th>Date</th><th>Type</th><th>Format</th><th>Duration</th><th>Status</th>
+            </tr></thead>
+            <tbody>`;
+        for (const s of sections.sessions.sessions) {
+          html += `<tr>
+            <td>${fmtDate(s.date)}</td>
+            <td style="text-transform:capitalize;">${esc(s.category)}</td>
+            <td style="text-transform:capitalize;">${esc(s.delivery)}</td>
+            <td>${s.durationMin}min</td>
+            <td><span class="r-sessions-status ${s.status}">${s.status}</span></td>
+          </tr>`;
+        }
+        html += `</tbody></table>
+          <div style="margin-top:8px;font-size:0.75rem;color:#6b7280;">
+            ${sections.sessions.totalCompleted} completed · ${sections.sessions.totalCancelled} cancelled
+          </div>
+        </div>`;
+      }
+
+      // ── Entries Section ──
+      if (sections.entries && sections.entries.entries.length > 0) {
+        html += `<div class="r-section">
+          <div class="r-section-title">${getIcon('file-text')} Entries (${sections.entries.totalEntries})</div>`;
+        for (const e of sections.entries.entries.slice(0, 20)) {
+          html += `
+            <div class="r-entry-row">
+              <span class="r-entry-date">${fmtDate(e.date)}</span>
+              <span class="r-entry-cat">${esc(e.category)}</span>
+              ${e.primaryMetric ? `<span class="r-entry-metric">${e.primaryMetric.value} ${esc(e.primaryMetric.unit || '')}</span>` : '<span></span>'}
+              ${e.hasCoachFeedback ? `<span class="r-entry-feedback">✓ Coach feedback</span>` : '<span></span>'}
+            </div>
+          `;
+        }
+        if (sections.entries.entries.length > 20) {
+          html += `<div style="font-size:0.75rem;color:#6b7280;margin-top:8px;">Showing 20 of ${sections.entries.totalEntries} entries</div>`;
+        }
+        html += `</div>`;
+      }
+
+      // ── Empty state if no sections rendered ──
+      const hasSectionContent = sections.overview || 
+        (sections.goals?.goals.length) || 
+        (sections.metrics?.metrics.length) || 
+        (sections.sessions?.sessions.length) || 
+        (sections.entries?.entries.length) || 
+        (sections.timeline?.stats.length);
+
+      if (!hasSectionContent) {
+        html += `
+          <div style="text-align:center;padding:40px 20px;color:#6b7280;">
+            <div style="font-size:1.5rem;margin-bottom:8px;">📊</div>
+            <div style="font-weight:600;color:#1a1a2e;">No Data Available</div>
+            <div style="font-size:0.85rem;">No data found for the selected period. Try a wider date range.</div>
+          </div>
+        `;
+      }
+
+      // ── Footer ──
+      html += `
+          </div>
+          <div class="r-doc-footer">
+            <span>${esc(branding.brandName)} · ${reportTitle[meta.reportType]}</span>
+            <span>Generated ${fmtDateTime(meta.generatedAt)}${branding.footerText ? ` · ${esc(branding.footerText)}` : ''}</span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('report-document')!.innerHTML = html;
+      document.getElementById('report-viewer')!.classList.add('active');
+
+      // Scroll to report
+      document.getElementById('report-viewer')!.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function esc(s: string): string {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    init();
+  </script>
+</PortalLayout>

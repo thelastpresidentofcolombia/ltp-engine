@@ -1,0 +1,490 @@
+---
+/**
+ * /portal/sessions — Sessions Page
+ *
+ * ENGINE CONTRACT:
+ * - Lists upcoming and past sessions
+ * - Booking form with availability slot picker
+ * - Cancel button on pending/confirmed sessions
+ * - Feature-gated: hidden if 'sessions' not in resolved features
+ * - All data loaded client-side via portalAuth + sessions API
+ */
+import PortalLayout from '@/layouts/PortalLayout.astro';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Sessions" activeSection="sessions" operatorId={operatorId!}>
+  <!-- ── Booking Section ── -->
+  <section id="booking-section" class="portal-card" style="display:none;">
+    <h2 class="section-title">Book a Session</h2>
+
+    <!-- Step 1: Choose category + delivery -->
+    <div id="booking-step-1">
+      <div class="form-row">
+        <label class="form-label">Session Type</label>
+        <div id="category-chips" class="chip-group"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Delivery</label>
+        <div id="delivery-chips" class="chip-group"></div>
+      </div>
+      <button id="btn-show-slots" class="btn-primary" disabled>Choose Time →</button>
+    </div>
+
+    <!-- Step 2: Pick a time slot -->
+    <div id="booking-step-2" style="display:none;">
+      <div class="form-row">
+        <label class="form-label">Available Slots</label>
+        <div id="week-nav" class="week-nav">
+          <button id="btn-prev-week" class="btn-ghost">← Prev</button>
+          <span id="week-label" class="week-label"></span>
+          <button id="btn-next-week" class="btn-ghost">Next →</button>
+        </div>
+        <div id="slots-grid" class="slots-grid">
+          <p style="color:var(--portal-text-muted);font-size:0.85rem">Loading availability…</p>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Notes (optional)</label>
+        <textarea id="booking-notes" rows="2" class="form-input" placeholder="Anything the coach should know…"></textarea>
+      </div>
+      <div class="btn-row">
+        <button id="btn-back-step1" class="btn-ghost">← Back</button>
+        <button id="btn-confirm-booking" class="btn-primary" disabled>Confirm Booking</button>
+      </div>
+    </div>
+
+    <!-- Booking result -->
+    <div id="booking-result" style="display:none;" class="result-banner"></div>
+  </section>
+
+  <!-- ── Upcoming Sessions ── -->
+  <section class="portal-card">
+    <h2 class="section-title">Upcoming Sessions</h2>
+    <div id="upcoming-list" class="session-list">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+  </section>
+
+  <!-- ── Past Sessions ── -->
+  <section class="portal-card">
+    <h2 class="section-title">Past Sessions</h2>
+    <div id="past-list" class="session-list">
+      <div class="skeleton-row"></div>
+    </div>
+  </section>
+</PortalLayout>
+
+<style is:global>
+  /* ── Page-specific styles only (shared classes in portal-system.css) ── */
+
+  /* ── Slots grid ── */
+  .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    min-height: 60px;
+  }
+  .slot-btn {
+    padding: 0.6rem;
+    border-radius: var(--portal-radius-sm, 8px);
+    border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    background: transparent;
+    color: var(--portal-text-secondary, #9da0b0);
+    cursor: pointer;
+    font-size: 0.8rem;
+    text-align: center;
+    transition: all var(--portal-transition, 150ms ease-out);
+  }
+  .slot-btn:hover { border-color: var(--portal-accent, #6366f1); color: var(--portal-text, #ececf1); }
+  .slot-btn:focus-visible {
+    outline: 2px solid var(--portal-accent, #6366f1);
+    outline-offset: 2px;
+  }
+  .slot-btn.selected {
+    background: var(--portal-accent, #6366f1);
+    color: var(--portal-bg, #0d0d12);
+    border-color: var(--portal-accent, #6366f1);
+    font-weight: 600;
+  }
+  .slot-date-header {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--portal-text-secondary, #9da0b0);
+    padding: 0.5rem 0 0.25rem;
+    border-bottom: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+  }
+
+  /* ── Week nav ── */
+  .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .week-label { font-size: 0.9rem; color: var(--portal-text-secondary, #9da0b0); }
+
+  /* ── Session cards ── */
+  .session-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .session-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-radius: var(--portal-radius, 14px);
+    border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+    background: var(--portal-bg, #0d0d12);
+  }
+  .session-info { flex: 1; }
+  .session-title { font-weight: 600; font-size: 0.95rem; color: var(--portal-text, #ececf1); }
+  .session-meta { font-size: 0.8rem; color: var(--portal-text-secondary, #9da0b0); margin-top: 0.25rem; }
+  /* ── Inline icon sizing ── */
+  .meta-icon { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; margin-right: 4px; }
+
+  /* ── Mobile Responsive ── */
+  @media (max-width: 768px) {
+    .slot-btn {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+    .slots-grid {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    .session-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .session-card .btn-row {
+      align-self: stretch;
+    }
+  }
+</style>
+
+<script>
+  import { initPortal, getAuthed, postAuthed, cachedGet, clearApiCache } from '@/lib/portal/portalAuth.client';
+  import { getIcon, emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
+  import type { PortalBootstrapV2 } from '@/types/portal';
+  import type { AvailabilitySlot } from '@/types/sessions';
+
+  let bootstrap: PortalBootstrapV2;
+  let selectedCategory: string | null = null;
+  let selectedDelivery: string | null = null;
+  let selectedSlot: AvailabilitySlot | null = null;
+  let allSlots: AvailabilitySlot[] = [];
+  let weekOffset = 0;
+
+  // Session categories from engine defaults (will be config-driven later)
+  const CATEGORIES = ['discovery', 'standard', 'premium', 'review'];
+  const DELIVERY = ['virtual', 'in-person'];
+  const STATUS_BADGE: Record<string, string> = {
+    pending: 'portal-badge-warning',
+    confirmed: 'portal-badge-success',
+    completed: 'portal-badge-muted',
+  };
+
+  async function init() {
+    try {
+      bootstrap = await initPortal();
+
+      // Check feature access
+      if (!bootstrap.features.includes('sessions')) {
+        document.getElementById('booking-section')!.style.display = 'block';
+        document.getElementById('booking-section')!.innerHTML =
+          emptyStateHtml({ icon: 'shield', title: 'Sessions Not Available', desc: 'Sessions are not enabled for your account. Contact your coach for access.' });
+        return;
+      }
+
+      document.getElementById('booking-section')!.style.display = 'block';
+
+      renderChips();
+      await loadSessions();
+    } catch (err) {
+      console.error('[Sessions] Init failed:', err);
+      document.getElementById('upcoming-list')!.innerHTML =
+        errorStateHtml({ title: 'Unable to Load Sessions', desc: 'Something went wrong loading your sessions.', retry: { label: 'Reload Page', id: 'btn-reload-sessions' } });
+      document.getElementById('btn-reload-sessions')?.addEventListener('click', () => location.reload());
+    }
+  }
+
+  // ── Chip rendering ──
+  function renderChips() {
+    const catContainer = document.getElementById('category-chips')!;
+    const delContainer = document.getElementById('delivery-chips')!;
+
+    catContainer.innerHTML = CATEGORIES.map((c) =>
+      `<button class="chip" data-cat="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`
+    ).join('');
+
+    delContainer.innerHTML = DELIVERY.map((d) =>
+      `<button class="chip" data-del="${d}">${d === 'virtual' ? `${getIcon('video', 'chip-icon')} Virtual` : `${getIcon('map-pin', 'chip-icon')} In-Person`}</button>`
+    ).join('');
+
+    catContainer.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.chip') as HTMLElement;
+      if (!btn) return;
+      catContainer.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCategory = btn.dataset.cat || null;
+      updateBookBtn();
+    });
+
+    delContainer.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.chip') as HTMLElement;
+      if (!btn) return;
+      delContainer.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+      btn.classList.add('active');
+      selectedDelivery = btn.dataset.del || null;
+      updateBookBtn();
+    });
+  }
+
+  function updateBookBtn() {
+    const btn = document.getElementById('btn-show-slots') as HTMLButtonElement;
+    btn.disabled = !(selectedCategory && selectedDelivery);
+  }
+
+  // ── Slot loading + rendering ──
+  async function loadSlots() {
+    const grid = document.getElementById('slots-grid')!;
+    grid.innerHTML = '<p style="color:var(--portal-text-muted);font-size:0.85rem">Loading availability…</p>';
+
+    const opId = bootstrap.actor.operatorIds[0];
+    if (!opId) {
+      grid.innerHTML = emptyStateHtml({ icon: 'alert', title: 'No Operator Found', desc: 'Your account is not linked to an operator.' });
+      return;
+    }
+
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(start.getDate() + weekOffset * 7);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+
+    const startStr = toDateStr(start);
+    const endStr = toDateStr(end);
+
+    document.getElementById('week-label')!.textContent =
+      `${formatShortDate(start)} – ${formatShortDate(end)}`;
+
+    try {
+      const resp = await getAuthed(
+        `/api/portal/availability?operatorId=${opId}&rangeStart=${startStr}&rangeEnd=${endStr}`
+      );
+      const data = await resp.json();
+      allSlots = data.slots || [];
+
+      if (allSlots.length === 0) {
+        grid.innerHTML = emptyStateHtml({ icon: 'calendar', title: 'No Slots Available', desc: 'No available time slots this week. Try the next week.' });
+        return;
+      }
+
+      // Group slots by date
+      const grouped: Record<string, AvailabilitySlot[]> = {};
+      for (const slot of allSlots) {
+        const dateKey = slot.start.slice(0, 10);
+        if (!grouped[dateKey]) grouped[dateKey] = [];
+        grouped[dateKey].push(slot);
+      }
+
+      grid.innerHTML = '';
+      for (const [dateKey, daySlots] of Object.entries(grouped)) {
+        const header = document.createElement('div');
+        header.className = 'slot-date-header';
+        header.textContent = formatDateLabel(dateKey);
+        grid.appendChild(header);
+
+        for (const slot of daySlots) {
+          const btn = document.createElement('button');
+          btn.className = 'slot-btn';
+          btn.textContent = formatTime(slot.start);
+          btn.addEventListener('click', () => {
+            grid.querySelectorAll('.slot-btn').forEach((b) => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedSlot = slot;
+            (document.getElementById('btn-confirm-booking') as HTMLButtonElement).disabled = false;
+          });
+          grid.appendChild(btn);
+        }
+      }
+    } catch (err) {
+      console.error('[Sessions] Load slots failed:', err);
+      grid.innerHTML = errorStateHtml({ title: 'Could Not Load Availability', desc: 'Failed to load time slots. Please try again.', retry: { label: 'Retry', id: 'btn-retry-slots' } });
+      document.getElementById('btn-retry-slots')?.addEventListener('click', () => loadSlots());
+    }
+  }
+
+  // ── Session list loading ──
+  async function loadSessions() {
+    try {
+      const resp = await cachedGet('/api/portal/sessions');
+      const data = await resp.json();
+      const sessions = data.sessions || [];
+
+      const now = new Date().toISOString();
+      const upcoming = sessions.filter((s: any) => s.startTime && s.startTime > now && s.status !== 'completed');
+      const past = sessions.filter((s: any) => !s.startTime || s.startTime <= now || s.status === 'completed');
+
+      renderSessionList('upcoming-list', upcoming, true);
+      renderSessionList('past-list', past, false);
+    } catch (err) {
+      console.error('[Sessions] Load sessions failed:', err);
+      document.getElementById('upcoming-list')!.innerHTML =
+        errorStateHtml({ title: 'Could Not Load Sessions', desc: 'Please check your connection and try again.', retry: { label: 'Retry', id: 'btn-retry-sessions' } });
+      document.getElementById('btn-retry-sessions')?.addEventListener('click', () => loadSessions());
+    }
+  }
+
+  function renderSessionList(containerId: string, sessions: any[], showCancel: boolean) {
+    const container = document.getElementById(containerId)!;
+
+    if (sessions.length === 0) {
+      container.innerHTML = showCancel
+        ? emptyStateHtml({ icon: 'calendar', title: 'No Upcoming Sessions', desc: 'Book a session above to get started!' })
+        : emptyStateHtml({ icon: 'calendar', title: 'No Past Sessions', desc: 'Your completed sessions will appear here.' });
+      return;
+    }
+
+    container.innerHTML = sessions.map((s: any) => `
+      <div class="session-card" data-session-id="${s.id}">
+        <div class="session-info">
+          <div class="session-title">${escapeHtml(s.title || s.category || 'Session')}</div>
+          <div class="session-meta">
+            ${s.startTime ? formatDateTime(s.startTime) : 'TBD'}
+            · ${s.durationMin || 60}min
+            · ${s.delivery === 'virtual' ? `<span class="session-delivery-icon">${getIcon('video', 'meta-icon')}</span> Virtual` : `<span class="session-delivery-icon">${getIcon('map-pin', 'meta-icon')}</span> In-Person`}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span class="portal-badge ${STATUS_BADGE[s.status] || 'portal-badge-muted'}">${s.status}</span>
+          ${showCancel && ['pending', 'confirmed'].includes(s.status)
+            ? `<button class="btn-danger btn-sm" data-cancel-id="${s.id}">Cancel</button>`
+            : ''}
+        </div>
+      </div>
+    `).join('');
+
+    // Bind cancel buttons
+    container.querySelectorAll('[data-cancel-id]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.target as HTMLElement).dataset.cancelId;
+        if (!id || !confirm('Cancel this session?')) return;
+        try {
+          await postAuthed(`/api/portal/sessions/${id}`, { action: 'cancel' });
+          clearApiCache('/api/portal/sessions');
+          await loadSessions();
+        } catch (err) {
+          console.error('[Sessions] Cancel failed:', err);
+        }
+      });
+    });
+  }
+
+  // ── Booking flow event wiring ──
+  document.getElementById('btn-show-slots')?.addEventListener('click', () => {
+    document.getElementById('booking-step-1')!.style.display = 'none';
+    document.getElementById('booking-step-2')!.style.display = 'block';
+    weekOffset = 0;
+    selectedSlot = null;
+    loadSlots();
+  });
+
+  document.getElementById('btn-back-step1')?.addEventListener('click', () => {
+    document.getElementById('booking-step-1')!.style.display = 'block';
+    document.getElementById('booking-step-2')!.style.display = 'none';
+  });
+
+  document.getElementById('btn-prev-week')?.addEventListener('click', () => {
+    if (weekOffset > 0) { weekOffset--; loadSlots(); }
+  });
+
+  document.getElementById('btn-next-week')?.addEventListener('click', () => {
+    if (weekOffset < 4) { weekOffset++; loadSlots(); }
+  });
+
+  document.getElementById('btn-confirm-booking')?.addEventListener('click', async () => {
+    if (!selectedSlot || !selectedCategory || !selectedDelivery) return;
+    const resultEl = document.getElementById('booking-result')!;
+    const btn = document.getElementById('btn-confirm-booking') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Booking…';
+
+    const opId = bootstrap.actor.operatorIds[0];
+    const notes = (document.getElementById('booking-notes') as HTMLTextAreaElement).value;
+
+    try {
+      const resp = await postAuthed('/api/portal/sessions', {
+        operatorId: opId,
+        category: selectedCategory,
+        delivery: selectedDelivery,
+        startTime: selectedSlot.start,
+        durationMin: selectedSlot.durationMin,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        clientNotes: notes || undefined,
+      });
+
+      if (resp.ok) {
+        resultEl.style.display = 'block';
+        resultEl.className = 'result-banner result-success';
+        resultEl.textContent = 'Session booked successfully! You\'ll receive a confirmation.';
+        // Reset form
+        document.getElementById('booking-step-2')!.style.display = 'none';
+        document.getElementById('booking-step-1')!.style.display = 'block';
+        document.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+        selectedCategory = null;
+        selectedDelivery = null;
+        selectedSlot = null;
+        updateBookBtn();
+        clearApiCache('/api/portal/sessions');
+        await loadSessions();
+      } else {
+        const err = await resp.json();
+        resultEl.style.display = 'block';
+        resultEl.className = 'result-banner result-error';
+        resultEl.textContent = err.error || 'Booking failed';
+      }
+    } catch (err) {
+      resultEl.style.display = 'block';
+      resultEl.className = 'result-banner result-error';
+      resultEl.textContent = 'Network error — please try again.';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Confirm Booking';
+  });
+
+  // ── Formatting helpers ──
+  function toDateStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function formatShortDate(d: Date): string {
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function formatDateLabel(isoDate: string): string {
+    const d = new Date(isoDate + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  function formatTime(iso: string): string {
+    return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function formatDateTime(iso: string): string {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) +
+      ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function escapeHtml(s: string): string {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ── Kick off ──
+  init();
+</script>

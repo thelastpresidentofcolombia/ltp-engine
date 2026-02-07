@@ -60,4 +60,21 @@ export const Subcollections = {
   CHECKINS: 'checkins',
   BOOKINGS: 'bookings',
   ITEMS: 'items', // for pendingEntitlements
+  SESSIONS: 'sessions',   // portal v2 — replaces bookings
+  ENTRIES: 'entries',      // portal v2 — replaces checkins
+  GOALS: 'goals',         // portal v2 — user goals
+} as const;
+
+// Top-level portal collections
+// SCOPING DECISION (locked): conversations/ is a global top-level collection.
+// Each doc ID is `${clientUid}--${operatorId}` (double-dash delimiter).
+// Messages are a subcollection: conversations/{id}/messages/{msgId}
+// Security rules check explicit clientUid + operatorId fields, never parse the ID.
+export const PortalCollections = {
+  /** Global conversations. ID convention: `${clientUid}--${operatorId}` */
+  CONVERSATIONS: 'conversations',
+  /** Subcollection of conversations: conversations/{id}/messages/{msgId} */
+  MESSAGES: 'messages',
+  /** Elevated portal roles. Doc ID: `${uid}_${operatorId}` */
+  PORTAL_ROLES: 'portalRoles',
 } as const;

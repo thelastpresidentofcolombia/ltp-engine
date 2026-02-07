@@ -118,7 +118,7 @@ const TOURS_MODULE_VALIDATION: Record<string, { dataPath: string; minCount: numb
   localIntel: {
     dataPath: 'localIntel',
     minCount: 0, // localIntel is optional, just needs to exist if module is present
-    itemValidation: null,
+    itemValidation: undefined,
   },
 };
 

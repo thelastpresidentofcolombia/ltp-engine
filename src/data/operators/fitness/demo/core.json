@@ -96,6 +96,90 @@
       }
     ]
   },
+  "portal": {
+    "enabled": true,
+    "features": [
+      "dashboard",
+      "sessions",
+      "timeline",
+      "programs",
+      "messaging",
+      "profile",
+      "entries",
+      "goals",
+      "reports"
+    ],
+    "sessions": {
+      "allowSelfBook": true,
+      "categories": ["discovery", "standard", "premium", "review"],
+      "delivery": ["virtual", "in-person"]
+    },
+    "entries": {
+      "allowClientCreate": true,
+      "metrics": [
+        { "key": "weight", "label": "Weight", "unit": "kg", "inputType": "number", "chartColor": "#ccff00", "direction": "down" },
+        { "key": "bodyFat", "label": "Body Fat", "unit": "%", "inputType": "number", "chartColor": "#00ff88", "direction": "down" },
+        { "key": "energy", "label": "Energy", "unit": "1-10", "inputType": "slider", "chartColor": "#ff6b6b", "direction": "up", "range": [1, 10] },
+        { "key": "sleep", "label": "Sleep Quality", "unit": "1-10", "inputType": "slider", "chartColor": "#845ef7", "direction": "up", "range": [1, 10] }
+      ]
+    },
+    "timeline": {
+      "defaultRange": "30d",
+      "availableRanges": ["7d", "30d", "90d", "all"]
+    },
+    "messaging": {
+      "enabled": true
+    },
+    "goals": {
+      "allowClientCreate": true,
+      "maxActiveGoals": 10,
+      "categories": ["performance", "body", "habit", "milestone"],
+      "templates": [
+        {
+          "id": "lose-weight",
+          "title": "Lose Weight",
+          "category": "body",
+          "defaultTarget": 5,
+          "unit": "kg",
+          "direction": "decrease",
+          "linkedMetricKey": "weight",
+          "icon": "⚖️",
+          "color": "#ccff00"
+        },
+        {
+          "id": "reduce-body-fat",
+          "title": "Reduce Body Fat",
+          "category": "body",
+          "defaultTarget": 15,
+          "unit": "%",
+          "direction": "decrease",
+          "linkedMetricKey": "bodyFat",
+          "icon": "📉",
+          "color": "#00ff88"
+        },
+        {
+          "id": "weekly-sessions",
+          "title": "Weekly Training Sessions",
+          "category": "habit",
+          "defaultTarget": 4,
+          "unit": "sessions/week",
+          "direction": "increase",
+          "icon": "💪",
+          "color": "#6366f1"
+        },
+        {
+          "id": "consistency-streak",
+          "title": "Check-in Streak",
+          "category": "habit",
+          "defaultTarget": 30,
+          "unit": "days",
+          "direction": "increase",
+          "icon": "🔥",
+          "color": "#f59e0b"
+        }
+      ]
+    }
+  },
   "integrations": {
     "stripeProductIds": {
       "tier-foundation": "price_foundation_xxx",

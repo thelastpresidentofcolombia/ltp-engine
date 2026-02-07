@@ -88,3 +88,24 @@ export {
   DEFAULT_VARIANTS,
   SECTION_LIMITS,
 } from '@config/engine';
+
+// Portal Feature Resolution
+export {
+  resolvePortalFeatures,
+  ENGINE_PORTAL_DEFAULTS,
+  type ResolvedPortalConfig,
+} from './resolvePortalFeatures';
+
+// Timeline Resolution
+export {
+  resolveTimeline,
+  parseTimelineRange,
+  type ResolveTimelineInput,
+} from './resolveTimeline';
+
+// Availability Resolution
+export {
+  resolveAvailability,
+  ENGINE_DEFAULT_SCHEDULE,
+  type ResolveAvailabilityInput,
+} from './resolveAvailability';

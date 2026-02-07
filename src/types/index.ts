@@ -24,6 +24,16 @@ export * from './nomenclature';
 // Resource/Entitlement types
 export * from './resources';
 
+// Portal types (v1.9.0+)
+export * from './portal';
+export * from './sessions';
+export * from './entries';
+export * from './timeline';
+export * from './messaging';
+export * from './goals';
+export * from './reports';
+export * from './commands';
+
 // Utility types
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];

@@ -176,11 +176,11 @@ Cannot use "undefined" as a Firestore value (found in field "stripe.customerId")
 
 **Email CTA Pointing to Wrong Domain:**
 ```
-lovethisplace.co/portal → 404
+lovethisplace.co/portal  404
 ```
 - **Cause:** Webhook had hardcoded `SITE_URL || 'lovethisplace.co'`
 - **Fix:** Use shared `sendAccessEmail()` with `PUBLIC_PORTAL_URL` env var
-- **Default:** `https://ltp-engine.vercel.app/portal`
+- **Fallback default (when env is missing):** `https://ltp-engine.vercel.app/portal` (engine's built-in portal route)
 
 #### 📁 Files Added This Version
 
@@ -210,12 +210,15 @@ lovethisplace.co/portal → 404
 #### 🌐 Domain Architecture (Recommended)
 
 ```
-portal.lovethisplace.co  → LTP Engine (Vercel subdomain)
-ltp-engine.vercel.app    → LTP Engine (default)
+portal.lovethisplace.co  → LTP Engine (portal subdomain)
+ltp-engine.vercel.app    → LTP Engine (default/preview)
 www.lovethisplace.co     → Main LoveThisPlace site (future)
 ```
 
-**Env Var:** `PUBLIC_PORTAL_URL=https://portal.lovethisplace.co/portal`
+**Env Var (recommended):** `PUBLIC_PORTAL_URL=https://portal.lovethisplace.co`
+
+- For emails, `PUBLIC_PORTAL_URL` is treated as the **base portal URL**. In production, Vercel host rules redirect `https://portal.lovethisplace.co/` → `https://portal.lovethisplace.co/en/portal` (and `/es/portal` for Spanish).
+- When `PUBLIC_PORTAL_URL` is not set, the engine falls back to `https://ltp-engine.vercel.app/portal`.
 
 ---
 
@@ -258,14 +261,14 @@ users/{uid}/entitlements/{entId}
 pendingEntitlements/{email_operatorId_resourceId}
 ```
 
-#### 🌐 Client Portal (`/portal`)
+#### 🌐 Client Portal (`/portal` + `/[lang]/portal`)
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Login UI | ✅ Working | Clean card-based design |
-| Email Link Flow | ✅ Working | "Check your email" → click → signed in |
-| Entitlements Dashboard | ✅ Working | Shows operator, resource, status |
-| Empty State | ✅ Working | "No active programs" message |
+| Login UI | ✅ Working | Premium card-based design (`/portal` and localized `/en/portal`, `/es/portal`) |
+| Email Link Flow | ✅ Working | Magic link round-trips to the **current path** (e.g. `/en/portal`) |
+| Entitlements Dashboard | ✅ Working | Shows operator, resource, status, branding, status pills |
+| Empty State | ✅ Working | "No active programs" message with premium empty state |
 | Error Handling | ✅ Working | Displays API errors gracefully |
 
 #### 🔧 Technical: Astro + Firebase Client Bundling
@@ -274,9 +277,11 @@ pendingEntitlements/{email_operatorId_resourceId}
 
 **Solution:**
 ```
-src/lib/firebase/client.client.ts  → Firebase SDK + auth functions (bundled)
-src/lib/portal/portal.client.ts    → Portal logic (bundled)
-src/pages/portal.astro             → <script>import "../lib/portal/portal.client"</script>
+src/lib/firebase/client.client.ts   → Firebase SDK + auth functions (bundled)
+src/lib/portal/portal.client.ts     → Portal logic (bundled)
+src/pages/portal.astro              → Non-localized portal shell + global CSS
+src/pages/[lang]/portal.astro       → Localized portal shell (`/en/portal`, `/es/portal`)
+                                      <script>import "../lib/portal/portal.client"</script> via Astro bundling
 ```
 
 **Build Output:** `portal.astro...js 172.30 kB` — Firebase properly bundled.
@@ -468,7 +473,7 @@ Complete implementation of the tours/nightlife vertical with 11 custom modules:
 
 | Gap | Status | Notes |
 |-----|--------|-------|
-| **Client Portal** | ✅ Complete | `/portal` with Firebase Auth + entitlements dashboard |
+| **Client Portal** | ✅ Complete | `/portal` + `/[lang]/portal` with Firebase Auth + entitlements dashboard |
 | **Firebase Auth** | ✅ Complete | Magic link sign-in, session persistence, authorized domains |
 | **Entitlements System** | ✅ Complete | Pending → claim → user flow, multi-operator support |
 | **Payment Pipeline** | ✅ Complete | Stripe → webhook → entitlement → email → portal |
@@ -480,7 +485,7 @@ Complete implementation of the tours/nightlife vertical with 11 custom modules:
 | **Stripe Connect** | 🔄 Planned | Current: direct checkout; Target: split payouts |
 | **Zod runtime validation** | 🔄 Planned | Build-time validation exists via scripts |
 | **Fitness skin components** | 🔄 Partial | Uses consultancy skin as fallback |
-| **Portal UI polish** | 🔄 Planned | Basic functional, needs design refinement |
+| **Portal UI polish** | ✅ Complete | Premium SaaS layout, skeletons, operator cards, status pills |
 | **Admin/Coach dashboard** | 🔄 Planned | Manual Firestore edits for now |
 
 ---
@@ -495,7 +500,7 @@ Complete implementation of the tours/nightlife vertical with 11 custom modules:
 | Stripe checkout | ✅ Live | Real test purchases completed |
 | Payment webhooks | ✅ Live | 200 OK responses, entitlements created |
 | Email fulfillment | ✅ Live | Brevo sends "Your access is ready" |
-| Client portal | ✅ Live | `ltp-engine.vercel.app/portal` |
+| Client portal | ✅ Live | `portal.lovethisplace.co/en/portal` (canonical) + `ltp-engine.vercel.app/portal` (engine default) |
 | Firebase auth | ✅ Live | Magic link sign-in working |
 | Entitlements | ✅ Live | Claims work, dashboard shows access |
 
@@ -511,6 +516,62 @@ Complete implementation of the tours/nightlife vertical with 11 custom modules:
 | Multi-language | ✅ en/es |
 
 **Bottom Line:** You can charge money and deliver digital access TODAY.
+
+## 🧭 Client Onboarding & Custom Domains
+
+This section describes how to take a new operator live and serve it on a dedicated client domain (while still using a single LTP Engine deployment).
+
+### 1️⃣ Create the operator (site) in the engine
+
+- Add a new operator folder under `src/data/operators/{vertical}/{slug}/` (for example `src/data/operators/fitness/apex-performance/`).
+- Create:
+  - `core.json` with language-agnostic data (vertical, modules, vibe tokens, products, etc.).
+  - `{lang}.json` files for each supported language (at minimum `en.json`; optionally `es.json`).
+- Run `npm run validate` to ensure the operator matches the engine contracts.
+- Run `npm run dev` and visit `/{lang}/v/{vertical}/{slug}` (for example `/en/v/fitness/apex-performance`) to confirm the page renders correctly.
+
+### 2️⃣ Connect the client's domain in Vercel
+
+- In the `ltp-engine` project on Vercel, add the client's domain (for example `apexperformance.com`).
+- Update the client's DNS to point the domain to Vercel (A/CNAME records as instructed by Vercel).
+
+### 3️⃣ Map the domain root to the operator route
+
+- In `vercel.json`, add host-based redirects for the new domain so that its root URL resolves to the operator path inside the engine. Example:
+
+```json
+{
+  "source": "/",
+  "has": [{ "type": "host", "value": "apexperformance.com" }],
+  "destination": "/en/v/fitness/apex-performance",
+  "permanent": false
+}
+```
+
+- (Optional but recommended) Add `/en`, `/en/`, `/es`, `/es/` variants for that host, mirroring the pattern used for `portal.lovethisplace.co`.
+- Redeploy the project. After deployment:
+  - `https://apexperformance.com` → `https://apexperformance.com/en/v/fitness/apex-performance` (via Vercel redirect).
+
+### 4️⃣ Portal behavior for all clients
+
+- The **client portal** remains centralized at `https://portal.lovethisplace.co/en/portal` (with `/es/portal` for Spanish).
+- Env var `PUBLIC_PORTAL_URL` should point to the portal subdomain base (recommended: `https://portal.lovethisplace.co`).
+- Vercel host rules for `portal.lovethisplace.co` (see `vercel.json`) handle:
+  - `/`, `/en`, `/en/`, `/portal` → `/en/portal`
+  - `/es`, `/es/` → `/es/portal`
+- The portal client script sends Firebase magic links back to **whatever path the user is currently on** (for example `/en/portal`), so:
+  - Locally: `http://localhost:4321/en/portal`
+  - Production: `https://portal.lovethisplace.co/en/portal`
+
+### 5️⃣ Firebase authorized domains (production)
+
+- In Firebase Authentication → Settings → Authorized domains, ensure the following are present:
+  - `localhost`
+  - `ltp-engine-dev.firebaseapp.com` / `ltp-engine-dev.web.app` (or your project equivalents)
+  - `ltp-engine.vercel.app` (engine default domain)
+  - `ltp-engine-git-main-juan-carlos-morales-projects.vercel.app` (preview domain)
+  - `portal.lovethisplace.co` (portal subdomain)
+- If you attach additional custom domains that should initiate portal flows directly, add them here as well.
 
 ### 🎯 Next Steps (Product Decisions)
 
@@ -1620,7 +1681,126 @@ npm run type-check
 
 ---
 
-## 🗺️ Roadmap & Next Steps
+## �️ Deploy Gate
+
+> **The single rule: nothing deploys without `npm run gate` passing.**
+
+The gate is a four-stage sequential pipeline that must exit 0 before code is considered deploy-ready. It catches the classes of error that each individual tool misses on its own.
+
+### Pipeline Stages
+
+```
+npm run gate
+  │
+  ├─ 1. validate   — Operator JSON structure (core.json + lang files)
+  ├─ 2. canary     — Runtime env vars, portal feature unions, config shapes
+  ├─ 3. astro check — TypeScript + Astro component diagnostics (0 errors)
+  └─ 4. astro build — Full static build + SSR function bundle
+```
+
+### Commands
+
+| Command | Purpose | When to use |
+|---------|---------|-------------|
+| `npm run gate` | Full pipeline, permissive canary | Local development — warns on missing env but won't fail |
+| `npm run gate:strict` | Full pipeline, strict canary | CI / pre-deploy — fails on missing required env vars |
+| `npm run canary` | Canary checks only | Quick env + portal validation |
+| `npm run canary:selftest` | Canary regression test | After modifying canary logic |
+| `npm run validate` | Operator JSON validation only | After editing operator data |
+
+### Canary Modes
+
+The canary (`scripts/validate-canary.ts`) runs in two modes:
+
+| Mode | Trigger | Missing required env var | Missing optional env var |
+|------|---------|--------------------------|--------------------------|
+| **Permissive** (default) | Local dev, no flags | ⚠ Warning | ⚠ Warning |
+| **Strict** | `CI=true` OR `CANARY_STRICT=1` | ❌ Fatal (exit 1) | ⚠ Warning |
+
+**Strict mode activates when:**
+- `process.env.CI === 'true'` (set automatically by most CI providers)
+- `process.env.CANARY_STRICT === '1'` (set manually or via `npm run gate:strict`)
+
+### Environment Variable Resolution
+
+The canary checks **two sources** for each variable:
+1. **`.env` file** — parsed from disk (the local developer's file)
+2. **`process.env`** — the runtime environment (Vercel injects vars here)
+
+A variable is considered "present" if it has a non-empty value in **either** source.
+
+### Required Environment Variables
+
+**Server-side (SSR/API routes):**
+| Variable | Purpose |
+|----------|---------|
+| `FIREBASE_PROJECT_ID` | Firebase Admin SDK |
+| `FIREBASE_CLIENT_EMAIL` | Firebase Admin SDK |
+| `FIREBASE_PRIVATE_KEY` | Firebase Admin SDK |
+
+**Client-side (public, baked into static output):**
+| Variable | Purpose |
+|----------|---------|
+| `PUBLIC_FIREBASE_API_KEY` | Firebase Client SDK |
+| `PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Client SDK |
+| `PUBLIC_FIREBASE_PROJECT_ID` | Firebase Client SDK |
+
+**Optional (warn-only in both modes):**
+| Variable | Purpose |
+|----------|---------|
+| `STRIPE_SECRET_KEY` | Stripe payments |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook validation |
+| `BREVO_API_KEY` | Transactional email |
+| `FULFILLMENT_FROM_EMAIL` | Email sender address |
+
+### Portal Feature Validation
+
+The canary validates that every operator's `portal.features[]` array contains only values from the `PortalFeature` union type. This catches typos and stale feature names at gate time instead of at runtime.
+
+### Smoke URLs
+
+After validation, the canary prints a smoke URL list for every portal-enabled operator:
+
+```
+📋 Smoke URLs (portal-enabled operators):
+   → /portal/fitness-demo/dashboard
+   → /portal/tours-jose/dashboard
+```
+
+Use these for manual post-deploy verification.
+
+### Vercel Configuration
+
+In your Vercel project settings, ensure:
+
+1. **Environment Variables** — All required vars set for **Production** and **Preview** environments
+2. **Build Command** — `npm run gate:strict` (replaces the default `npm run build`)
+3. This ensures every Vercel build runs the full gate with strict canary checks
+
+> **⚠️ CRITICAL:** Setting the Vercel build command to `npm run gate:strict` is the enforcement mechanism. Without it, the gate is advisory-only.
+
+### Canary Self-Test
+
+`npm run canary:selftest` is a regression test for the canary itself. It:
+
+1. Runs canary in **permissive** mode → asserts exit 0
+2. Runs canary in **strict** mode → asserts exit 0 (current repo has all vars)
+3. Masks required env vars + runs **strict** → asserts exit 1 (must fail)
+4. Masks required env vars + runs **permissive** → asserts exit 0 (must pass)
+
+Run this after modifying `validate-canary.ts` to ensure you haven't accidentally loosened or broken the checks.
+
+### Baseline
+
+As of the latest gate run:
+- `astro check`: **0 errors, 0 warnings** (hints are informational, not gated)
+- `astro build`: **Complete** (all static pages + SSR function)
+- `validate`: **All operators pass** (5/5)
+- `canary`: **All checks pass** in both modes
+
+---
+
+## �🗺️ Roadmap & Next Steps
 
 ### ✅ Completed (v1.3.2)
 | Task | Description | Status |

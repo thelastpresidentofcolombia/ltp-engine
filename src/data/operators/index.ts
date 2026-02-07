@@ -97,3 +97,27 @@ export function getOperatorsBranding(operatorIds: string[]): Record<string, Oper
  * Alias for backwards compatibility
  */
 export const loadOperatorCore = getOperatorBranding;
+
+// ============================================================
+// PORTAL CONFIG REGISTRY
+// ============================================================
+
+import type { PortalConfig } from '../../types/portal';
+
+/**
+ * Raw portal config blocks from operator core.json files.
+ * Used by bootstrap to pass to resolvePortalFeatures().
+ */
+const OPERATOR_PORTAL_CONFIG: Record<string, PortalConfig | undefined> = {
+  'fitness-demo': (fitnessDemoCore as any).portal,
+  'consultancy-demo': (consultancyDemoCore as any).portal,
+  'tours-demo': (toursDemoCore as any).portal,
+};
+
+/**
+ * Get the raw portal config from an operator's core.json.
+ * Returns undefined if operator has no portal block (engine defaults apply).
+ */
+export function getOperatorPortalConfig(operatorId: string): PortalConfig | undefined {
+  return OPERATOR_PORTAL_CONFIG[operatorId];
+}

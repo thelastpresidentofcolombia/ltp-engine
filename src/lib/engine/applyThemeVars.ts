@@ -314,6 +314,7 @@ export function resolveTheme(operator: Operator): VibeTheme {
     const customTheme = getTheme(vibeId);
     if (customTheme) {
       return customTheme;
+      
     }
   }
   

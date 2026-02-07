@@ -9,6 +9,38 @@
 
 import type { Timestamp } from 'firebase-admin/firestore';
 
+// Re-export engine portal types used in API routes
+import type { PortalRole } from '../../types/portal';
+export type { PortalRole } from '../../types/portal';
+
+// ============================================================
+// PORTAL ACTOR (resolved on every portal API call)
+// ============================================================
+
+/**
+ * Firestore document for elevated portal roles.
+ * Path: portalRoles/{uid}_{operatorId}
+ * Only needed for coach/admin. Clients are implicit.
+ */
+export interface PortalRoleDoc {
+  uid: string;
+  operatorId: string;
+  role: PortalRole;
+  grantedBy: string;      // admin UID who granted
+  grantedAt: Timestamp;
+}
+
+/**
+ * Resolved actor — computed from auth + Firestore role docs.
+ * Used by every portal API route to scope data access.
+ */
+export interface PortalActorResolved {
+  uid: string;
+  email: string;
+  role: PortalRole;
+  operatorIds: string[];
+}
+
 // ============================================================
 // ENUMS / CONSTANTS
 // ============================================================
@@ -318,3 +350,42 @@ export interface PortalBootstrapResponse {
   }>;
   engineVersion: string;
 }
+
+// ============================================================
+// FIRESTORE COLLECTION / SUBCOLLECTION NAMES (v1.9.0+)
+// ============================================================
+
+/**
+ * New Firestore subcollections for portal v2.
+ * Extends the existing Collections / Subcollections in admin.ts.
+ */
+export const PortalSubcollections = {
+  SESSIONS: 'sessions',       // users/{uid}/sessions/{id}
+  ENTRIES: 'entries',          // users/{uid}/entries/{id}
+} as const;
+
+export const PortalCollections = {
+  CONVERSATIONS: 'conversations',         // conversations/{id}
+  MESSAGES: 'messages',                    // conversations/{id}/messages/{id}
+  PORTAL_ROLES: 'portalRoles',            // portalRoles/{uid}_{operatorId}
+} as const;
+
+// ============================================================
+// BACKWARDS COMPATIBILITY ALIASES
+// ============================================================
+
+/**
+ * Legacy CheckinDoc → new EntryDoc naming.
+ * Existing code that references CheckinDoc keeps working.
+ * New code should use EntryDoc from types/entries.ts.
+ * @deprecated Use EntryDoc from '@/types/entries' for new code.
+ */
+export type LegacyCheckinDoc = CheckinDoc;
+
+/**
+ * Legacy BookingDoc → new SessionDoc naming.
+ * Existing code that references BookingDoc keeps working.
+ * New code should use SessionDoc from types/sessions.ts.
+ * @deprecated Use SessionDoc from '@/types/sessions' for new code.
+ */
+export type LegacyBookingDoc = BookingDoc;

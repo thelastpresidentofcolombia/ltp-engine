@@ -1,0 +1,660 @@
+---
+/**
+ * /portal/profile — Rich User Profile Page (v2)
+ *
+ * ENGINE CONTRACT:
+ * - Identity + Stats + History (not just a settings form).
+ * - Role badge from operator config.
+ * - Activity stats: total sessions, entries, messages.
+ * - Placeholder sections for goals, media gallery, badges (Phase B).
+ * - Glass-card bento layout matching dashboard design language.
+ * - Editable profile fields preserved.
+ */
+
+import PortalLayout from '@/layouts/PortalLayout.astro';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Profile" activeSection="profile" operatorId={operatorId!}>
+  <style is:global>
+    /* ========================================
+       PROFILE BENTO STAGGER
+       ======================================== */
+    .bento-grid > :nth-child(1) { animation-delay: 0.05s; }
+    .bento-grid > :nth-child(2) { animation-delay: 0.1s; }
+    .bento-grid > :nth-child(3) { animation-delay: 0.15s; }
+    .bento-grid > :nth-child(4) { animation-delay: 0.2s; }
+    .bento-grid > :nth-child(5) { animation-delay: 0.25s; }
+    .bento-grid > :nth-child(6) { animation-delay: 0.3s; }
+    .bento-grid > :nth-child(7) { animation-delay: 0.35s; }
+
+    .p-card-title-icon {
+      display: inline-flex;
+      align-items: center;
+      width: 18px;
+      height: 18px;
+      color: var(--portal-accent);
+    }
+    .p-card-title-icon svg { width: 16px; height: 16px; }
+
+    /* ========================================
+       IDENTITY BANNER
+       ======================================== */
+    .p-identity {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 28px 32px;
+      background:
+        linear-gradient(135deg,
+          rgba(99,102,241,0.08) 0%,
+          rgba(139,92,246,0.04) 50%,
+          transparent 100%);
+      position: relative;
+    }
+    .p-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--portal-radius, 14px);
+      background: var(--portal-accent);
+      color: var(--portal-bg, #0d0d12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .p-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--portal-radius, 14px);
+      object-fit: cover;
+    }
+    .p-identity-info h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .p-identity-email {
+      font-size: 0.85rem;
+      color: var(--portal-text-secondary);
+      margin-top: 2px;
+    }
+    .p-identity-badges {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ========================================
+       ACTIVITY STATS
+       ======================================== */
+    .p-stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px;
+    }
+    .p-stat {
+      text-align: center;
+      padding: 16px 8px;
+      border-radius: var(--portal-radius, 14px);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* ========================================
+       EDIT FORM
+       ======================================== */
+    .p-form { display: grid; gap: 14px; }
+    .p-save-status {
+      font-size: 0.85rem;
+      color: var(--portal-success);
+      display: none;
+      margin-left: 8px;
+    }
+
+    /* ========================================
+       OPERATOR ACCESS
+       ======================================== */
+    .p-op-card {
+      padding: 14px 16px;
+      border-radius: var(--portal-radius-sm, 8px);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .p-op-icon {
+      font-size: 1.2rem;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--portal-radius-sm, 8px);
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .p-op-icon svg { width: 18px; height: 18px; color: var(--portal-text-secondary); }
+    .p-op-name { font-weight: 600; font-size: 0.9rem; }
+    .p-op-sub { font-size: 0.8rem; color: var(--portal-text-secondary); }
+
+    /* ========================================
+       DEMO / PREVIEW MODE
+       ======================================== */
+    .p-demo-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--portal-accent, #6366f1);
+      background: color-mix(in srgb, var(--portal-accent, #6366f1) 10%, transparent);
+      padding: 2px 8px;
+      border-radius: var(--portal-radius-sm, 8px);
+      vertical-align: middle;
+    }
+    .p-badge-demo {
+      background: color-mix(in srgb, var(--portal-accent, #6366f1) 15%, transparent) !important;
+      color: var(--portal-accent, #6366f1) !important;
+      border: 1px solid color-mix(in srgb, var(--portal-accent, #6366f1) 25%, transparent) !important;
+    }
+    .p-card-demo {
+      border-color: color-mix(in srgb, var(--portal-accent, #6366f1) 15%, transparent);
+    }
+    .p-demo-hint {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--portal-text-muted);
+      padding: 16px 0 4px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      margin-top: 16px;
+    }
+
+    /* ── Media Grid (demo) ── */
+    .p-media-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 540px) {
+      .p-media-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .p-media-thumb {
+      aspect-ratio: 1;
+      border-radius: var(--portal-radius, 14px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px dashed rgba(255,255,255,0.08);
+      transition: transform var(--portal-transition, 150ms ease-out), border-color var(--portal-transition, 150ms ease-out);
+    }
+    .p-media-thumb:hover {
+      transform: scale(1.04);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .p-media-icon { opacity: 0.3; }
+    .p-media-icon svg { width: 24px; height: 24px; }
+    .p-media-label { font-size: 0.7rem; font-weight: 600; }
+
+    /* ── Achievements (demo) ── */
+    .p-achievements-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 900px) {
+      .p-achievements-row { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 540px) {
+      .p-achievements-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    .p-achievement {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 4px;
+      padding: 16px 8px;
+      border-radius: var(--portal-radius, 14px);
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: transform var(--portal-transition, 150ms ease-out), border-color var(--portal-transition, 150ms ease-out);
+    }
+    .p-achievement:hover { transform: translateY(-2px); }
+    .p-achievement-earned {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .p-achievement-locked {
+      opacity: 0.35;
+      filter: grayscale(0.6);
+    }
+    .p-achievement-icon { font-size: 1.6rem; }
+    .p-achievement-label { font-size: 0.75rem; font-weight: 700; color: var(--portal-text, #ececf1); }
+    .p-achievement-desc { font-size: 0.65rem; color: var(--portal-text-muted); }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+      .p-identity {
+        padding: 20px 18px;
+        gap: 14px;
+      }
+      .p-avatar {
+        width: 56px;
+        height: 56px;
+        font-size: 1.3rem;
+      }
+      .p-identity-info h2 { font-size: 1.1rem; }
+    }
+  </style>
+
+  <script>
+    import { initPortal, getAuthed, postAuthed, cachedGet, clearApiCache } from '@/lib/portal/portalAuth.client';
+    import type { PortalBootstrapV2 } from '@/types/portal';
+    import { getIcon, emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
+    import { portalHref } from '@/lib/portal/portalNav';
+
+    function esc(s: string): string {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function renderProfile(data: PortalBootstrapV2) {
+      const content = document.getElementById('portal-content');
+      if (!content) return;
+
+      const { actor, operators, summary } = data;
+      const opIds = Object.keys(operators);
+      const primaryOp = opIds.length > 0 ? operators[opIds[0]] : null;
+      const initials = actor.email.split('@')[0].substring(0, 2).toUpperCase();
+      const displayName = actor.email.split('@')[0];
+      const vertical = primaryOp?.vertical || '';
+
+      // Role label (from operator or raw role)
+      const roleLabel = actor.role;
+
+      // Vertical icon
+      const vertIcons: Record<string, string> = { fitness: getIcon('dumbbell'), consultancy: getIcon('briefcase'), tours: getIcon('globe') };
+      const vertIcon = vertIcons[vertical] || getIcon('building');
+      const hasActivity = summary.upcomingSessions > 0 || summary.recentEntries > 0 || summary.unreadMessages > 0 || summary.activePrograms > 0 || (summary as any).activeGoals > 0;
+
+      // ── Demo mode: show realistic placeholder data when user has no activity ──
+      const demo = !hasActivity;
+      const s = demo
+        ? { sessions: 3, entries: 12, messages: 5, programs: 2, goals: 4, streak: 7 }
+        : {
+            sessions: summary.upcomingSessions,
+            entries: summary.recentEntries,
+            messages: summary.unreadMessages,
+            programs: summary.activePrograms,
+            goals: (summary as any).activeGoals ?? 0,
+            streak: 0,
+          };
+      const demoTag = demo ? '<span class="p-demo-tag">Sample data</span>' : '';
+
+      content.innerHTML = `
+        <div class="bento-grid">
+          <!-- ── Identity Banner ── -->
+          <div class="portal-card-glass portal-animate-in bento-full p-identity">
+            <div class="p-avatar" id="profile-avatar">${initials}</div>
+            <div class="p-identity-info">
+              <h2 id="profile-display-name">${esc(displayName)}</h2>
+              <div class="p-identity-email">${esc(actor.email)}</div>
+              <div class="p-identity-badges">
+                <span class="portal-badge portal-badge-accent">${esc(roleLabel)}</span>
+                ${vertical ? `<span class="portal-badge portal-badge-muted">${esc(vertical)}</span>` : ''}
+                ${opIds.length > 1 ? `<span class="portal-badge portal-badge-muted">${opIds.length} operators</span>` : ''}
+                ${demo ? `<span class="portal-badge p-badge-demo">${getIcon('sparkle', 'badge-icon')} Preview Mode</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Activity Stats ── -->
+          <div class="portal-card-glass portal-animate-in bento-full ${demo ? 'p-card-demo' : ''}">
+            <div class="portal-card-title"><span class="p-card-title-icon">${getIcon('trending-up')}</span> Activity Overview ${demoTag}</div>
+            <div class="p-stats-row">
+              <div class="p-stat">
+                <div class="portal-stat-value">${s.sessions}</div>
+                <div class="portal-stat-label">Sessions</div>
+              </div>
+              <div class="p-stat">
+                <div class="portal-stat-value">${s.entries}</div>
+                <div class="portal-stat-label">Updates</div>
+              </div>
+              <div class="p-stat">
+                <div class="portal-stat-value">${s.messages}</div>
+                <div class="portal-stat-label">Messages</div>
+              </div>
+              <div class="p-stat">
+                <div class="portal-stat-value">${s.programs}</div>
+                <div class="portal-stat-label">Programs</div>
+              </div>
+              <div class="p-stat">
+                <div class="portal-stat-value">${s.goals}</div>
+                <div class="portal-stat-label">Goals</div>
+              </div>
+              <div class="p-stat">
+                <div class="portal-stat-value">${s.streak}</div>
+                <div class="portal-stat-label">Streak</div>
+              </div>
+            </div>
+            ${demo ? '<div class="p-demo-hint">This is how your profile will look as you start using the platform. <strong>Your real data will replace these numbers.</strong></div>' : ''}
+          </div>
+
+          <!-- ── Edit Profile ── -->
+          <div class="portal-card-glass portal-animate-in bento-two-thirds">
+            <div class="portal-card-title"><span class="p-card-title-icon">${getIcon('pencil')}</span> Profile Details</div>
+            <form id="profile-form" class="p-form">
+              <div>
+                <label class="form-label">Name</label>
+                <input id="profile-name" type="text" placeholder="Your name" class="form-input" />
+              </div>
+              <div>
+                <label class="form-label">Phone</label>
+                <input id="profile-phone" type="tel" placeholder="+1 (555) 000-0000" class="form-input" />
+              </div>
+              <div>
+                <label class="form-label">Timezone</label>
+                <select id="profile-timezone" class="form-input">
+                  <option value="">Auto-detect</option>
+                  <option value="America/New_York">Eastern (New York)</option>
+                  <option value="America/Chicago">Central (Chicago)</option>
+                  <option value="America/Denver">Mountain (Denver)</option>
+                  <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+                  <option value="America/Bogota">Colombia (Bogotá)</option>
+                  <option value="Europe/London">UK (London)</option>
+                  <option value="Europe/Madrid">Spain (Madrid)</option>
+                  <option value="Asia/Tokyo">Japan (Tokyo)</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button type="submit" class="btn-primary">Save Changes</button>
+                <span id="profile-status" class="p-save-status">✓ Saved</span>
+              </div>
+            </form>
+          </div>
+
+          <!-- ── Operator Access ── -->
+          <div class="portal-card-glass portal-animate-in bento-third">
+            <div class="portal-card-title"><span class="p-card-title-icon">${getIcon('key')}</span> Access</div>
+            ${opIds.length > 0
+              ? opIds.map(id => {
+                  const op = operators[id];
+                  const vi = vertIcons[op?.vertical || ''] || getIcon('building');
+                  return `
+                    <div class="p-op-card" style="margin-bottom:8px;">
+                      <div class="p-op-icon">${vi}</div>
+                      <div>
+                        <div class="p-op-name">${esc(op?.brandName || id)}</div>
+                        <div class="p-op-sub">${esc(op?.tagline || op?.vertical || '')}</div>
+                      </div>
+                    </div>`;
+                }).join('')
+              : emptyStateHtml({ icon: 'key', title: 'No Access', desc: 'You are not linked to any operators yet.' })
+            }
+          </div>
+
+          <!-- ── Goals (live from API) ── -->
+          <div class="portal-card-glass portal-animate-in bento-half" id="profile-goals-section">
+            <div class="portal-card-title"><span class="p-card-title-icon">${getIcon('target')}</span> Goals</div>
+            <div id="profile-goals-content">
+              ${demo ? `
+                <div class="p-demo-goals">
+                  ${[
+                    { icon: getIcon('target', 'goal-icon'), title: 'Complete 20 sessions', pct: 65, current: 13, target: 20, unit: 'sessions', color: 'var(--portal-accent)' },
+                    { icon: getIcon('file-text', 'goal-icon'), title: 'Log updates daily', pct: 85, current: 6, target: 7, unit: 'days', color: '#10b981' },
+                    { icon: getIcon('chart', 'goal-icon'), title: 'Hit target weight', pct: 40, current: 82, target: 78, unit: 'kg', color: '#f59e0b' },
+                  ].map(g => `
+                    <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <span style="font-size:0.85rem;font-weight:600;">${g.icon} ${g.title}</span>
+                        <span style="font-size:0.75rem;color:var(--portal-text-muted);">${g.pct}%</span>
+                      </div>
+                      <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;">
+                        <div style="height:100%;width:${g.pct}%;background:${g.color};border-radius:3px;transition:width 0.4s;"></div>
+                      </div>
+                      <div style="font-size:0.7rem;color:var(--portal-text-muted);margin-top:3px;">${g.current} / ${g.target} ${g.unit}</div>
+                    </div>
+                  `).join('')}
+                  <div style="text-align:center;margin-top:10px;">${demoTag}</div>
+                </div>
+              ` : `
+                <div class="empty-state">
+                  <div class="empty-state-icon">${getIcon('target')}</div>
+                  <div class="empty-state-desc">Loading goals…</div>
+                </div>
+              `}
+            </div>
+          </div>
+
+          <!-- ── Progress Media ── -->
+          <div class="portal-card-glass portal-animate-in bento-half">
+            <div class="portal-card-title"><span class="p-card-title-icon">${getIcon('camera')}</span> Progress Media</div>
+            ${demo ? `
+              <div class="p-media-grid">
+                ${[
+                  { label: 'Week 1', color: 'rgba(99,102,241,0.15)', accent: '#6366f1' },
+                  { label: 'Week 4', color: 'rgba(16,185,129,0.15)', accent: '#10b981' },
+                  { label: 'Week 8', color: 'rgba(245,158,11,0.15)', accent: '#f59e0b' },
+                  { label: 'Week 12', color: 'rgba(139,92,246,0.15)', accent: '#8b5cf6' },
+                ].map(m => `
+                  <div class="p-media-thumb" style="background:${m.color};">
+                    <span class="p-media-icon">${getIcon('camera')}</span>
+                    <span class="p-media-label" style="color:${m.accent};">${m.label}</span>
+                  </div>
+                `).join('')}
+              </div>
+              <div style="text-align:center;margin-top:10px;">${demoTag}</div>
+            ` : `
+              <div class="empty-state">
+                <div class="empty-state-icon">${getIcon('camera')}</div>
+                <div class="empty-state-desc">Upload progress photos & videos.<br>Track visual progress over time.</div>
+              </div>
+            `}
+          </div>
+
+          <!-- ── Achievements ── -->
+          <div class="portal-card-glass portal-animate-in bento-full">
+            <div class="portal-card-title"><span class="p-card-title-icon">${getIcon('trophy')}</span> Achievements</div>
+            ${demo ? `
+              <div class="p-achievements-row">
+                ${[
+                  { icon: getIcon('flame', 'achievement-icon'), label: 'First Streak', desc: '3-day streak', earned: true },
+                  { icon: getIcon('target', 'achievement-icon'), label: 'Goal Setter', desc: 'Created first goal', earned: true },
+                  { icon: getIcon('message', 'achievement-icon'), label: 'Communicator', desc: 'Sent 10 messages', earned: true },
+                  { icon: getIcon('trophy', 'achievement-icon'), label: 'Consistent', desc: '7-day streak', earned: false },
+                  { icon: getIcon('star', 'achievement-icon'), label: 'Milestone', desc: 'Complete 50 sessions', earned: false },
+                  { icon: getIcon('trending-up', 'achievement-icon'), label: 'Data Driven', desc: 'Log 30 entries', earned: false },
+                ].map(a => `
+                  <div class="p-achievement ${a.earned ? 'p-achievement-earned' : 'p-achievement-locked'}">
+                    <div class="p-achievement-icon">${a.icon}</div>
+                    <div class="p-achievement-label">${a.label}</div>
+                    <div class="p-achievement-desc">${a.desc}</div>
+                  </div>
+                `).join('')}
+              </div>
+              <div style="text-align:center;margin-top:12px;">${demoTag}</div>
+            ` : `
+              <div class="empty-state">
+                <div class="empty-state-icon">${getIcon('trophy')}</div>
+                <div class="empty-state-desc">Earn badges by reaching milestones. Your achievements will appear here.</div>
+              </div>
+            `}
+          </div>
+
+          <!-- ── Danger Zone ── -->
+          <div class="portal-card-glass portal-animate-in bento-full" style="border-color:rgba(239,68,68,0.15);">
+            <div class="portal-card-title"><span class="p-card-title-icon">${getIcon('shield')}</span> Account</div>
+            <button id="profile-logout" class="btn-danger">Sign Out</button>
+          </div>
+        </div>
+      `;
+
+      // Wire form
+      wireProfileForm(data);
+      // Load goals into profile section (skip if demo mode — already showing sample goals)
+      if (hasActivity) loadProfileGoals(data);
+    }
+
+    async function loadProfileGoals(data: PortalBootstrapV2) {
+      const container = document.getElementById('profile-goals-content');
+      if (!container) return;
+
+      // Check if goals feature is enabled
+      if (!data.features.includes('goals' as any)) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">${getIcon('target')}</div>
+            <div class="empty-state-desc">Goal tracking coming soon.<br>Set targets, track progress, earn achievements.</div>
+          </div>
+        `;
+        return;
+      }
+
+      try {
+        const opIds = Object.keys(data.operators);
+        const opId = opIds[0] || '';
+        const url = opId
+          ? `/api/portal/goals?operatorId=${encodeURIComponent(opId)}&status=active`
+          : '/api/portal/goals?status=active';
+        const resp = await cachedGet(url);
+        if (!resp.ok) throw new Error('Failed');
+        const goalsData = await resp.json();
+        const goals = goalsData.goals || [];
+
+        if (goals.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+            <div class="empty-state-icon">${getIcon('target')}</div>
+              <div class="empty-state-desc">No active goals yet.</div>
+              <a href="${portalHref('goals')}" style="margin-top:8px;font-size:0.8rem;color:var(--portal-accent);text-decoration:none;">Set your first goal →</a>
+            </div>
+          `;
+          return;
+        }
+
+        // Show up to 3 goals with progress bars
+        const goalCards = goals.slice(0, 3).map((g: any) => {
+          const pct = Math.max(0, Math.min(100, g.progressPct));
+          const color = g.color || 'var(--portal-accent)';
+          return `
+            <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <span style="font-size:0.85rem;font-weight:600;">${g.icon ? g.icon + ' ' : ''}${esc(g.title)}</span>
+                <span style="font-size:0.75rem;color:var(--portal-text-muted);">${pct}%</span>
+              </div>
+              <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;">
+                <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width 0.4s;"></div>
+              </div>
+              <div style="font-size:0.7rem;color:var(--portal-text-muted);margin-top:3px;">${g.currentValue} / ${g.targetValue} ${esc(g.unit)}</div>
+            </div>
+          `;
+        }).join('');
+
+        const moreLink = goals.length > 3
+          ? `<a href="${portalHref('goals')}" style="display:block;text-align:center;font-size:0.8rem;color:var(--portal-accent);text-decoration:none;margin-top:10px;">View all ${goals.length} goals →</a>`
+          : `<a href="${portalHref('goals')}" style="display:block;text-align:center;font-size:0.8rem;color:var(--portal-accent);text-decoration:none;margin-top:10px;">Manage goals →</a>`;
+
+        container.innerHTML = goalCards + moreLink;
+      } catch {
+        container.innerHTML = errorStateHtml({ title: 'Unable to Load Goals', desc: 'Could not load your goals.', retry: { label: 'Retry', id: 'btn-retry-profile-goals' } });
+        document.getElementById('btn-retry-profile-goals')?.addEventListener('click', () => loadProfileGoals(data));
+      }
+    }
+
+    async function wireProfileForm(data: PortalBootstrapV2) {
+      // Pre-fill with existing profile data
+      try {
+        const profileResp = await cachedGet('/api/portal/profile');
+        if (profileResp.ok) {
+          const profileData = await profileResp.json();
+          if (profileData.profile) {
+            const nameInput = document.getElementById('profile-name') as HTMLInputElement;
+            const phoneInput = document.getElementById('profile-phone') as HTMLInputElement;
+            const tzSelect = document.getElementById('profile-timezone') as HTMLSelectElement;
+            if (nameInput && profileData.profile.name) nameInput.value = profileData.profile.name;
+            if (phoneInput && profileData.profile.phone) phoneInput.value = profileData.profile.phone;
+            if (tzSelect && profileData.profile.timezone) tzSelect.value = profileData.profile.timezone;
+
+            // Update display name if we have it
+            if (profileData.profile.name) {
+              const nameEl = document.getElementById('profile-display-name');
+              if (nameEl) nameEl.textContent = profileData.profile.name;
+            }
+          }
+        }
+      } catch {
+        // Profile endpoint may not exist yet — that's OK
+      }
+
+      // Save handler
+      const form = document.getElementById('profile-form');
+      const statusEl = document.getElementById('profile-status');
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = (document.getElementById('profile-name') as HTMLInputElement).value.trim();
+        const phone = (document.getElementById('profile-phone') as HTMLInputElement).value.trim();
+        const timezone = (document.getElementById('profile-timezone') as HTMLSelectElement).value;
+
+        try {
+          const saveResp = await postAuthed('/api/portal/profile', { name, phone, timezone });
+          if (saveResp.ok) {
+            clearApiCache('/api/portal/profile');
+            if (statusEl) {
+              statusEl.style.display = 'inline';
+              setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+            }
+            // Update display name
+            if (name) {
+              const nameEl = document.getElementById('profile-display-name');
+              if (nameEl) nameEl.textContent = name;
+            }
+          } else {
+            const errData = await saveResp.json().catch(() => ({}));
+            if (statusEl) {
+              statusEl.textContent = '✕ ' + (errData.error || `Error ${saveResp.status}`);
+              statusEl.style.display = 'inline';
+              statusEl.style.color = 'var(--portal-error, #ef4444)';
+              setTimeout(() => { statusEl.style.display = 'none'; statusEl.style.color = ''; }, 5000);
+            }
+          }
+        } catch (err: any) {
+          if (statusEl) {
+            statusEl.textContent = '✕ ' + (err.message || 'Failed to save');
+            statusEl.style.display = 'inline';
+            statusEl.style.color = 'var(--portal-error, #ef4444)';
+            setTimeout(() => { statusEl.style.display = 'none'; statusEl.style.color = ''; }, 5000);
+          }
+        }
+      });
+
+      // Logout
+      document.getElementById('profile-logout')?.addEventListener('click', () => {
+        import('@/lib/firebase/client.client').then(({ auth, signOut }) => {
+          signOut(auth).then(() => window.location.reload());
+        });
+      });
+    }
+
+    // Boot
+    initPortal()
+      .then(renderProfile)
+      .catch((err) => {
+        console.error('[Profile] Failed:', err);
+        const content = document.getElementById('portal-content');
+        if (content) {
+          content.innerHTML = errorStateHtml({ title: 'Unable to Load Profile', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-profile' } });
+          document.getElementById('btn-reload-profile')?.addEventListener('click', () => location.reload());
+        }
+      });
+  </script>
+</PortalLayout>

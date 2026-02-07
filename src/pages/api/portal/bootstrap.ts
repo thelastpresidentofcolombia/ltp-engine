@@ -1,17 +1,23 @@
 /**
- * /api/portal/bootstrap - Load Portal Data
+ * /api/portal/bootstrap - Load Portal Data (v2)
  * 
  * ENGINE CONTRACT:
  * - GET with Firebase ID token in Authorization header
- * - Returns user profile, memberships, and entitlements
- * - Used by portal to initialize client state
+ * - Returns PortalBootstrapV2: actor + features + branding + summaryCounts
+ * - ALSO returns v1-compatible fields (user, memberships, entitlements) for legacy portal
+ * - Every portal page calls this first. The single "who am I + what can I see" payload.
  * 
- * RESPONSE:
+ * RESPONSE (v2 shape):
  * {
+ *   actor: { uid, email, role, operatorIds },
+ *   features: PortalFeature[],
+ *   operators: Record<string, PortalOperatorBranding>,
+ *   summary: { activePrograms, upcomingSessions, unreadMessages, recentEntries, nextSessionAt },
+ *   engineVersion: string,
+ *   // v1 compat (also included):
  *   user: { uid, email, profile },
- *   memberships: [{ operatorId, status }],
- *   entitlements: [...],
- *   engineVersion: string
+ *   memberships: [...],
+ *   entitlements: [...]
  * }
  */
 
@@ -22,10 +28,14 @@ import type {
   EntitlementDoc, 
   MembershipDoc, 
   UserDoc,
-  PortalBootstrapResponse 
 } from '../../../lib/firebase/types';
 import { getResourceDefinition } from '../../../data/resources';
-import { loadOperatorCore } from '../../../data/operators';
+import { loadOperatorCore, getOperatorPortalConfig } from '../../../data/operators';
+import { resolvePortalFeatures } from '../../../lib/engine/resolvePortalFeatures';
+import type { ResolvedPortalConfig } from '../../../lib/engine/resolvePortalFeatures';
+import type { PortalFeature, PortalOperatorBranding } from '../../../types/portal';
+import { resolveActor, type PortalActor } from '../../../lib/portal/resolveActor';
+import { resolvePortalSummaryCounts } from '../../../lib/portal/resolvePortalSummaryCounts';
 
 /** Minimal operator branding info for portal cards */
 export interface OperatorBranding {
@@ -49,30 +59,17 @@ export const GET: APIRoute = async ({ request }) => {
     );
   }
 
-  // === VERIFY AUTH TOKEN ===
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
+  // === RESOLVE ACTOR (v2: role + operator scope) ===
+  const actor = await resolveActor(request, { auth, db });
+  if (!actor) {
     return new Response(
-      JSON.stringify({ error: 'Missing authorization token' }),
+      JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
-  const idToken = authHeader.substring(7);
-  let decodedToken;
-
-  try {
-    decodedToken = await auth.verifyIdToken(idToken);
-  } catch (err: any) {
-    console.error('[Bootstrap] Token verification failed:', err?.message);
-    return new Response(
-      JSON.stringify({ error: 'Invalid token' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
-  const uid = decodedToken.uid;
-  const email = decodedToken.email || '';
+  const uid = actor.uid;
+  const email = actor.email;
 
   // === LOAD USER DATA ===
   const userRef = db.collection(Collections.USERS).doc(uid);
@@ -86,7 +83,7 @@ export const GET: APIRoute = async ({ request }) => {
         .get(),
     ]);
 
-    // Build user object
+    // Build user object (v1 compat)
     const userData = userDoc.data() as UserDoc | undefined;
     const user = {
       uid,
@@ -128,20 +125,67 @@ export const GET: APIRoute = async ({ request }) => {
     });
 
     // Collect unique operator IDs and get branding info
-    const operatorIds = [...new Set(entitlements.map(e => e.operatorId))];
-    const operators: Record<string, OperatorBranding> = {};
-    for (const opId of operatorIds) {
+    const allOperatorIds = [...new Set([
+      ...actor.operatorIds,
+      ...entitlements.map(e => e.operatorId),
+    ])];
+
+    const operators: Record<string, PortalOperatorBranding & { portal: ResolvedPortalConfig }> = {};
+    let resolvedFeatures: PortalFeature[] = [];
+
+    for (const opId of allOperatorIds) {
       const branding = loadOperatorCore(opId);
+      const portalCfg = getOperatorPortalConfig(opId);
+      const resolvedPortal = resolvePortalFeatures(portalCfg);
       if (branding) {
-        operators[opId] = branding;
+        operators[opId] = { ...(branding as any), portal: resolvedPortal };
       }
     }
 
-    const response: PortalBootstrapResponse = {
+    // Resolve features from the primary operator (first in list)
+    // In future: merge features across multiple operators
+    const primaryOpId = allOperatorIds[0];
+    if (primaryOpId && operators[primaryOpId]) {
+      resolvedFeatures = operators[primaryOpId].portal.features;
+    } else {
+      resolvedFeatures = resolvePortalFeatures(undefined).features;
+    }
+
+    // Dev assertion: fitness-demo should resolve 7 features
+    if (import.meta.env.DEV && operators['fitness-demo']) {
+      const fdFeatures = operators['fitness-demo'].portal.features;
+      console.log(`[Bootstrap] fitness-demo resolved ${fdFeatures.length} features:`, fdFeatures);
+      if (fdFeatures.length < 8) {
+        console.warn('[Bootstrap] ⚠️ fitness-demo should have 8 features but got', fdFeatures.length);
+      }
+    }
+
+    // === SUMMARY COUNTS (v2) ===
+    // Uses dual-read helper: prefers canonical (sessions/entries) subcollections,
+    // falls back to legacy (bookings/checkins) if canonical is empty.
+    const summary = await resolvePortalSummaryCounts({ db, uid });
+    // Patch in activePrograms (computed from entitlements, not Firestore subcollections)
+    summary.activePrograms = entitlements.filter(
+      (e) => !e.expiresAt || new Date(e.expiresAt) > new Date()
+    ).length;
+
+    // Build v2 response (superset of v1)
+    const response = {
+      // === v2 fields ===
+      actor: {
+        uid: actor.uid,
+        email: actor.email,
+        role: actor.role,
+        operatorIds: actor.operatorIds,
+      },
+      features: resolvedFeatures,
+      summary,
+
+      // === v1 compat fields (legacy portal still uses these) ===
       user,
       memberships,
-      entitlements: entitlements as any, // Type coercion for timestamp conversion
-      operators, // NEW: operator branding info for portal cards
+      entitlements: entitlements as any,
+      operators,
       engineVersion: ENGINE_VERSION,
     };
 

@@ -1,0 +1,216 @@
+---
+/**
+ * /portal/programs — Active Programs & Resources Page
+ *
+ * ENGINE CONTRACT:
+ * - Shows entitlements grouped by operator (same data as legacy portal but in new layout).
+ * - Clickable cards resolve via resolveEntitlementHref() — engine never re-implements routing.
+ */
+
+import PortalLayout from '@/layouts/PortalLayout.astro';
+export const prerender = false;
+const { operatorId } = Astro.params;
+---
+
+<PortalLayout title="Programs" activeSection="programs" operatorId={operatorId!}>
+  <style is:global>
+    /* ── Programs page layout ── */
+    .prg-group { margin-bottom: 2rem; }
+    .prg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .prg-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.5rem;
+      background: var(--portal-bg-card, #14141d);
+      border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
+      border-radius: var(--portal-radius, 14px);
+      text-decoration: none;
+      color: var(--portal-text, #ececf1);
+      transition: border-color var(--portal-transition, 150ms ease-out), background var(--portal-transition, 150ms ease-out);
+    }
+    .prg-card:hover {
+      border-color: var(--portal-accent, #6366f1);
+      background: var(--portal-bg-hover, #1e1e28);
+    }
+    .prg-card:focus-visible {
+      outline: 2px solid var(--portal-accent, #6366f1);
+      outline-offset: 2px;
+    }
+    .prg-card.disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .prg-card-info { flex: 1; min-width: 0; }
+    .prg-card-label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .prg-card-desc {
+      font-size: 0.85rem;
+      color: var(--portal-text-secondary, #9da0b0);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .prg-card-status {
+      font-size: 0.75rem;
+      color: var(--portal-error, #ef4444);
+      margin-top: 4px;
+    }
+    .prg-card-arrow {
+      font-size: 1.2rem;
+      color: var(--portal-text-muted, #6b7280);
+      flex-shrink: 0;
+      margin-left: 1rem;
+      transition: color var(--portal-transition, 150ms ease-out);
+    }
+    .prg-card:hover .prg-card-arrow {
+      color: var(--portal-accent, #6366f1);
+    }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+      .prg-grid {
+        grid-template-columns: 1fr;
+      }
+      .prg-card {
+        padding: 1rem 1.25rem;
+      }
+    }
+  </style>
+
+  <script>
+    import { initPortal, getAuthed } from '@/lib/portal/portalAuth.client';
+    import { getIcon, emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
+    import type { PortalBootstrapV2 } from '@/types/portal';
+
+    function resolveEntitlementHref(ent: any): string | null {
+      if (!ent.resource?.action) return null;
+      const action = ent.resource.action;
+      switch (action.type) {
+        case 'page':
+        case 'embed':
+        case 'download':
+          return `/portal/r/${ent.operatorId}/${ent.resourceId}`;
+        case 'external':
+          return action.href;
+        default:
+          return null;
+      }
+    }
+
+    function isExpired(ent: any): boolean {
+      if (!ent.expiresAt) return false;
+      return new Date(ent.expiresAt) < new Date();
+    }
+
+    async function renderPrograms(data: PortalBootstrapV2) {
+      const content = document.getElementById('portal-content');
+      if (!content) return;
+
+      // Fetch full entitlements from bootstrap (they're in the v1 compat layer)
+      let entitlements: any[] = [];
+      try {
+        const bsResp = await getAuthed('/api/portal/bootstrap');
+        if (bsResp.ok) {
+          const fullData = await bsResp.json();
+          entitlements = fullData.entitlements || [];
+        }
+      } catch {
+        entitlements = [];
+      }
+
+      // Group by operator
+      const byOperator: Record<string, any[]> = {};
+      for (const ent of entitlements) {
+        if (!byOperator[ent.operatorId]) byOperator[ent.operatorId] = [];
+        byOperator[ent.operatorId].push(ent);
+      }
+
+      const opIds = Object.keys(byOperator);
+
+      if (opIds.length === 0) {
+        content.innerHTML = `
+          <div class="portal-page-header">
+            <div class="portal-page-title">Programs</div>
+            <div class="portal-page-subtitle">Your active programs and resources.</div>
+          </div>
+          ${emptyStateHtml({ icon: 'package', title: 'No Active Programs', desc: 'Once you purchase a program or get access granted, your content will appear here.' })}
+        `;
+        return;
+      }
+
+      let cardsHtml = '';
+      for (const opId of opIds) {
+        const op = data.operators[opId];
+        const ents = byOperator[opId];
+        const brandName = op?.brandName || opId;
+
+        const items = ents.map(ent => {
+          const href = resolveEntitlementHref(ent);
+          const label = ent.resource?.label || ent.resourceId;
+          const desc = ent.resource?.description || '';
+          const expired = isExpired(ent);
+          const isExternal = ent.resource?.action?.type === 'external';
+
+          if (href && !expired) {
+            return `
+              <a href="${href}" class="prg-card"
+                ${isExternal ? 'target="_blank" rel="noreferrer"' : ''}>
+                <div class="prg-card-info">
+                  <div class="prg-card-label">${label}</div>
+                  ${desc ? `<div class="prg-card-desc">${desc}</div>` : ''}
+                </div>
+                <span class="prg-card-arrow">${isExternal ? getIcon('external-link', 'link-icon') : getIcon('arrow-right', 'link-icon')}</span>
+              </a>
+            `;
+          }
+
+          return `
+            <div class="prg-card disabled">
+              <div class="prg-card-info">
+                <div class="prg-card-label">${label}</div>
+                <div class="prg-card-status">${expired ? 'Expired' : 'Coming soon'}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        cardsHtml += `
+          <div class="prg-group">
+            <h3 class="portal-card-title">${brandName}</h3>
+            <div class="prg-grid">${items}</div>
+          </div>
+        `;
+      }
+
+      content.innerHTML = `
+        <div class="portal-page-header">
+          <div class="portal-page-title">Programs</div>
+          <div class="portal-page-subtitle">${data.summary.activePrograms} active program${data.summary.activePrograms !== 1 ? 's' : ''}.</div>
+        </div>
+        ${cardsHtml}
+      `;
+    }
+
+    initPortal()
+      .then(renderPrograms)
+      .catch((err) => {
+        console.error('[Programs] Failed:', err);
+        const content = document.getElementById('portal-content');
+        if (content) {
+          content.innerHTML = errorStateHtml({ title: 'Unable to Load Programs', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-programs' } });
+          document.getElementById('btn-reload-programs')?.addEventListener('click', () => location.reload());
+        }
+      });
+  </script>
+</PortalLayout>

@@ -300,6 +300,11 @@ const { operatorId } = Astro.params;
         padding: 18px;
       }
     }
+    @media (max-width: 480px) {
+      .dash-hero .hero-stat-val { font-size: 1.2rem; }
+      .dash-hero .hero-metric,
+      .dash-hero .hero-stat-card { min-width: 100%; }
+    }
 
     /* Tier 2: Dock (Action Bar) */
     .dash-dock .w-cell {
@@ -476,6 +481,30 @@ const { operatorId } = Astro.params;
     @media (max-width: 768px) {
       .w-welcome { flex-direction: column; align-items: flex-start; padding: 24px; }
       .w-welcome-stats { gap: 16px; }
+      .w-welcome-greeting { font-size: 1.1rem; }
+      .w-metrics-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+      .w-streak-value { font-size: 2rem; }
+      .w-goal-ring { width: 44px; height: 44px; }
+      .w-onboard-step { min-height: 44px; padding: 12px 14px; }
+    }
+    @media (max-width: 480px) {
+      .w-welcome { padding: 18px 16px; gap: 16px; }
+      .w-welcome-avatar { width: 42px; height: 42px; font-size: 1rem; }
+      .w-welcome-greeting { font-size: 1rem; }
+      .w-welcome-sub { font-size: 0.78rem; }
+      .w-mini-val { font-size: 1.1rem; }
+      .w-metrics-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .w-metric-card { padding: 10px; }
+      .w-metric-value { font-size: 1.05rem; }
+      .w-streak-value { font-size: 1.6rem; }
+      .w-goal-card { gap: 10px; padding: 8px 10px; }
+      .w-goal-ring { width: 38px; height: 38px; }
+      .w-goal-title { font-size: 0.8rem; }
+      .w-onboard-step { padding: 10px 12px; gap: 10px; }
+      .w-onboard-num { width: 24px; height: 24px; font-size: 0.7rem; }
+      .w-actions-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
+      .w-action { padding: 14px 6px; font-size: 0.72rem; gap: 8px; }
+      .w-card-inner { padding: 14px; }
     }
 
     /* ========================================

@@ -85,11 +85,12 @@ const { operatorId } = Astro.params;
   /* ── Container: two-panel flex layout ── */
   .messaging-container {
     display: flex;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 130px); /* space for page header + padding */
+    min-height: 400px;
     overflow: hidden;
     background: var(--portal-bg, #0d0d12);
     border: 1px solid var(--portal-border, rgba(255,255,255,0.06));
-    border-radius: 12px;
+    border-radius: var(--portal-radius, 14px);
   }
 
   /* ── Conversation List Panel ── */
@@ -363,7 +364,8 @@ const { operatorId } = Astro.params;
       display: flex;
     }
     .messaging-container {
-      height: calc(100vh - 80px - 70px);
+      height: calc(100vh - 80px - 80px); /* header + bottom tab bar */
+      border-radius: 8px;
     }
     .btn-send {
       width: 44px;

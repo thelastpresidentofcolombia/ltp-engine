@@ -160,6 +160,24 @@ const { operatorId } = Astro.params;
     .session-card .btn-row {
       align-self: stretch;
     }
+    .week-nav {
+      gap: 8px;
+    }
+    .week-nav .btn-ghost {
+      min-height: 44px;
+      padding: 8px 12px;
+    }
+  }
+  @media (max-width: 480px) {
+    .week-label { font-size: 0.8rem; }
+    .slots-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; }
+    .slot-btn { font-size: 0.78rem; padding: 8px 4px; }
+    .session-card { padding: 0.8rem; }
+    .session-title { font-size: 0.88rem; }
+    .session-meta { font-size: 0.75rem; }
+    .session-card .btn-row { flex-direction: column; }
+    .session-card .btn-row .btn-primary,
+    .session-card .btn-row .btn-ghost { width: 100%; justify-content: center; }
   }
 </style>
 

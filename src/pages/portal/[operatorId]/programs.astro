@@ -84,7 +84,16 @@ const { operatorId } = Astro.params;
       }
       .prg-card {
         padding: 1rem 1.25rem;
+        min-height: 44px;
       }
+    }
+    @media (max-width: 480px) {
+      .prg-card {
+        padding: 0.85rem 1rem;
+      }
+      .prg-card-label { font-size: 0.88rem; }
+      .prg-card-desc { font-size: 0.78rem; }
+      .prg-card-arrow { margin-left: 0.5rem; font-size: 1rem; }
     }
   </style>
 

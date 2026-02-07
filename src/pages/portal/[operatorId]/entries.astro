@@ -150,6 +150,23 @@ const { operatorId } = Astro.params;
     .entry-metric {
       text-align: left;
     }
+    input[type="range"] {
+      height: 8px;
+      padding: 12px 0;
+    }
+    .load-more-row .btn-ghost {
+      width: 100%;
+      min-height: 44px;
+      justify-content: center;
+    }
+  }
+  @media (max-width: 480px) {
+    .entry-card { padding: 0.8rem; }
+    .entry-metric-val { font-size: 1rem; }
+    .entry-metric-label { font-size: 0.72rem; }
+    .slider-row { flex-wrap: wrap; gap: 6px; }
+    .slider-row label { width: 100%; }
+    .slider-row input[type="range"] { flex: 1; min-width: 0; }
   }
 </style>
 

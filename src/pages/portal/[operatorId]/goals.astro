@@ -279,14 +279,30 @@ const { operatorId } = Astro.params;
         display: inline-flex;
         align-items: center;
         padding: 8px 16px;
+        font-size: 0.78rem;
       }
-      .g-modal { padding: 20px; }
+      .g-modal { padding: 20px; max-width: calc(100vw - 32px); }
       .g-goal-item { padding: 14px; gap: 12px; }
       .g-goal-ring { width: 44px; height: 44px; }
+      .g-goal-ring svg { width: 44px; height: 44px; }
+      .g-goal-pct { font-size: 0.6rem; }
+      .g-goal-name { font-size: 0.88rem; }
+      .g-goal-progress-text { font-size: 0.75rem; }
       .g-goal-actions { gap: 6px; }
+      .g-goal-actions .btn-ghost,
+      .g-goal-actions .btn-danger { min-height: 36px; padding: 6px 10px; }
       .g-templates {
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
       }
+    }
+    @media (max-width: 480px) {
+      .g-header { padding: 16px 14px; flex-direction: column; align-items: flex-start; }
+      .g-header .btn-primary { width: 100%; text-align: center; }
+      .g-templates { grid-template-columns: 1fr 1fr; }
+      .g-goal-bar-track { margin-top: 6px; }
+      .g-tabs { overflow-x: auto; flex-wrap: nowrap; }
+      .g-tabs::-webkit-scrollbar { display: none; }
+      .g-tab { flex-shrink: 0; }
     }
 
 

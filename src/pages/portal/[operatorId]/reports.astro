@@ -459,17 +459,31 @@ const { operatorId } = Astro.params;
        RESPONSIVE
        ============================================ */
     @media (max-width: 768px) {
-      .r-config { grid-template-columns: 1fr; }
-      .r-doc-header { flex-direction: column; gap: 12px; }
+      .r-config { grid-template-columns: 1fr; gap: 12px; }
+      .r-config-section { padding: 18px; }
+      .r-type-cards { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+      .r-type-card { padding: 12px 10px; }
+      .r-type-name { font-size: 0.78rem; }
+      .r-type-desc { font-size: 0.68rem; }
+      .r-sections-grid { gap: 6px; }
+      .r-section-toggle { padding: 8px 12px; font-size: 0.75rem; min-height: 44px; }
+      .r-actions { flex-wrap: wrap; }
+      .r-doc-header { flex-direction: column; gap: 12px; padding: 20px; }
       .r-doc-meta { text-align: left; }
       .r-doc-title { font-size: 1.2rem; padding: 16px 20px 4px; }
       .r-doc-subtitle { padding: 0 20px 16px; }
       .r-doc-body { padding: 0 20px 24px; }
-      .r-doc-header { padding: 20px; }
       .r-doc-footer { padding: 12px 20px; flex-direction: column; gap: 4px; }
       .r-kpis { grid-template-columns: repeat(2, 1fr); }
       .r-goal-bar { width: 80px; }
-      .r-metrics-table, .r-sessions-table { font-size: 0.75rem; }
+      .r-metrics-table, .r-sessions-table { font-size: 0.75rem; overflow-x: auto; display: block; }
+      .r-viewer-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+    @media (max-width: 480px) {
+      .r-type-cards { grid-template-columns: 1fr; }
+      .r-kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .r-kpi { padding: 10px; }
+      .r-kpi-value { font-size: 1.1rem; }
     }
   </style>
 

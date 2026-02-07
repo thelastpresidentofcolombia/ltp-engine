@@ -252,6 +252,25 @@ const { operatorId } = Astro.params;
         font-size: 1.3rem;
       }
       .p-identity-info h2 { font-size: 1.1rem; }
+      .p-stats-row {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      }
+      .p-form .form-input,
+      .p-form .form-textarea {
+        font-size: 16px; /* prevents iOS zoom */
+      }
+    }
+    @media (max-width: 480px) {
+      .p-identity { padding: 16px 14px; gap: 10px; flex-direction: column; align-items: center; text-align: center; }
+      .p-avatar { width: 64px; height: 64px; font-size: 1.5rem; }
+      .p-identity-info { align-items: center; }
+      .p-identity-info h2 { font-size: 1rem; }
+      .p-identity-badges { justify-content: center; }
+      .p-stats-row { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .p-achievement { padding: 12px 6px; }
+      .p-achievement-icon { font-size: 1.3rem; }
+      .p-achievement-label { font-size: 0.7rem; }
+      .p-op-card { flex-direction: column; gap: 8px; text-align: center; }
     }
   </style>
 

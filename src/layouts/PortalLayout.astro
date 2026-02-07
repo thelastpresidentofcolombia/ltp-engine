@@ -314,11 +314,15 @@ const navItems = [
       flex: 1;
       margin-left: var(--portal-sidebar-width);
       padding: 32px 40px;
-      max-width: 1000px;
+      min-width: 0; /* prevent flex overflow */
+    }
+    .portal-main > #portal-content {
+      max-width: 1080px;
+      width: 100%;
     }
 
     .portal-page-header {
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
     .portal-page-title {
       font-size: 1.75rem;
@@ -326,9 +330,11 @@ const navItems = [
       color: var(--portal-text);
       margin-bottom: 4px;
     }
-    .portal-page-subtitle {
+    .portal-page-subtitle,
+    .portal-page-desc {
       font-size: 0.95rem;
       color: var(--portal-text-secondary);
+      margin-top: 2px;
     }
 
     /* ---------- LOGIN SCREEN ---------- */
@@ -519,7 +525,10 @@ const navItems = [
       }
       .portal-main {
         margin-left: 0;
-        padding: 20px 16px 100px;
+        padding: 20px 16px 90px; /* 90px clears bottom tab bar */
+      }
+      .portal-main > #portal-content {
+        max-width: 100%;
       }
       .portal-login-card {
         padding: 28px 24px;
@@ -527,6 +536,12 @@ const navItems = [
       .nav-item {
         min-height: 44px;
         justify-content: center;
+      }
+      .portal-page-header {
+        margin-bottom: 20px;
+      }
+      .portal-page-title {
+        font-size: 1.4rem;
       }
     }
   </style>

@@ -37,7 +37,7 @@ let initPromise: Promise<PortalBootstrapV2> | null = null;
 // ============================================================
 
 const CACHE_KEY = 'ltp_portal_bootstrap';
-const CACHE_TTL = 30_000; // 30 seconds
+const CACHE_TTL = 300_000; // 5 minutes — fast page transitions
 
 function getCachedBootstrap(): PortalBootstrapV2 | null {
   try {
@@ -69,7 +69,7 @@ function clearCachedBootstrap() {
 // ============================================================
 
 const API_CACHE_PREFIX = 'ltp_api_';
-const DEFAULT_API_TTL = 30_000; // 30 seconds
+const DEFAULT_API_TTL = 120_000; // 2 minutes — reduces re-fetch on page nav
 
 /**
  * Authenticated GET with sessionStorage caching.

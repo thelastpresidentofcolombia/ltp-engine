@@ -1,0 +1,461 @@
+---
+/**
+ * /portal — Portal Lobby (Auth Gate + Operator Resolution)
+ *
+ * ENGINE CONTRACT:
+ * - This is the single entry point for the portal.
+ * - /en/portal and /es/portal redirect here (302).
+ * - Fast path: if sessionStorage has a cached operatorId, redirects instantly
+ *   to /portal/{opId}/dashboard before any Firebase JS loads.
+ * - Slow path: shows the login screen, completes magic-link auth,
+ *   fetches bootstrap, resolves operatorId, then redirects.
+ * - Once redirected, PortalLayout takes over with sidebar nav, shell, etc.
+ * - This page should NEVER be the long-term landing — it's a routing lobby.
+ */
+export const prerender = false;
+---
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal | Sign In</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#6366f1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+    :root {
+      --portal-bg: #0d0d12;
+      --portal-bg-card: #14141d;
+      --portal-surface: #1a1a2e;
+      --portal-border: rgba(255,255,255,0.06);
+      --portal-border-strong: rgba(255,255,255,0.12);
+      --portal-text: #ececf1;
+      --portal-text-secondary: #9da0b0;
+      --portal-text-muted: #6b7280;
+      --portal-accent: #6366f1;
+      --portal-accent-hover: #818cf8;
+      --portal-success: #10b981;
+      --portal-error: #ef4444;
+      --portal-radius: 14px;
+      --portal-radius-sm: 8px;
+      --portal-transition: 150ms ease-out;
+    }
+
+    html {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--portal-bg);
+      color: var(--portal-text);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .lobby-card {
+      background: var(--portal-bg-card);
+      border: 1px solid var(--portal-border);
+      border-radius: var(--portal-radius);
+      padding: 40px;
+      max-width: 420px;
+      width: 100%;
+      opacity: 0;
+      animation: lobby-fadein 0.3s ease-out 0.1s forwards;
+    }
+
+    @keyframes lobby-fadein {
+      to { opacity: 1; }
+    }
+
+    .lobby-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .lobby-brand-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lobby-brand-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--portal-accent);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .lobby-brand-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--portal-text-muted);
+    }
+
+    .lobby-card h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .lobby-card .subtitle {
+      color: var(--portal-text-secondary);
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .lobby-card input[type="email"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--portal-border-strong);
+      border-radius: var(--portal-radius-sm);
+      background: var(--portal-bg);
+      color: var(--portal-text);
+      font-family: inherit;
+      font-size: 1rem;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border-color var(--portal-transition), box-shadow var(--portal-transition);
+    }
+    .lobby-card input[type="email"]:focus {
+      border-color: var(--portal-accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    .lobby-card input[type="email"]::placeholder {
+      color: var(--portal-text-muted);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: var(--portal-radius-sm);
+      background: var(--portal-accent);
+      color: white;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--portal-transition);
+    }
+    .btn-primary:hover { background: var(--portal-accent-hover); }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:focus-visible { outline: 2px solid var(--portal-accent); outline-offset: 2px; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .lobby-error {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--portal-radius-sm);
+      padding: 10px 14px;
+      color: var(--portal-error);
+      font-size: 0.85rem;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .lobby-success {
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: var(--portal-radius-sm);
+      padding: 16px;
+      text-align: center;
+    }
+    .lobby-success h3 {
+      color: var(--portal-success);
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+    .lobby-success p {
+      color: var(--portal-text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .lobby-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 32px 0;
+    }
+    .lobby-spinner .ring {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--portal-border-strong);
+      border-top-color: var(--portal-accent);
+      border-radius: 50%;
+      animation: lobby-spin 0.7s linear infinite;
+    }
+    @keyframes lobby-spin {
+      to { transform: rotate(360deg); }
+    }
+    .lobby-spinner p {
+      color: var(--portal-text-secondary);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 480px) {
+      .lobby-card { padding: 28px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ─── Fast-path redirect (runs before any JS framework loads) ─── -->
+  <script is:inline>
+  (function() {
+    try {
+      // 1. Direct sessionStorage hit
+      var opId = sessionStorage.getItem('cp:lastOperatorId');
+      if (opId) {
+        window.location.replace('/portal/' + opId + '/dashboard');
+        return;
+      }
+      // 2. Bootstrap cache fallback
+      var raw = sessionStorage.getItem('ltp_portal_bootstrap');
+      if (raw) {
+        var d = JSON.parse(raw).data;
+        var ops = d && d.operators ? Object.keys(d.operators) : [];
+        if (ops.length >= 1) {
+          sessionStorage.setItem('cp:lastOperatorId', ops[0]);
+          window.location.replace('/portal/' + ops[0] + '/dashboard');
+          return;
+        }
+      }
+    } catch(e) {}
+    // No cached state → show lobby (remove hidden class)
+    document.addEventListener('DOMContentLoaded', function() {
+      var card = document.getElementById('lobby-card');
+      if (card) card.style.display = '';
+    });
+  })();
+  </script>
+
+  <!-- ─── Lobby card (hidden until fast-path fails) ─── -->
+  <div id="lobby-card" class="lobby-card" style="display:none;">
+    <div class="lobby-brand">
+      <div class="lobby-brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="lobby-brand-label">Portal</div>
+    </div>
+
+    <!-- Login form (default state) -->
+    <div id="lobby-login">
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Get a magic link sent to your email — no password needed.</p>
+      <input id="lobby-email" type="email" placeholder="you@email.com" autocomplete="email" />
+      <button id="lobby-send" class="btn-primary">Send login link</button>
+      <div id="lobby-error" class="lobby-error"></div>
+    </div>
+
+    <!-- Loading state (shown while resolving auth / bootstrap) -->
+    <div id="lobby-loading" style="display:none;">
+      <div class="lobby-spinner">
+        <div class="ring"></div>
+        <p>Signing you in…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Module script: Firebase auth + bootstrap resolution ─── -->
+  <script>
+    import {
+      auth,
+      isSignInWithEmailLink,
+      sendSignInLinkToEmail,
+      signInWithEmailLink,
+      onAuthStateChanged,
+    } from '../lib/firebase/client.client';
+
+    // ── DOM refs ──
+    const lobbyCard    = document.getElementById('lobby-card')!;
+    const loginDiv     = document.getElementById('lobby-login')!;
+    const loadingDiv   = document.getElementById('lobby-loading')!;
+    const emailInput   = document.getElementById('lobby-email') as HTMLInputElement;
+    const sendBtn      = document.getElementById('lobby-send') as HTMLButtonElement;
+    const errorEl      = document.getElementById('lobby-error') as HTMLElement;
+
+    // ── Helpers ──
+    function showLogin()   { loginDiv.style.display = ''; loadingDiv.style.display = 'none'; lobbyCard.style.display = ''; }
+    function showLoading() { loginDiv.style.display = 'none'; loadingDiv.style.display = ''; lobbyCard.style.display = ''; }
+    function showError(msg: string) {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
+    }
+
+    function getEmailFromStorage(): string {
+      return window.localStorage.getItem('ltp_portal_email') || '';
+    }
+    function setEmailToStorage(email: string) {
+      window.localStorage.setItem('ltp_portal_email', email);
+    }
+    function clearEmailStorage() {
+      window.localStorage.removeItem('ltp_portal_email');
+    }
+
+    // ── Redirect to operator dashboard ──
+    async function resolveAndRedirect(user: any) {
+      showLoading();
+      try {
+        const token = await user.getIdToken();
+
+        // Try claiming pending entitlements (non-fatal)
+        try {
+          await fetch('/api/portal/claim', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch {}
+
+        // Fetch bootstrap to get operator list
+        const resp = await fetch('/api/portal/bootstrap', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!resp.ok) throw new Error(`Bootstrap failed (${resp.status})`);
+
+        const data = await resp.json();
+
+        // Cache bootstrap for fast path on future visits
+        try {
+          sessionStorage.setItem('ltp_portal_bootstrap', JSON.stringify({ data, ts: Date.now() }));
+        } catch {}
+
+        const operators = data.operators ? Object.keys(data.operators) : [];
+
+        if (operators.length === 0) {
+          // Edge case: authenticated but no operator memberships
+          loginDiv.innerHTML = `
+            <div style="text-align:center;">
+              <h2 style="margin-bottom:8px;">No Active Portal</h2>
+              <p class="subtitle">Your account doesn't have any active memberships yet. If you just purchased, check your email for your portal link.</p>
+            </div>
+          `;
+          loginDiv.style.display = '';
+          loadingDiv.style.display = 'none';
+          return;
+        }
+
+        // Pick first operator (multi-op switcher comes later)
+        const opId = operators[0];
+        sessionStorage.setItem('cp:lastOperatorId', opId);
+        window.location.replace(`/portal/${opId}/dashboard`);
+      } catch (err: any) {
+        console.error('[Portal Lobby] Bootstrap error:', err);
+        showLogin();
+        showError(err?.message || 'Something went wrong. Please try again.');
+      }
+    }
+
+    // ── Magic link completion ──
+    async function completeEmailLink(): Promise<boolean> {
+      const href = window.location.href;
+      if (!isSignInWithEmailLink(auth, href)) return false;
+
+      showLoading();
+
+      let email = getEmailFromStorage();
+      if (!email) {
+        email = window.prompt('Enter the email you used to request the login link:') || '';
+        if (!email) { showLogin(); return false; }
+        setEmailToStorage(email);
+      }
+
+      await signInWithEmailLink(auth, email, href);
+      clearEmailStorage();
+
+      // Strip Firebase auth params from URL
+      window.history.replaceState({}, document.title, '/portal');
+      return true;
+    }
+
+    // ── Wire login form ──
+    async function handleSend() {
+      const email = emailInput.value.trim();
+      if (!email) {
+        showError('Please enter your email.');
+        return;
+      }
+
+      try {
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending…';
+        errorEl.style.display = 'none';
+
+        await sendSignInLinkToEmail(auth, email, {
+          url: `${window.location.origin}/portal`,
+          handleCodeInApp: true,
+        });
+
+        setEmailToStorage(email);
+
+        // Replace login form with success message
+        loginDiv.innerHTML = `
+          <div class="lobby-success">
+            <h3>Check your email</h3>
+            <p>We sent a sign-in link to <strong>${email}</strong>. Click it to access your portal.</p>
+          </div>
+        `;
+      } catch (e: any) {
+        console.error('[Portal Lobby] Send link error:', e);
+        showError(e?.message || 'Failed to send link.');
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send login link';
+      }
+    }
+
+    sendBtn?.addEventListener('click', handleSend);
+    emailInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleSend();
+    });
+
+    // ── Auth state listener ──
+    (async () => {
+      // Complete magic link first (if returning from email)
+      try {
+        await completeEmailLink();
+      } catch (e) {
+        console.error('[Portal Lobby] Magic link error:', e);
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          // Already authenticated → resolve operator + redirect
+          await resolveAndRedirect(user);
+        } else {
+          // Not authenticated → show login
+          showLogin();
+        }
+      });
+    })();
+  </script>
+
+  <noscript>
+    <div class="lobby-card" style="opacity:1; text-align:center;">
+      <h2>JavaScript Required</h2>
+      <p class="subtitle">Please enable JavaScript to access the portal.</p>
+    </div>
+  </noscript>
+</body>
+</html>

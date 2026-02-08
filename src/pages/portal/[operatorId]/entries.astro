@@ -439,6 +439,7 @@ const { operatorId } = Astro.params;
       if (cursor && append) params.set('cursor', cursor);
 
       const resp = await cachedGet(`/api/portal/entries?${params}`);
+      if (!resp.ok) throw new Error(`API ${resp.status}`);
       const data = await resp.json();
 
       if (append) {

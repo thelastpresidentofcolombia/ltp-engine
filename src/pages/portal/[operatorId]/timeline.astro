@@ -251,11 +251,14 @@ const { operatorId } = Astro.params;
 
     try {
       const resp = await cachedGet(`/api/portal/timeline?range=${currentRange}`);
+      if (!resp.ok) {
+        throw new Error(`API returned ${resp.status}`);
+      }
       const data: TimelineView = await resp.json();
 
       document.getElementById('loading-state')!.style.display = 'none';
 
-      if (data.entryCount === 0 || data.series.every((s) => s.points.length === 0)) {
+      if (!data.series || data.entryCount === 0 || data.series.every((s) => s.points.length === 0)) {
         document.getElementById('empty-state')!.style.display = 'block';
         document.getElementById('empty-state-content')!.innerHTML =
           emptyStateHtml({ icon: 'chart', title: 'No Timeline Data', desc: 'Start logging updates to see your progress over time!', action: { label: 'Log an Update', href: '/portal/entries' } });

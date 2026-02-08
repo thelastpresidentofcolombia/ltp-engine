@@ -17,8 +17,7 @@
 import type { APIRoute } from 'astro';
 import { db, auth, Collections, Subcollections } from '../../../lib/firebase/admin';
 import { resolveActor } from '../../../lib/portal/resolveActor';
-import { requireFeature, requireOperatorAccess } from '../../../lib/portal/guards';
-import { resolvePortalFeatures } from '../../../lib/engine/resolvePortalFeatures';
+import { requireFeature, requireOperatorAccess, resolveActorPortal } from '../../../lib/portal/guards';
 import type { SessionCreateRequest, SessionDoc } from '../../../types/sessions';
 
 export const prerender = false;
@@ -43,7 +42,7 @@ export const GET: APIRoute = async ({ request }) => {
     );
   }
 
-  const resolvedPortal = resolvePortalFeatures(undefined);
+  const resolvedPortal = resolveActorPortal(actor);
   const denied = requireFeature('sessions', resolvedPortal.features);
   if (denied) return denied;
 
@@ -133,7 +132,7 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  const resolvedPortal = resolvePortalFeatures(undefined);
+  const resolvedPortal = resolveActorPortal(actor);
   const denied = requireFeature('sessions', resolvedPortal.features);
   if (denied) return denied;
 

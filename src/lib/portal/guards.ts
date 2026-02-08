@@ -24,6 +24,22 @@ import type { PortalFeature } from '../../types/portal';
 import type { PortalActor } from '../portal/resolveActor';
 import { actorCanAccessOperator, actorHasRole } from '../portal/resolveActor';
 import type { PortalRole } from '../../types/portal';
+import { getOperatorPortalConfig } from '../../data/operators';
+import { resolvePortalFeatures, type ResolvedPortalConfig } from '../engine/resolvePortalFeatures';
+
+/**
+ * Resolve the portal config for the actor's effective operator.
+ * Uses an explicit operatorId if provided, otherwise the actor's primary operator.
+ * This ensures feature gates check the ACTUAL operator config, not engine defaults.
+ */
+export function resolveActorPortal(
+  actor: PortalActor,
+  operatorId?: string | null
+): ResolvedPortalConfig {
+  const effectiveOp = operatorId || actor.operatorIds[0];
+  const portalCfg = effectiveOp ? getOperatorPortalConfig(effectiveOp) : undefined;
+  return resolvePortalFeatures(portalCfg);
+}
 
 /**
  * Returns a 403 Response if `feature` is not in the resolved feature set.

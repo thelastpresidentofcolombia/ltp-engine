@@ -12,8 +12,7 @@
 import type { APIRoute } from 'astro';
 import { db, auth, Subcollections, Collections } from '../../../lib/firebase/admin';
 import { resolveActor } from '../../../lib/portal/resolveActor';
-import { requireFeature, requireOperatorAccess } from '../../../lib/portal/guards';
-import { resolvePortalFeatures } from '../../../lib/engine/resolvePortalFeatures';
+import { requireFeature, requireOperatorAccess, resolveActorPortal } from '../../../lib/portal/guards';
 import { resolveAvailability, ENGINE_DEFAULT_SCHEDULE } from '../../../lib/engine/resolveAvailability';
 import type { SessionDoc } from '../../../types/sessions';
 
@@ -36,7 +35,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   // === Feature gate ===
-  const resolvedPortal = resolvePortalFeatures(undefined); // TODO: pass operator config when available
+  const resolvedPortal = resolveActorPortal(actor, new URL(request.url).searchParams.get('operatorId'));
   const denied = requireFeature('sessions', resolvedPortal.features);
   if (denied) return denied;
 

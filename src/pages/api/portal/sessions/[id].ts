@@ -18,8 +18,7 @@
 import type { APIRoute } from 'astro';
 import { db, auth, Collections, Subcollections } from '../../../../lib/firebase/admin';
 import { resolveActor, actorHasRole } from '../../../../lib/portal/resolveActor';
-import { requireFeature } from '../../../../lib/portal/guards';
-import { resolvePortalFeatures } from '../../../../lib/engine/resolvePortalFeatures';
+import { requireFeature, resolveActorPortal } from '../../../../lib/portal/guards';
 
 export const prerender = false;
 
@@ -39,7 +38,7 @@ export const PATCH: APIRoute = async ({ request, params }) => {
     );
   }
 
-  const resolvedPortal = resolvePortalFeatures(undefined);
+  const resolvedPortal = resolveActorPortal(actor);
   const denied = requireFeature('sessions', resolvedPortal.features);
   if (denied) return denied;
 

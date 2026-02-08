@@ -338,6 +338,7 @@ const { operatorId } = Astro.params;
   async function loadSessions() {
     try {
       const resp = await cachedGet('/api/portal/sessions');
+      if (!resp.ok) throw new Error(`API ${resp.status}`);
       const data = await resp.json();
       const sessions = data.sessions || [];
 

@@ -400,16 +400,25 @@ const { operatorId } = Astro.params;
   let activeConvoId: string | null = null;
   let unsubscribeMessages: (() => void) | null = null;
 
+  // ── Page-identity guard ──
+  let _gen = 0;
+  function stale(g: number) { return g !== _gen; }
+  function $(id: string) { return document.getElementById(id); }
+
   // ============================================================
   // INIT
   // ============================================================
 
   async function init() {
+    const gen = ++_gen;
+    // Cleanup any previous Firestore subscription
+    if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
     try {
       bootstrap = await initPortal();
+      if (stale(gen)) return;
 
       if (!bootstrap.features.includes('messaging')) {
-        const container = document.getElementById('messaging-container');
+        const container = $('messaging-container');
         if (container) {
           container.innerHTML =
             emptyStateHtml({ icon: 'shield', title: 'Messaging Not Available', desc: 'Messaging is not enabled for your account. Contact your coach for access.' });
@@ -419,12 +428,13 @@ const { operatorId } = Astro.params;
 
       await refreshConversations();
     } catch (err) {
+      if (stale(gen)) return;
       console.error('[Messaging] Init failed:', err);
-      const container = document.getElementById('messaging-container');
+      const container = $('messaging-container');
       if (container) {
         container.innerHTML =
           errorStateHtml({ title: 'Unable to Load Messages', desc: 'Something went wrong. Please try again.', retry: { label: 'Reload Page', id: 'btn-reload-messages' } });
-        document.getElementById('btn-reload-messages')?.addEventListener('click', () => location.reload());
+        $('btn-reload-messages')?.addEventListener('click', () => location.reload());
       }
     }
   }
@@ -444,20 +454,21 @@ const { operatorId } = Astro.params;
       }
     } catch (err) {
       console.error('[Messaging] Load conversations failed:', err);
-      const list = document.getElementById('convo-list');
+      const list = $('convo-list');
       if (list) {
         list.innerHTML = errorStateHtml({ title: 'Could Not Load', desc: 'Failed to load conversations.', retry: { label: 'Retry', id: 'btn-retry-convos' } });
-        document.getElementById('btn-retry-convos')?.addEventListener('click', () => refreshConversations());
+        $('btn-retry-convos')?.addEventListener('click', () => refreshConversations());
       }
     }
   }
 
   function renderConversationList() {
-    const list = document.getElementById('convo-list')!;
+    const list = $('convo-list');
+    if (!list) return;
 
     if (conversations.length === 0) {
       list.innerHTML = emptyStateHtml({ icon: 'message', title: 'No Conversations', desc: 'Start your first conversation with your coach!', action: { label: 'Start a Conversation', id: 'btn-start-first' } });
-      document.getElementById('btn-start-first')?.addEventListener('click', startNewConversation);
+      $('btn-start-first')?.addEventListener('click', startNewConversation);
       return;
     }
 
@@ -497,19 +508,19 @@ const { operatorId } = Astro.params;
 
     // Show thread UI
     const convo = conversations.find((c) => c.id === convoId);
-    const headerEl = document.getElementById('thread-header')!;
-    const titleEl = document.getElementById('thread-title')!;
-    const sendBoxEl = document.getElementById('send-box')!;
-    const emptyEl = document.getElementById('thread-empty');
-    const messagesEl = document.getElementById('thread-messages')!;
+    const headerEl = $('thread-header');
+    const titleEl = $('thread-title');
+    const sendBoxEl = $('send-box');
+    const emptyEl = $('thread-empty');
+    const messagesEl = $('thread-messages');
 
-    headerEl.style.display = 'flex';
-    titleEl.textContent = convo?.operatorBrandName || 'Conversation';
-    sendBoxEl.style.display = 'flex';
+    if (headerEl) headerEl.style.display = 'flex';
+    if (titleEl) titleEl.textContent = convo?.operatorBrandName || 'Conversation';
+    if (sendBoxEl) sendBoxEl.style.display = 'flex';
     if (emptyEl) emptyEl.style.display = 'none';
 
     // Show loading state
-    messagesEl.innerHTML = '<div class="loading-messages">Loading messages…</div>';
+    if (messagesEl) messagesEl.innerHTML = '<div class="loading-messages">Loading messages…</div>';
 
     // Subscribe to realtime messages via Firestore onSnapshot
     // First snapshot = initial load. Subsequent = realtime updates.
@@ -525,11 +536,11 @@ const { operatorId } = Astro.params;
     }
 
     // Mobile: show thread panel
-    document.getElementById('messaging-container')!.classList.add('show-thread');
+    $('messaging-container')?.classList.add('show-thread');
 
     // Focus input
     setTimeout(() => {
-      (document.getElementById('message-input') as HTMLInputElement)?.focus();
+      ($('message-input') as HTMLInputElement)?.focus();
     }, 100);
   }
 
@@ -538,7 +549,8 @@ const { operatorId } = Astro.params;
   // ============================================================
 
   function renderMessages(messages: MessageDoc[]) {
-    const container = document.getElementById('thread-messages')!;
+    const container = $('thread-messages');
+    if (!container) return;
 
     if (messages.length === 0) {
       container.innerHTML = emptyStateHtml({ icon: 'wave', title: 'No Messages Yet', desc: 'Say hello to start the conversation!' });
@@ -567,9 +579,9 @@ const { operatorId } = Astro.params;
   // ============================================================
 
   async function handleSend() {
-    const input = document.getElementById('message-input') as HTMLInputElement;
-    const text = input.value.trim();
-    if (!text || !activeConvoId) return;
+    const input = $('message-input') as HTMLInputElement | null;
+    const text = input?.value?.trim();
+    if (!text || !activeConvoId || !input) return;
 
     // Clear input immediately for snappy feel
     input.value = '';
@@ -585,16 +597,18 @@ const { operatorId } = Astro.params;
       // Restore text so user can retry
       input.value = text;
       // Show inline error
-      const messagesEl = document.getElementById('thread-messages')!;
-      const errorEl = document.createElement('div');
+      const messagesEl = $('thread-messages');
+      if (messagesEl) {
+        const errorEl = document.createElement('div');
       errorEl.className = 'message message-mine';
       errorEl.innerHTML = `
         <div class="message-bubble" style="background:rgba(239,68,68,0.2);color:var(--portal-error, #ef4444);border:1px solid rgba(239,68,68,0.3);">
           <div class="message-text">${getIcon('alert', 'alert-icon-svg')} Failed to send. Press Enter to retry.</div>
         </div>
       `;
-      messagesEl.appendChild(errorEl);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+        messagesEl.appendChild(errorEl);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
     }
   }
 
@@ -605,7 +619,7 @@ const { operatorId } = Astro.params;
   async function startNewConversation() {
     const opId = bootstrap.actor.operatorIds[0];
     if (!opId) {
-      const list = document.getElementById('convo-list');
+      const list = $('convo-list');
       if (list) {
         list.innerHTML = emptyStateHtml({ icon: 'alert', title: 'No Operator Found', desc: 'Your account is not linked to an operator.' });
       }
@@ -618,10 +632,10 @@ const { operatorId } = Astro.params;
       selectConversation(convo.id);
     } catch (err: any) {
       console.error('[Messaging] Start conversation failed:', err);
-      const list = document.getElementById('convo-list');
+      const list = $('convo-list');
       if (list) {
         list.innerHTML = errorStateHtml({ title: 'Could Not Start Conversation', desc: err.message || 'Please try again.', retry: { label: 'Retry', id: 'btn-retry-new-convo' } });
-        document.getElementById('btn-retry-new-convo')?.addEventListener('click', () => startNewConversation());
+        $('btn-retry-new-convo')?.addEventListener('click', () => startNewConversation());
       }
     }
   }
@@ -630,19 +644,19 @@ const { operatorId } = Astro.params;
   // EVENT WIRING
   // ============================================================
 
-  document.getElementById('btn-send')?.addEventListener('click', handleSend);
+  $('btn-send')?.addEventListener('click', handleSend);
 
-  document.getElementById('message-input')?.addEventListener('keypress', (e) => {
+  $('message-input')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   });
 
-  document.getElementById('btn-new-convo')?.addEventListener('click', startNewConversation);
+  $('btn-new-convo')?.addEventListener('click', startNewConversation);
 
-  document.getElementById('btn-back')?.addEventListener('click', () => {
-    document.getElementById('messaging-container')!.classList.remove('show-thread');
+  $('btn-back')?.addEventListener('click', () => {
+    $('messaging-container')?.classList.remove('show-thread');
     // Don't clear activeConvoId — keep it highlighted in list
   });
 
@@ -677,6 +691,11 @@ const { operatorId } = Astro.params;
   }
 
   // ── Kick off ──
+  // Cleanup Firestore subscription on page swap
+  document.addEventListener('astro:before-swap', () => {
+    ++_gen; // Invalidate any in-flight async ops
+    if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+  }, { once: true });
   init();
 </script>
 

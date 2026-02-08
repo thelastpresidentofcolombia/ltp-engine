@@ -194,6 +194,12 @@ const { operatorId } = Astro.params;
   let allSlots: AvailabilitySlot[] = [];
   let weekOffset = 0;
 
+  // ── Page-identity guard ──
+  // Prevents stale async callbacks from crashing after view-transition nav.
+  let _gen = 0;
+  function stale(g: number) { return g !== _gen; }
+  function $(id: string) { return document.getElementById(id); }
+
   // Session categories from engine defaults (will be config-driven later)
   const CATEGORIES = ['discovery', 'standard', 'premium', 'review'];
   const DELIVERY = ['virtual', 'in-person'];
@@ -204,33 +210,41 @@ const { operatorId } = Astro.params;
   };
 
   async function init() {
+    const gen = ++_gen;
     try {
       bootstrap = await initPortal();
+      if (stale(gen)) return;
 
       // Check feature access
+      const bookingEl = $('booking-section');
       if (!bootstrap.features.includes('sessions')) {
-        document.getElementById('booking-section')!.style.display = 'block';
-        document.getElementById('booking-section')!.innerHTML =
-          emptyStateHtml({ icon: 'shield', title: 'Sessions Not Available', desc: 'Sessions are not enabled for your account. Contact your coach for access.' });
+        if (bookingEl) {
+          bookingEl.style.display = 'block';
+          bookingEl.innerHTML =
+            emptyStateHtml({ icon: 'shield', title: 'Sessions Not Available', desc: 'Sessions are not enabled for your account. Contact your coach for access.' });
+        }
         return;
       }
 
-      document.getElementById('booking-section')!.style.display = 'block';
+      if (bookingEl) bookingEl.style.display = 'block';
 
       renderChips();
-      await loadSessions();
+      await loadSessions(gen);
     } catch (err) {
+      if (stale(gen)) return;
       console.error('[Sessions] Init failed:', err);
-      document.getElementById('upcoming-list')!.innerHTML =
+      const el = $('upcoming-list');
+      if (el) el.innerHTML =
         errorStateHtml({ title: 'Unable to Load Sessions', desc: 'Something went wrong loading your sessions.', retry: { label: 'Reload Page', id: 'btn-reload-sessions' } });
-      document.getElementById('btn-reload-sessions')?.addEventListener('click', () => location.reload());
+      $('btn-reload-sessions')?.addEventListener('click', () => location.reload());
     }
   }
 
   // ── Chip rendering ──
   function renderChips() {
-    const catContainer = document.getElementById('category-chips')!;
-    const delContainer = document.getElementById('delivery-chips')!;
+    const catContainer = $('category-chips');
+    const delContainer = $('delivery-chips');
+    if (!catContainer || !delContainer) return;
 
     catContainer.innerHTML = CATEGORIES.map((c) =>
       `<button class="chip" data-cat="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`
@@ -260,13 +274,14 @@ const { operatorId } = Astro.params;
   }
 
   function updateBookBtn() {
-    const btn = document.getElementById('btn-show-slots') as HTMLButtonElement;
-    btn.disabled = !(selectedCategory && selectedDelivery);
+    const btn = $('btn-show-slots') as HTMLButtonElement | null;
+    if (btn) btn.disabled = !(selectedCategory && selectedDelivery);
   }
 
   // ── Slot loading + rendering ──
   async function loadSlots() {
-    const grid = document.getElementById('slots-grid')!;
+    const grid = $('slots-grid');
+    if (!grid) return;
     grid.innerHTML = '<p style="color:var(--portal-text-muted);font-size:0.85rem">Loading availability…</p>';
 
     const opId = bootstrap.actor.operatorIds[0];
@@ -284,7 +299,8 @@ const { operatorId } = Astro.params;
     const startStr = toDateStr(start);
     const endStr = toDateStr(end);
 
-    document.getElementById('week-label')!.textContent =
+    const weekLabel = $('week-label');
+    if (weekLabel) weekLabel.textContent =
       `${formatShortDate(start)} – ${formatShortDate(end)}`;
 
     try {
@@ -329,15 +345,17 @@ const { operatorId } = Astro.params;
       }
     } catch (err) {
       console.error('[Sessions] Load slots failed:', err);
+      if (!grid) return;
       grid.innerHTML = errorStateHtml({ title: 'Could Not Load Availability', desc: 'Failed to load time slots. Please try again.', retry: { label: 'Retry', id: 'btn-retry-slots' } });
-      document.getElementById('btn-retry-slots')?.addEventListener('click', () => loadSlots());
+      $('btn-retry-slots')?.addEventListener('click', () => loadSlots());
     }
   }
 
   // ── Session list loading ──
-  async function loadSessions() {
+  async function loadSessions(gen?: number) {
     try {
       const resp = await cachedGet('/api/portal/sessions');
+      if (gen != null && stale(gen)) return;
       if (!resp.ok) throw new Error(`API ${resp.status}`);
       const data = await resp.json();
       const sessions = data.sessions || [];
@@ -349,15 +367,18 @@ const { operatorId } = Astro.params;
       renderSessionList('upcoming-list', upcoming, true);
       renderSessionList('past-list', past, false);
     } catch (err) {
+      if (gen != null && stale(gen)) return;
       console.error('[Sessions] Load sessions failed:', err);
-      document.getElementById('upcoming-list')!.innerHTML =
+      const el = $('upcoming-list');
+      if (el) el.innerHTML =
         errorStateHtml({ title: 'Could Not Load Sessions', desc: 'Please check your connection and try again.', retry: { label: 'Retry', id: 'btn-retry-sessions' } });
-      document.getElementById('btn-retry-sessions')?.addEventListener('click', () => loadSessions());
+      $('btn-retry-sessions')?.addEventListener('click', () => loadSessions());
     }
   }
 
   function renderSessionList(containerId: string, sessions: any[], showCancel: boolean) {
-    const container = document.getElementById(containerId)!;
+    const container = $(containerId);
+    if (!container) return;
 
     if (sessions.length === 0) {
       container.innerHTML = showCancel
@@ -402,36 +423,39 @@ const { operatorId } = Astro.params;
   }
 
   // ── Booking flow event wiring ──
-  document.getElementById('btn-show-slots')?.addEventListener('click', () => {
-    document.getElementById('booking-step-1')!.style.display = 'none';
-    document.getElementById('booking-step-2')!.style.display = 'block';
+  $('btn-show-slots')?.addEventListener('click', () => {
+    const s1 = $('booking-step-1');
+    const s2 = $('booking-step-2');
+    if (s1) s1.style.display = 'none';
+    if (s2) s2.style.display = 'block';
     weekOffset = 0;
     selectedSlot = null;
     loadSlots();
   });
 
-  document.getElementById('btn-back-step1')?.addEventListener('click', () => {
-    document.getElementById('booking-step-1')!.style.display = 'block';
-    document.getElementById('booking-step-2')!.style.display = 'none';
+  $('btn-back-step1')?.addEventListener('click', () => {
+    const s1 = $('booking-step-1');
+    const s2 = $('booking-step-2');
+    if (s1) s1.style.display = 'block';
+    if (s2) s2.style.display = 'none';
   });
 
-  document.getElementById('btn-prev-week')?.addEventListener('click', () => {
+  $('btn-prev-week')?.addEventListener('click', () => {
     if (weekOffset > 0) { weekOffset--; loadSlots(); }
   });
 
-  document.getElementById('btn-next-week')?.addEventListener('click', () => {
+  $('btn-next-week')?.addEventListener('click', () => {
     if (weekOffset < 4) { weekOffset++; loadSlots(); }
   });
 
-  document.getElementById('btn-confirm-booking')?.addEventListener('click', async () => {
+  $('btn-confirm-booking')?.addEventListener('click', async () => {
     if (!selectedSlot || !selectedCategory || !selectedDelivery) return;
-    const resultEl = document.getElementById('booking-result')!;
-    const btn = document.getElementById('btn-confirm-booking') as HTMLButtonElement;
-    btn.disabled = true;
-    btn.textContent = 'Booking…';
+    const resultEl = $('booking-result');
+    const btn = $('btn-confirm-booking') as HTMLButtonElement | null;
+    if (btn) { btn.disabled = true; btn.textContent = 'Booking…'; }
 
     const opId = bootstrap.actor.operatorIds[0];
-    const notes = (document.getElementById('booking-notes') as HTMLTextAreaElement).value;
+    const notes = ($('booking-notes') as HTMLTextAreaElement)?.value ?? '';
 
     try {
       const resp = await postAuthed('/api/portal/sessions', {
@@ -445,12 +469,16 @@ const { operatorId } = Astro.params;
       });
 
       if (resp.ok) {
-        resultEl.style.display = 'block';
-        resultEl.className = 'result-banner result-success';
-        resultEl.textContent = 'Session booked successfully! You\'ll receive a confirmation.';
+        if (resultEl) {
+          resultEl.style.display = 'block';
+          resultEl.className = 'result-banner result-success';
+          resultEl.textContent = 'Session booked successfully! You\'ll receive a confirmation.';
+        }
         // Reset form
-        document.getElementById('booking-step-2')!.style.display = 'none';
-        document.getElementById('booking-step-1')!.style.display = 'block';
+        const s2 = $('booking-step-2');
+        const s1 = $('booking-step-1');
+        if (s2) s2.style.display = 'none';
+        if (s1) s1.style.display = 'block';
         document.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
         selectedCategory = null;
         selectedDelivery = null;
@@ -460,18 +488,21 @@ const { operatorId } = Astro.params;
         await loadSessions();
       } else {
         const err = await resp.json();
-        resultEl.style.display = 'block';
-        resultEl.className = 'result-banner result-error';
-        resultEl.textContent = err.error || 'Booking failed';
+        if (resultEl) {
+          resultEl.style.display = 'block';
+          resultEl.className = 'result-banner result-error';
+          resultEl.textContent = err.error || 'Booking failed';
+        }
       }
     } catch (err) {
-      resultEl.style.display = 'block';
-      resultEl.className = 'result-banner result-error';
-      resultEl.textContent = 'Network error — please try again.';
+      if (resultEl) {
+        resultEl.style.display = 'block';
+        resultEl.className = 'result-banner result-error';
+        resultEl.textContent = 'Network error — please try again.';
+      }
     }
 
-    btn.disabled = false;
-    btn.textContent = 'Confirm Booking';
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm Booking'; }
   });
 
   // ── Formatting helpers ──

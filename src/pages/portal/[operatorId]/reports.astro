@@ -562,6 +562,11 @@ const { operatorId } = Astro.params;
     let selectedSections: Set<ReportSectionId> = new Set(['overview', 'goals', 'metrics', 'sessions']);
     let reportData: ReportData | null = null;
 
+    // ── Page-identity guard ──
+    let _gen = 0;
+    function stale(g: number) { return g !== _gen; }
+    function $(id: string) { return document.getElementById(id); }
+
     // ── Report type definitions (vertical-agnostic) ──
     const REPORT_TYPES: Array<{ id: ReportType; name: string; desc: string; icon: string }> = [
       { id: 'progress', name: 'Progress Report',  desc: 'Full overview with metrics, goals, and sessions', icon: 'trending-up' },
@@ -589,11 +594,14 @@ const { operatorId } = Astro.params;
 
     // ── Init ──
     async function init() {
+      const gen = ++_gen;
       try {
         bootstrap = await initPortal();
+        if (stale(gen)) return;
 
         if (!bootstrap.features.includes('reports')) {
-          document.getElementById('reports-config')!.innerHTML =
+          const el = $('reports-config');
+          if (el) el.innerHTML =
             emptyStateHtml({ icon: 'shield', title: 'Reports Not Available', desc: 'Reports are not enabled for your account. Contact your provider for access.' });
           return;
         }
@@ -609,10 +617,12 @@ const { operatorId } = Astro.params;
         renderConfigurator(reportsCfg);
         wireEvents();
       } catch (err) {
+        if (stale(gen)) return;
         console.error('[Reports] Init failed:', err);
-        document.getElementById('reports-config')!.innerHTML =
+        const el = $('reports-config');
+        if (el) el.innerHTML =
           errorStateHtml({ title: 'Unable to Load', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-reports' } });
-        document.getElementById('btn-reload-reports')?.addEventListener('click', () => location.reload());
+        $('btn-reload-reports')?.addEventListener('click', () => location.reload());
       }
     }
 
@@ -622,7 +632,8 @@ const { operatorId } = Astro.params;
       const allowedTypes = cfg?.types || REPORT_TYPES.map(t => t.id);
       const types = REPORT_TYPES.filter(t => allowedTypes.includes(t.id));
 
-      document.getElementById('report-types')!.innerHTML = types.map(t => `
+      const typesEl = $('report-types');
+      if (typesEl) typesEl.innerHTML = types.map(t => `
         <div class="r-type-card ${t.id === selectedType ? 'selected' : ''}" data-type="${t.id}">
           <div class="r-type-icon">${getIcon(t.icon as any)}</div>
           <div class="r-type-name">${t.name}</div>
@@ -631,20 +642,22 @@ const { operatorId } = Astro.params;
       `).join('');
 
       // Period chips
-      document.getElementById('period-chips')!.innerHTML = PERIODS.map(p => `
+      const periodEl = $('period-chips');
+      if (periodEl) periodEl.innerHTML = PERIODS.map(p => `
         <button class="chip ${p.id === selectedPeriod ? 'active' : ''}" data-period="${p.id}">${p.label}</button>
       `).join('');
 
       // Section toggles
-      document.getElementById('section-toggles')!.innerHTML = ALL_SECTIONS.map(s => `
+      const secEl = $('section-toggles');
+      if (secEl) secEl.innerHTML = ALL_SECTIONS.map(s => `
         <button class="r-section-toggle ${selectedSections.has(s.id) ? 'active' : ''}" data-section="${s.id}">
           ${getIcon(s.icon as any)} ${s.label}
         </button>
       `).join('');
 
       // Download/new icons
-      document.getElementById('download-icon')!.innerHTML = getIcon('download');
-      document.getElementById('new-icon')!.innerHTML = getIcon('plus');
+      const dlIcon = $('download-icon'); if (dlIcon) dlIcon.innerHTML = getIcon('download');
+      const newIcon = $('new-icon'); if (newIcon) newIcon.innerHTML = getIcon('plus');
 
       updateGenerateBtn();
     }
@@ -652,7 +665,7 @@ const { operatorId } = Astro.params;
     // ── Wire Events ──
     function wireEvents() {
       // Type selection
-      document.getElementById('report-types')!.addEventListener('click', (e) => {
+      $('report-types')?.addEventListener('click', (e) => {
         const card = (e.target as HTMLElement).closest('.r-type-card') as HTMLElement;
         if (!card) return;
         document.querySelectorAll('.r-type-card').forEach(c => c.classList.remove('selected'));
@@ -662,18 +675,19 @@ const { operatorId } = Astro.params;
       });
 
       // Period selection
-      document.getElementById('period-chips')!.addEventListener('click', (e) => {
+      $('period-chips')?.addEventListener('click', (e) => {
         const chip = (e.target as HTMLElement).closest('.chip') as HTMLElement;
         if (!chip) return;
         document.querySelectorAll('#period-chips .chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         selectedPeriod = chip.dataset.period as ReportPeriod;
-        document.getElementById('custom-range')!.style.display = selectedPeriod === 'custom' ? '' : 'none';
+        const customEl = $('custom-range');
+        if (customEl) customEl.style.display = selectedPeriod === 'custom' ? '' : 'none';
         updateGenerateBtn();
       });
 
       // Section toggles
-      document.getElementById('section-toggles')!.addEventListener('click', (e) => {
+      $('section-toggles')?.addEventListener('click', (e) => {
         const toggle = (e.target as HTMLElement).closest('.r-section-toggle') as HTMLElement;
         if (!toggle) return;
         const id = toggle.dataset.section as ReportSectionId;
@@ -688,21 +702,21 @@ const { operatorId } = Astro.params;
       });
 
       // Generate
-      document.getElementById('btn-generate')!.addEventListener('click', generateReport);
+      $('btn-generate')?.addEventListener('click', generateReport);
 
       // Download PDF
-      document.getElementById('btn-download')!.addEventListener('click', () => window.print());
+      $('btn-download')?.addEventListener('click', () => window.print());
 
       // New report
-      document.getElementById('btn-new-report')!.addEventListener('click', () => {
-        document.getElementById('report-viewer')!.classList.remove('active');
+      $('btn-new-report')?.addEventListener('click', () => {
+        $('report-viewer')?.classList.remove('active');
         reportData = null;
       });
     }
 
     function updateGenerateBtn() {
-      const btn = document.getElementById('btn-generate') as HTMLButtonElement;
-      btn.disabled = selectedSections.size === 0;
+      const btn = $('btn-generate') as HTMLButtonElement | null;
+      if (btn) btn.disabled = selectedSections.size === 0;
     }
 
     // ── Date Range Calculation ──
@@ -711,8 +725,8 @@ const { operatorId } = Astro.params;
       const to = now.toISOString().split('T')[0];
 
       if (selectedPeriod === 'custom') {
-        const from = (document.getElementById('range-from') as HTMLInputElement).value || to;
-        const toVal = (document.getElementById('range-to') as HTMLInputElement).value || to;
+        const from = ($('range-from') as HTMLInputElement)?.value || to;
+        const toVal = ($('range-to') as HTMLInputElement)?.value || to;
         return { from, to: toVal };
       }
 
@@ -724,10 +738,10 @@ const { operatorId } = Astro.params;
 
     // ── Generate Report ──
     async function generateReport() {
-      const btn = document.getElementById('btn-generate') as HTMLButtonElement;
-      const status = document.getElementById('gen-status')!;
-      btn.disabled = true;
-      status.textContent = 'Aggregating data…';
+      const btn = $('btn-generate') as HTMLButtonElement | null;
+      const status = $('gen-status');
+      if (btn) btn.disabled = true;
+      if (status) status.textContent = 'Aggregating data…';
 
       try {
         const range = getDateRange();
@@ -913,19 +927,19 @@ const { operatorId } = Astro.params;
           );
         }
 
-        status.textContent = 'Fetching data…';
+        if (status) status.textContent = 'Fetching data…';
         await Promise.all(fetches);
 
         reportData = { meta, branding, actor, sections };
 
-        status.textContent = '';
-        btn.disabled = false;
+        if (status) status.textContent = '';
+        if (btn) btn.disabled = false;
 
         renderReport(reportData);
       } catch (err: any) {
         console.error('[Reports] Generate failed:', err);
-        status.textContent = 'Failed to generate report.';
-        btn.disabled = false;
+        if (status) status.textContent = 'Failed to generate report.';
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -1149,11 +1163,13 @@ const { operatorId } = Astro.params;
         </div>
       `;
 
-      document.getElementById('report-document')!.innerHTML = html;
-      document.getElementById('report-viewer')!.classList.add('active');
+      const docEl = $('report-document');
+      if (docEl) docEl.innerHTML = html;
+      const viewerEl = $('report-viewer');
+      if (viewerEl) viewerEl.classList.add('active');
 
       // Scroll to report
-      document.getElementById('report-viewer')!.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      viewerEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function esc(s: string): string {

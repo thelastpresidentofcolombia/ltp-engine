@@ -204,6 +204,11 @@ const { operatorId } = Astro.params;
   let hasMore = false;
   let selectedOperatorId: string | null = null;
 
+  // ── Page-identity guard ──
+  let _gen = 0;
+  function stale(g: number) { return g !== _gen; }
+  function $(id: string) { return document.getElementById(id); }
+
   const CATEGORIES = ['metrics', 'narrative', 'composite'];
 
   /** Get the resolved portal config for the selected (or primary) operator. */
@@ -216,13 +221,18 @@ const { operatorId } = Astro.params;
   }
 
   async function init() {
+    const gen = ++_gen;
     try {
       bootstrap = await initPortal();
+      if (stale(gen)) return;
 
     if (!bootstrap.features.includes('entries')) {
-      document.getElementById('entry-form-section')!.style.display = 'block';
-      document.getElementById('entry-form-section')!.innerHTML =
-        emptyStateHtml({ icon: 'shield', title: 'Updates Not Available', desc: 'Entries are not enabled for your account. Contact your coach for access.' });
+      const formSection = $('entry-form-section');
+      if (formSection) {
+        formSection.style.display = 'block';
+        formSection.innerHTML =
+          emptyStateHtml({ icon: 'shield', title: 'Updates Not Available', desc: 'Entries are not enabled for your account. Contact your coach for access.' });
+      }
       return;
     }
 
@@ -239,17 +249,20 @@ const { operatorId } = Astro.params;
       return;
     }
 
-    bootEntryForm();
+    bootEntryForm(gen);
     } catch (err) {
+      if (stale(gen)) return;
       console.error('[Entries] Init failed:', err);
-      document.getElementById('entries-list')!.innerHTML =
+      const el = $('entries-list');
+      if (el) el.innerHTML =
         errorStateHtml({ title: 'Unable to Load', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-entries' } });
-      document.getElementById('btn-reload-entries')?.addEventListener('click', () => location.reload());
+      $('btn-reload-entries')?.addEventListener('click', () => location.reload());
     }
   }
 
   function renderOperatorSelector(opIds: string[]) {
-    const section = document.getElementById('entry-form-section')!;
+    const section = $('entry-form-section');
+    if (!section) return;
     section.style.display = 'block';
     section.innerHTML = `
       <h2 class="section-title">Select Operator</h2>
@@ -261,7 +274,7 @@ const { operatorId } = Astro.params;
         }).join('')}
       </div>
     `;
-    document.getElementById('op-selector')!.addEventListener('click', (e) => {
+    $('op-selector')?.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest('.chip') as HTMLElement;
       if (!btn) return;
       selectedOperatorId = btn.dataset.op || null;
@@ -269,9 +282,10 @@ const { operatorId } = Astro.params;
     });
   }
 
-  function bootEntryForm() {
+  function bootEntryForm(gen?: number) {
     // Re-render the form section
-    const section = document.getElementById('entry-form-section')!;
+    const section = $('entry-form-section');
+    if (!section) return;
     section.style.display = 'block';
     section.innerHTML = `
       <h2 class="section-title">Log an Update</h2>
@@ -331,7 +345,8 @@ const { operatorId } = Astro.params;
   }
 
   function renderCategoryChips() {
-    const container = document.getElementById('category-chips')!;
+    const container = $('category-chips');
+    if (!container) return;
     container.innerHTML = CATEGORIES.map((cat) =>
       `<button class="chip ${cat === selectedCategory ? 'active' : ''}" data-cat="${cat}">
         ${cat === 'metrics' ? getIcon('chart', 'chip-icon') + ' Metrics' : cat === 'narrative' ? getIcon('file-text', 'chip-icon') + ' Notes' : getIcon('chart', 'chip-icon') + getIcon('file-text', 'chip-icon') + ' Both'}
@@ -347,21 +362,22 @@ const { operatorId } = Astro.params;
       updateSubmitBtn();
 
       // Show/hide metrics form based on category
-      const metricsForm = document.getElementById('metrics-form')!;
-      const selfReportForm = document.getElementById('self-report-form')!;
+      const metricsForm = $('metrics-form');
+      const selfReportForm = $('self-report-form');
       if (selectedCategory === 'narrative') {
-        metricsForm.style.display = 'none';
-        selfReportForm.style.display = 'none';
+        if (metricsForm) metricsForm.style.display = 'none';
+        if (selfReportForm) selfReportForm.style.display = 'none';
       } else {
-        metricsForm.style.display = 'grid';
-        selfReportForm.style.display = 'grid';
+        if (metricsForm) metricsForm.style.display = 'grid';
+        if (selfReportForm) selfReportForm.style.display = 'grid';
       }
     });
   }
 
   function renderMetricsForm() {
-    const metricsForm = document.getElementById('metrics-form')!;
-    const selfReportForm = document.getElementById('self-report-form')!;
+    const metricsForm = $('metrics-form');
+    const selfReportForm = $('self-report-form');
+    if (!metricsForm || !selfReportForm) return;
 
     const numberMetrics = metricDefs.filter((m) => m.inputType === 'number');
     const sliderMetrics = metricDefs.filter((m) => m.inputType === 'slider');
@@ -392,7 +408,8 @@ const { operatorId } = Astro.params;
       input.addEventListener('input', (e) => {
         const el = e.target as HTMLInputElement;
         const key = el.dataset.key!;
-        document.getElementById(`val-${key}`)!.textContent = el.value;
+        const valEl = $(`val-${key}`);
+        if (valEl) valEl.textContent = el.value;
       });
     });
 
@@ -411,11 +428,11 @@ const { operatorId } = Astro.params;
   }
 
   function updateSubmitBtn() {
-    const btn = document.getElementById('btn-submit-entry') as HTMLButtonElement;
-    const dateVal = (document.getElementById('entry-date') as HTMLInputElement).value;
+    const btn = $('btn-submit-entry') as HTMLButtonElement | null;
+    const dateVal = ($('entry-date') as HTMLInputElement)?.value;
 
-    if (!selectedCategory || !dateVal) {
-      btn.disabled = true;
+    if (!btn || !selectedCategory || !dateVal) {
+      if (btn) btn.disabled = true;
       return;
     }
 
@@ -453,18 +470,20 @@ const { operatorId } = Astro.params;
       renderEntryList();
 
       // Show/hide load more
-      const loadMoreRow = document.getElementById('load-more-row')!;
-      loadMoreRow.style.display = hasMore ? 'flex' : 'none';
+      const loadMoreRow = $('load-more-row');
+      if (loadMoreRow) loadMoreRow.style.display = hasMore ? 'flex' : 'none';
     } catch (err) {
       console.error('[Entries] Load failed:', err);
-      document.getElementById('entries-list')!.innerHTML =
+      const el = $('entries-list');
+      if (el) el.innerHTML =
         errorStateHtml({ title: 'Could Not Load Entries', desc: 'Please check your connection and try again.', retry: { label: 'Retry', id: 'btn-retry-entries' } });
-      document.getElementById('btn-retry-entries')?.addEventListener('click', () => loadEntries());
+      $('btn-retry-entries')?.addEventListener('click', () => loadEntries());
     }
   }
 
   function renderEntryList() {
-    const container = document.getElementById('entries-list')!;
+    const container = $('entries-list');
+    if (!container) return;
 
     if (allEntries.length === 0) {
       container.innerHTML = emptyStateHtml({ icon: 'clipboard', title: 'No Updates Yet', desc: 'Log your first update above to start tracking your progress!' });
@@ -498,17 +517,16 @@ const { operatorId } = Astro.params;
 
   // ── Submit entry ──
   function wireSubmitButton() {
-    document.getElementById('btn-submit-entry')?.addEventListener('click', async () => {
+    $('btn-submit-entry')?.addEventListener('click', async () => {
       if (!selectedCategory) return;
 
-      const btn = document.getElementById('btn-submit-entry') as HTMLButtonElement;
-      const resultEl = document.getElementById('entry-result')!;
-      btn.disabled = true;
-      btn.textContent = 'Submitting\u2026';
+      const btn = $('btn-submit-entry') as HTMLButtonElement | null;
+      const resultEl = $('entry-result');
+      if (btn) { btn.disabled = true; btn.textContent = 'Submitting\u2026'; }
 
       const opId = selectedOperatorId || bootstrap.actor.operatorIds[0];
-      const date = (document.getElementById('entry-date') as HTMLInputElement).value;
-      const notes = (document.getElementById('entry-notes') as HTMLTextAreaElement).value;
+      const date = ($('entry-date') as HTMLInputElement)?.value;
+      const notes = ($('entry-notes') as HTMLTextAreaElement)?.value;
 
     // Collect metrics
     const metrics: Record<string, number | null> = {};
@@ -540,15 +558,18 @@ const { operatorId } = Astro.params;
       });
 
       if (resp.ok) {
-        resultEl.style.display = 'block';
-        resultEl.className = 'result-banner result-success';
-        resultEl.textContent = 'Update logged successfully!';
+        if (resultEl) {
+          resultEl.style.display = 'block';
+          resultEl.className = 'result-banner result-success';
+          resultEl.textContent = 'Update logged successfully!';
+        }
 
         // Reset form
         document.querySelectorAll('#metrics-form .form-input').forEach((inp) => {
           (inp as HTMLInputElement).value = '';
         });
-        (document.getElementById('entry-notes') as HTMLTextAreaElement).value = '';
+        const notesEl = $('entry-notes') as HTMLTextAreaElement | null;
+        if (notesEl) notesEl.value = '';
 
         // Reload entries
         cursor = undefined;
@@ -556,22 +577,25 @@ const { operatorId } = Astro.params;
         await loadEntries();
       } else {
         const err = await resp.json();
-        resultEl.style.display = 'block';
-        resultEl.className = 'result-banner result-error';
-        resultEl.textContent = err.error || 'Failed to submit';
+        if (resultEl) {
+          resultEl.style.display = 'block';
+          resultEl.className = 'result-banner result-error';
+          resultEl.textContent = err.error || 'Failed to submit';
+        }
       }
     } catch (err) {
-      resultEl.style.display = 'block';
-      resultEl.className = 'result-banner result-error';
-      resultEl.textContent = 'Network error — please try again.';
+      if (resultEl) {
+        resultEl.style.display = 'block';
+        resultEl.className = 'result-banner result-error';
+        resultEl.textContent = 'Network error — please try again.';
+      }
     }
 
-    btn.disabled = false;
-    btn.textContent = 'Submit Update';
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Update'; }
   });
 
   // Load More
-  document.getElementById('btn-load-more')?.addEventListener('click', () => loadEntries(true));
+  $('btn-load-more')?.addEventListener('click', () => loadEntries(true));
   }
 
   // ── Formatting helpers ──

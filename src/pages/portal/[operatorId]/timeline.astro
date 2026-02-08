@@ -173,6 +173,11 @@ const { operatorId } = Astro.params;
   let currentRange = '30d';
   let RANGES = ['7d', '30d', '90d', 'all'];
 
+  // ── Page-identity guard ──
+  let _gen = 0;
+  function stale(g: number) { return g !== _gen; }
+  function $(id: string) { return document.getElementById(id); }
+
   /** Get the resolved portal config for the primary operator. */
   function getOperatorPortal() {
     const opIds = Object.keys(bootstrap.operators);
@@ -182,22 +187,27 @@ const { operatorId } = Astro.params;
   }
 
   async function init() {
+    const gen = ++_gen;
     try {
       bootstrap = await initPortal();
+      if (stale(gen)) return;
     } catch (err) {
+      if (stale(gen)) return;
       console.error('[Timeline] Init failed:', err);
-      document.getElementById('loading-state')!.style.display = 'none';
-      document.getElementById('empty-state')!.style.display = 'block';
-      document.getElementById('empty-state-content')!.innerHTML =
+      const loading = $('loading-state'); if (loading) loading.style.display = 'none';
+      const empty = $('empty-state'); if (empty) empty.style.display = 'block';
+      const emptyContent = $('empty-state-content');
+      if (emptyContent) emptyContent.innerHTML =
         errorStateHtml({ title: 'Unable to Load', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-timeline' } });
-      document.getElementById('btn-reload-timeline')?.addEventListener('click', () => location.reload());
+      $('btn-reload-timeline')?.addEventListener('click', () => location.reload());
       return;
     }
 
     if (!bootstrap.features.includes('timeline')) {
-      document.getElementById('loading-state')!.style.display = 'none';
-      document.getElementById('empty-state')!.style.display = 'block';
-      document.getElementById('empty-state-content')!.innerHTML =
+      const loading = $('loading-state'); if (loading) loading.style.display = 'none';
+      const empty = $('empty-state'); if (empty) empty.style.display = 'block';
+      const emptyContent = $('empty-state-content');
+      if (emptyContent) emptyContent.innerHTML =
         emptyStateHtml({ icon: 'shield', title: 'Timeline Not Available', desc: 'Timeline is not enabled for your account. Contact your coach for access.' });
       return;
     }
@@ -212,11 +222,12 @@ const { operatorId } = Astro.params;
     }
 
     renderRangeChips();
-    await loadTimeline();
+    await loadTimeline(gen);
   }
 
   function renderRangeChips() {
-    const container = document.getElementById('range-chips')!;
+    const container = $('range-chips');
+    if (!container) return;
     container.innerHTML = RANGES.map((r) =>
       `<button class="chip ${r === currentRange ? 'active' : ''}" data-range="${r}">
         ${formatRangeLabel(r)}
@@ -243,24 +254,30 @@ const { operatorId } = Astro.params;
     }
   }
 
-  async function loadTimeline() {
-    document.getElementById('loading-state')!.style.display = 'block';
-    document.getElementById('charts-section')!.style.display = 'none';
-    document.getElementById('stats-section')!.style.display = 'none';
-    document.getElementById('empty-state')!.style.display = 'none';
+  async function loadTimeline(gen?: number) {
+    const loading = $('loading-state');
+    const charts = $('charts-section');
+    const stats = $('stats-section');
+    const empty = $('empty-state');
+    if (loading) loading.style.display = 'block';
+    if (charts) charts.style.display = 'none';
+    if (stats) stats.style.display = 'none';
+    if (empty) empty.style.display = 'none';
 
     try {
       const resp = await cachedGet(`/api/portal/timeline?range=${currentRange}`);
+      if (gen != null && stale(gen)) return;
       if (!resp.ok) {
         throw new Error(`API returned ${resp.status}`);
       }
       const data: TimelineView = await resp.json();
 
-      document.getElementById('loading-state')!.style.display = 'none';
+      if (loading) loading.style.display = 'none';
 
       if (!data.series || data.entryCount === 0 || data.series.every((s) => s.points.length === 0)) {
-        document.getElementById('empty-state')!.style.display = 'block';
-        document.getElementById('empty-state-content')!.innerHTML =
+        if (empty) empty.style.display = 'block';
+        const emptyContent = $('empty-state-content');
+        if (emptyContent) emptyContent.innerHTML =
           emptyStateHtml({ icon: 'chart', title: 'No Timeline Data', desc: 'Start logging updates to see your progress over time!', action: { label: 'Log an Update', href: '/portal/entries' } });
         return;
       }
@@ -268,18 +285,21 @@ const { operatorId } = Astro.params;
       renderStats(data.stats);
       renderCharts(data.series);
     } catch (err) {
+      if (gen != null && stale(gen)) return;
       console.error('[Timeline] Load failed:', err);
-      document.getElementById('loading-state')!.style.display = 'none';
-      document.getElementById('empty-state')!.style.display = 'block';
-      document.getElementById('empty-state-content')!.innerHTML =
+      if (loading) loading.style.display = 'none';
+      if (empty) empty.style.display = 'block';
+      const emptyContent = $('empty-state-content');
+      if (emptyContent) emptyContent.innerHTML =
         errorStateHtml({ title: 'Could Not Load Timeline', desc: 'Failed to load your timeline data. Please try again.', retry: { label: 'Retry', id: 'btn-retry-timeline' } });
-      document.getElementById('btn-retry-timeline')?.addEventListener('click', () => loadTimeline());
+      $('btn-retry-timeline')?.addEventListener('click', () => loadTimeline());
     }
   }
 
   // ── Stats Rendering ──
   function renderStats(stats: TimelineStats[]) {
-    const section = document.getElementById('stats-section')!;
+    const section = $('stats-section');
+    if (!section) return;
     const withData = stats.filter((s) => s.current != null);
 
     if (withData.length === 0) {
@@ -321,7 +341,8 @@ const { operatorId } = Astro.params;
 
   // ── Chart Rendering (lightweight canvas) ──
   function renderCharts(series: TimelineSeries[]) {
-    const section = document.getElementById('charts-section')!;
+    const section = $('charts-section');
+    if (!section) return;
     const withPoints = series.filter((s) => s.points.length >= 2);
 
     if (withPoints.length === 0) {

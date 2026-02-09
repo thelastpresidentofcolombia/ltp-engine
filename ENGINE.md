@@ -1,12 +1,147 @@
 # LTP Engine — Multi-Vertical Static Business Factory
 
-> **Version:** 1.8.0  
-> **Last Updated:** December 27, 2025  
-> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Firebase Auth ✅ | Client Portal ✅ | Entitlements ✅ | Gated Content ✅ | Email Delivery ✅ | Portal UX ✅ | Production Ready 🚀
+> **Version:** 2.0.0  
+> **Last Updated:** February 9, 2026  
+> **Status:** Engine-First Architecture ✅ | Astro 5 ✅ | Stripe Checkout ✅ | Webhook ✅ | Firebase Auth ✅ | Portal v2 (SaaS) ✅ | Entitlements ✅ | Gated Content ✅ | Email Delivery ✅ | View Transitions ✅ | Deploy Gate ✅ | Production Ready 🚀
 
 ---
 
 ## 📋 Changelog
+
+### v2.0.0 (February 2026) — Client Portal System (Post-Purchase SaaS)
+
+#### 🚀 SYSTEM JUMP: From Static Business Factory to Full SaaS Platform
+
+This release introduces **Portal v2** — a complete, operator-scoped, feature-gated client SaaS that replaces the v1 entitlement lobby. The engine is no longer just a landing-page factory. It now includes a post-purchase platform suitable for fitness coaches, consultants, tour operators, educators, and other service businesses.
+
+---
+
+#### Portal v2 Architecture Overview
+
+**Operator-Scoped Routing**
+
+Portal v2 uses a dedicated route namespace: `/portal/{operatorId}/{page}`. Each operator gets a fully isolated portal experience. The lobby at `/portal` handles authentication and resolves the user's operator, then redirects into the scoped space.
+
+**Feature Resolution**
+
+Each operator declares which portal features are enabled via `portal.features[]` in the operator registry. The engine resolves available features at bootstrap time via `resolvePortalFeatures()`. Pages and navigation items that reference disabled features are hidden — no dead links, no broken states.
+
+**Role + Feature Gating**
+
+Every API endpoint uses a server-side guard stack: `requireAuth()` → `requireActor()` → `requireFeature()`. The actor model resolves a Firebase token into a typed identity (uid, email, role, operatorIds). Features are checked against the operator config before any data is returned.
+
+**Dual-Read API Strategy**
+
+Portal v2 APIs for entries and sessions use a dual-read approach: they query the canonical v2 Firestore subcollection first, then fall back to legacy subcollection names (e.g., `checkins` → `entries`, `bookings` → `sessions`). This allows gradual migration without data loss.
+
+**View Transitions**
+
+Portal v2 uses Astro's `ClientRouter` with `fade` transitions for instant-feeling navigation. Every portal page registers an `astro:page-load` listener with a URL guard, ensuring re-initialization fires on both initial load and subsequent navigations. Firestore subscriptions (messaging) are cleaned up via `astro:before-swap`.
+
+**Layout System**
+
+A shared `PortalLayout.astro` provides the chrome: sidebar navigation on desktop (persisted across transitions), bottom tab bar on mobile, and a neutral dark theme not tied to any operator brand. Nine navigation items: Dashboard, Sessions, Programs, Entries, Timeline, Messaging, Goals, Reports, Profile.
+
+---
+
+#### Portal v2 Capability Matrix
+
+| Capability | Description | Status |
+|------------|-------------|--------|
+| **Dashboard** | Widget-based bento grid, operator-configurable widget set | ✅ Complete |
+| **Sessions** | Booking form with availability slots, upcoming/past list, cancel/reschedule | ✅ Complete |
+| **Programs** | Entitlements grouped by operator, clickable resource cards | ✅ Complete |
+| **Entries** | Metric input form driven by operator config, entry history with categories | ✅ Complete |
+| **Timeline** | Canvas chart visualization, range picker (7d–all), stat cards — zero external deps | ✅ Complete |
+| **Messaging** | Two-panel realtime messaging via Firestore `onSnapshot`, singleton subscription | ✅ Complete |
+| **Goals** | CRUD with templates, progress rings, linked metrics, archive | ✅ Complete |
+| **Reports** | Client-deliverable report configurator, section picker, print-to-PDF | ✅ Complete |
+| **Profile** | Identity, stats, role badge, timezone, glass-card layout | ✅ Complete |
+| **Command Palette** | Cmd+K palette with fuzzy search, keyboard nav, operator-scoped commands | ✅ Complete |
+| **Gated Resources** | Auth + entitlement verification, content rendered by action type | ✅ Complete |
+| **View Transitions** | Astro ClientRouter, page-load re-init guards on all 9 pages | ✅ Complete |
+| **Deploy Gate** | 4-stage pipeline: validate → canary → check → build | ✅ Complete |
+| **Admin / Coach UI** | Operator-side dashboard for managing clients | 🔄 Planned |
+| **Subscriptions** | Stripe recurring billing + entitlement renewal | 🔄 Planned |
+| **Stripe Connect** | Split payouts to operators (platform fee model) | 🔄 Planned |
+
+---
+
+#### Portal v2 API Surface
+
+| Endpoint | Methods | Purpose |
+|----------|---------|--------|
+| `/api/portal/bootstrap` | GET | Master bootstrap — actor, features, branding, summary counts |
+| `/api/portal/claim` | POST | Claim pending entitlements by email |
+| `/api/portal/entries` | GET, POST | List + create metric entries |
+| `/api/portal/goals` | GET, POST, PATCH | Full CRUD for goals |
+| `/api/portal/sessions` | GET, POST | List + book sessions |
+| `/api/portal/sessions/[id]` | PATCH | Cancel or reschedule a session |
+| `/api/portal/availability` | GET | Bookable time slots |
+| `/api/portal/timeline` | GET | Chart-ready timeline data |
+| `/api/portal/profile` | GET, POST | Read/update user profile |
+| `/api/portal/messages` | GET, POST | List + send messages within a conversation |
+| `/api/portal/conversations` | GET, POST, PATCH | List, create (idempotent), mark-as-read |
+| `/api/portal/resend` | POST | Resend access email (60s rate limit) |
+
+All endpoints require Firebase auth. Role and feature checks are enforced server-side.
+
+---
+
+#### Portal v2 Type System
+
+Portal v2 introduced dedicated type contracts for each feature domain:
+
+| Type File | Covers |
+|-----------|--------|
+| `types/portal.ts` | PortalBootstrapV2, PortalFeature, PortalActor, SummaryCounts |
+| `types/goals.ts` | GoalDoc, GoalSummary, GoalTemplate, GoalCategory, GoalDirection |
+| `types/sessions.ts` | SessionDoc, AvailabilitySlot, ScheduleConfig |
+| `types/entries.ts` | EntryDoc, EntryCategory, MetricConfig |
+| `types/messaging.ts` | ConversationDoc, MessageDoc, MessageSendRequest |
+| `types/timeline.ts` | TimelinePoint, TimelineSeries, TimelineStats |
+| `types/reports.ts` | ReportConfig, ReportPeriod, ReportSectionId, ReportData |
+| `types/commands.ts` | CommandId, CommandScope, CommandEntry |
+
+These are system-level contracts. Internal schemas (Firestore document shapes, CSS classes) are intentionally not documented here — they change frequently and belong in code comments.
+
+---
+
+#### Business Viability Update
+
+Portal v2 elevates the engine from a static business factory to a **full post-purchase SaaS platform**. The complete loop is now:
+
+```
+Discover (SEO landing page)
+    → Convert (Stripe checkout)
+    → Fulfill (webhook + email)
+    → Retain (Portal v2: dashboard, sessions, goals, messaging, reports)
+```
+
+This is no longer a landing-page generator with a login screen bolted on. It is a client-retention and service-delivery platform. Operators can run their entire client relationship through the portal.
+
+---
+
+#### Commits (v1.8.0 → v2.0.0)
+
+| Hash | Summary |
+|------|---------|
+| `6652e7c` | feat: full portal v2 — pages, types, APIs, gate system |
+| `ab491ef` | fix: restore polished UI + deep-link support |
+| `fd82c17` | fix: wire /portal lobby + redirect /en/portal to v2 |
+| `fa8a947` | fix: resolve features from operator config |
+| `738030c` | perf: 5x cache TTL + alignment + mobile responsive |
+| `b640179` | fix: null-safe DOM + generation guards for view transitions |
+| `cdfc478` | fix(i18n): manual routing — stop 404-ing portal routes |
+| `16f8321` | fix: messaging 500 + perf + mobile UX |
+| `723a902` | fix(mobile): programs card overflow + reports scroll |
+| `e74d810` | fix: kill onSnapshot leak, center portal content |
+| `47fb57a` | fix: remove eager Firebase import, tighten mobile padding |
+| `8327c13` | fix: tighten desktop layout (920px), mobile dashboard |
+| `4a2bd58` | fix: reports layout — single-column centered config |
+| `4e8eccd` | fix: all 9 portal pages re-init on view-transition navigation |
+
+---
 
 ### v1.8.0 (December 27, 2025) — Portal UX Polish (Phase 2.3)
 
@@ -471,22 +606,37 @@ Complete implementation of the tours/nightlife vertical with 11 custom modules:
 
 ### Known Gaps (Transparency)
 
+**Completed (v1.x → v2.0)**
+
+| Capability | Status |
+|------------|--------|
+| Client Portal (v2, 9 pages) | ✅ Complete |
+| Firebase Auth (magic link) | ✅ Complete |
+| Entitlements (pending → claim → user) | ✅ Complete |
+| Payment Pipeline (Stripe → webhook → email → portal) | ✅ Complete |
+| Token-driven backgrounds | ✅ Complete |
+| Offers + Products engine-first | ✅ Complete |
+| Schema.org FAQPage | ✅ Complete |
+| Tours vertical (skin + types + validation) | ✅ Complete |
+| WhatsApp floating button | ✅ Complete |
+| Operator-scoped portal routing | ✅ Complete |
+| Command palette (Cmd+K) | ✅ Complete |
+| Reports system (configurator + PDF) | ✅ Complete |
+| View transitions + page-load guards | ✅ Complete |
+| Deploy gate (4-stage pipeline) | ✅ Complete |
+
+**Open Gaps**
+
 | Gap | Status | Notes |
 |-----|--------|-------|
-| **Client Portal** | ✅ Complete | `/portal` + `/[lang]/portal` with Firebase Auth + entitlements dashboard |
-| **Firebase Auth** | ✅ Complete | Magic link sign-in, session persistence, authorized domains |
-| **Entitlements System** | ✅ Complete | Pending → claim → user flow, multi-operator support |
-| **Payment Pipeline** | ✅ Complete | Stripe → webhook → entitlement → email → portal |
-| **Token-driven backgrounds** | ✅ Complete | All skins use `bg-engine-*` classes, no hardcoded colors |
-| **Offers engine-first** | ✅ Complete | `resolveOfferAction()` + OffersConsultancy.astro wired |
-| **Schema.org FAQPage** | ✅ Complete | `buildFaqJsonLd.ts` + EngineLayout injection |
-| **Tours TypeScript contracts** | ✅ Complete | `src/types/tours.ts` + validation enforcement |
-| **WhatsApp floating button** | ✅ Complete | Engine-wide, accent-color matched |
-| **Stripe Connect** | 🔄 Planned | Current: direct checkout; Target: split payouts |
+| **Stripe Connect** | 🔄 Planned | Direct checkout works; split payouts not yet implemented |
 | **Zod runtime validation** | 🔄 Planned | Build-time validation exists via scripts |
 | **Fitness skin components** | 🔄 Partial | Uses consultancy skin as fallback |
-| **Portal UI polish** | ✅ Complete | Premium SaaS layout, skeletons, operator cards, status pills |
-| **Admin/Coach dashboard** | 🔄 Planned | Manual Firestore edits for now |
+| **Nightlife vertical skin** | 🔄 Planned | No dedicated components yet |
+| **Admin / Coach dashboard** | 🔄 Partial | Client portal exists; operator-side UI not yet built |
+| **Subscription billing** | 🔄 Planned | One-time purchases only; Stripe recurring not wired |
+| **Firestore security rules** | ⚠️ Needs tuning | Messaging permissions need tightening |
+| **Operator registry gaps** | ⚠️ Known | `jose-espinosa` and `medellin-pub-crawl` not in `operators/index.ts` |
 
 ---
 
@@ -496,26 +646,36 @@ Complete implementation of the tours/nightlife vertical with 11 custom modules:
 
 | Capability | Status | Evidence |
 |------------|--------|----------|
-| Landing pages | ✅ Live | `ltp-engine.vercel.app/en/v/fitness/demo` |
+| Landing pages (3 verticals) | ✅ Live | `ltp-engine.vercel.app/en/v/fitness/demo` |
 | Stripe checkout | ✅ Live | Real test purchases completed |
 | Payment webhooks | ✅ Live | 200 OK responses, entitlements created |
 | Email fulfillment | ✅ Live | Brevo sends "Your access is ready" |
-| Client portal | ✅ Live | `portal.lovethisplace.co/en/portal` (canonical) + `ltp-engine.vercel.app/portal` (engine default) |
+| Portal v2 (full SaaS) | ✅ Live | `portal.lovethisplace.co` — 9 pages, view transitions |
 | Firebase auth | ✅ Live | Magic link sign-in working |
 | Entitlements | ✅ Live | Claims work, dashboard shows access |
+| Dashboard + Widgets | ✅ Live | Operator-configurable bento grid |
+| Session booking | ✅ Live | Availability slots, cancel/reschedule |
+| Goal tracking | ✅ Live | CRUD, templates, progress rings |
+| Metric entries | ✅ Live | Category-based input, history |
+| Timeline charts | ✅ Live | Canvas rendering, zero external deps |
+| Messaging | ✅ Live | Realtime via Firestore onSnapshot |
+| Reports | ✅ Live | Configurator + browser print-to-PDF |
+| Command palette | ✅ Live | Cmd+K, fuzzy search, keyboard nav |
+| Deploy gate | ✅ Live | 4-stage: validate → canary → check → build |
 
 ### Revenue-Ready Checklist
 
 | Requirement | Status |
 |-------------|--------|
 | Accept payments | ✅ Stripe Checkout |
-| Deliver access | ✅ Entitlements + Portal |
+| Deliver access | ✅ Entitlements + Portal v2 |
 | Customer authentication | ✅ Firebase Magic Link |
 | Fulfillment notification | ✅ Brevo Email |
-| Multi-operator support | ✅ Data-driven |
+| Post-purchase retention | ✅ Portal v2 (dashboard, goals, sessions, messaging) |
+| Multi-operator support | ✅ Data-driven, feature-gated |
 | Multi-language | ✅ en/es |
 
-**Bottom Line:** You can charge money and deliver digital access TODAY.
+**Bottom Line:** This is no longer just a landing-page factory. It is a complete business platform — acquire, convert, fulfill, and retain — suitable for fitness coaches, consultants, tour operators, and service businesses. You can charge money, deliver access, and manage ongoing client relationships TODAY.
 
 ## 🧭 Client Onboarding & Custom Domains
 
@@ -575,41 +735,51 @@ This section describes how to take a new operator live and serve it on a dedicat
 
 ### 🎯 Next Steps (Product Decisions)
 
-These are no longer debugging tasks — they're business/product choices:
+These are no longer debugging tasks — they're business/product choices.
 
-#### Immediate (Polish)
+#### Completed Since v1.8 (Retired from this list)
+
+| Task | Status |
+|------|--------|
+| Portal UI design | ✅ Portal v2 with 9 pages, glass-card design, view transitions |
+| Loading skeletons | ✅ Skeleton shimmer on all pages |
+| Error state improvements | ✅ Graceful error + retry states everywhere |
+| Entitlement → action mapping | ✅ Clickable resource cards with navigation |
+| Operator-specific portal routes | ✅ `/portal/{operatorId}/{page}` |
+| Content delivery (gated pages) | ✅ `/portal/r/{operatorId}/{resourceId}` |
+
+#### Immediate (Hardening)
 
 | Task | Priority | Effort |
 |------|----------|--------|
-| Portal UI design | Medium | 2-4 hrs |
-| Email branding (custom domain) | Medium | 1 hr |
-| Error state improvements | Low | 1 hr |
-| Loading skeletons | Low | 1 hr |
+| Tighten Firestore security rules | 🔴 High | 1-2 hrs |
+| Finish Firestore index creation | 🔴 High | Waiting on Firebase |
+| Register real operators in index.ts | 🔴 High | 30 min |
+| Deploy another real operator (end-to-end) | 🟡 Medium | 2-4 hrs |
+| Email branding (custom domain DKIM) | 🟡 Medium | 1 hr |
 
 #### Short-Term (Features)
 
 | Task | Priority | Effort |
 |------|----------|--------|
-| Entitlement → action mapping | High | 2-4 hrs |
-| *What happens when user clicks a program? Link to content, embed, redirect?* |
-| Operator-specific portal routes | Medium | 2-3 hrs |
-| *`/portal/fitness-demo` instead of generic `/portal`* |
-| Subscription support | Medium | 4-8 hrs |
-| *Stripe subscriptions + recurring entitlements* |
-| Content delivery | High | Varies |
-| *Where does the actual program content live?* |
+| Admin / Coach dashboard | 🔴 High | 8-16 hrs |
+| *Operator sees their clients, grants entitlements, reviews sessions* |
+| Subscription support (Stripe recurring) | 🟡 Medium | 4-8 hrs |
+| *Recurring billing + entitlement renewal* |
+| Notification system | 🟡 Medium | 4-8 hrs |
+| *In-portal + email notifications for session reminders, goal milestones* |
 
 #### Medium-Term (Scale)
 
 | Task | Priority | Effort |
 |------|----------|--------|
-| Admin/coach dashboard | High | 8-16 hrs |
-| *Grant entitlements, view customers, manage access* |
-| Stripe Connect | Medium | 8-16 hrs |
+| Stripe Connect | 🟡 Medium | 8-16 hrs |
 | *Multi-operator payouts (platform fee model)* |
-| Rate limiting | Medium | 2-4 hrs |
+| Fitness skin (dedicated components) | 🟡 Medium | 4-8 hrs |
+| *Replace consultancy fallback with performance-themed skin* |
+| Rate limiting | 🟡 Medium | 2-4 hrs |
 | *Protect API endpoints* |
-| Analytics | Low | 2-4 hrs |
+| Analytics | 🟢 Low | 2-4 hrs |
 | *Track conversions, portal usage* |
 
 ---
@@ -1882,24 +2052,31 @@ Before committing any component changes, verify:
 
 ---
 
-## 🔮 Future Roadmap
+## 🔮 Roadmap
 
 | Phase | Feature | Status |
 |-------|---------|--------|
 | ✅ Phase 1 | Consultancy vertical | Complete |
-| 🔄 Phase 2 | Fitness vertical skin | Pending |
-| 🔄 Phase 3 | Tours vertical skin | Pending |
-| 🔄 Phase 4 | Nightlife vertical skin | Pending |
-| 🔄 Phase 5 | Admin dashboard | Planned |
-| 🔄 Phase 6 | Stripe checkout integration | Planned |
-| 🔄 Phase 7 | Analytics dashboard | Planned |
+| ✅ Phase 2 | Tours / Nightlife vertical | Complete |
+| ✅ Phase 3 | Stripe checkout + webhook + email fulfillment | Complete |
+| ✅ Phase 4 | Client Portal v1 (entitlement lobby) | Complete → Superseded by v2 |
+| ✅ Phase 5 | Portal v2 — full SaaS (9 pages, 12 APIs) | Complete |
+| ✅ Phase 6 | Deploy gate pipeline | Complete |
+| ✅ Phase 7 | View transitions + navigation re-init | Complete |
+| 🔄 Phase 8 | Fitness vertical skin (dedicated) | Partial — using consultancy fallback |
+| 🔄 Phase 9 | Admin / Coach dashboard | Planned |
+| 🔄 Phase 10 | Stripe Connect (split payouts) | Planned |
+| 🔄 Phase 11 | Subscription billing | Planned |
+| 🔄 Phase 12 | Analytics dashboard | Planned |
 
 ---
 
 ## 📚 Key Files Reference
 
+**Engine Core**
+
 | File | Purpose |
-|------|---------|
+|------|--------|
 | `src/lib/engine/index.ts` | Engine exports |
 | `src/lib/engine/loadOperator.ts` | JSON loading & merging |
 | `src/types/operator.ts` | Core type definitions |
@@ -1908,6 +2085,32 @@ Before committing any component changes, verify:
 | `src/styles/global.css` | Base styles + CSS vars |
 | `src/config/engine.ts` | Constants (verticals, modules) |
 | `src/components/skins/consultancy/skin.ts` | Consultancy skin config |
+
+**Portal v2**
+
+| File | Purpose |
+|------|--------|
+| `src/layouts/PortalLayout.astro` | Portal chrome — sidebar, tab bar, view transitions |
+| `src/styles/portal-system.css` | Shared portal component classes |
+| `src/lib/portal/portalAuth.client.ts` | Auth module — magic link, bootstrap, caching |
+| `src/lib/portal/guards.ts` | Server-side guard stack (requireAuth, requireActor, requireFeature) |
+| `src/lib/portal/resolveActor.ts` | Firebase token → PortalActor resolution |
+| `src/lib/portal/dashboardWidgets.ts` | Widget registry for operator-configurable dashboard |
+| `src/lib/portal/commandPalette.client.ts` | Cmd+K palette UI |
+| `src/lib/portal/messaging.client.ts` | Firestore onSnapshot realtime messaging |
+| `src/data/operators/index.ts` | Operator branding + portal config registry |
+| `src/types/portal.ts` | PortalBootstrapV2, PortalFeature, PortalActor |
+
+---
+
+## ⚠️ Legacy: Portal v1 (Deprecated)
+
+The original entitlement-based portal (single-page lobby at `/portal` rendering entitlement cards into `#portal-root`) has been fully superseded by Portal v2. Legacy files are retained only for reference:
+
+- `src/lib/portal/portal.client.ts` — v1 client logic (still used by the lobby auth flow, but all post-login rendering is v2)
+- `temp_portal.txt` — archived v1 code snapshot (safe to delete)
+
+All new portal work targets the v2 operator-scoped architecture.
 
 ---
 
@@ -1918,6 +2121,7 @@ Before committing any component changes, verify:
 3. **Test across languages** (en + es)
 4. **Test with demo operator** before creating new operators
 5. **Keep components dumb**—business logic goes in `/lib/engine/`
+6. **Portal pages must use `astro:page-load`** — bare module-level boot calls will break view transitions
 
 ---
 

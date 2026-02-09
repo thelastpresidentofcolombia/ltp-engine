@@ -40,7 +40,7 @@ Portal v2 uses Astro's `ClientRouter` with `fade` transitions for instant-feelin
 
 **Layout System**
 
-A shared `PortalLayout.astro` provides the chrome: sidebar navigation on desktop (persisted across transitions), bottom tab bar on mobile, and a neutral dark theme not tied to any operator brand. Nine navigation items: Dashboard, Sessions, Programs, Entries, Timeline, Messaging, Goals, Reports, Profile.
+A shared `PortalLayout.astro` provides the chrome: sidebar navigation on desktop (persisted across transitions), bottom tab bar on mobile, and a neutral dark theme not tied to any operator brand. Nine navigation items: Dashboard, Sessions, Programs, Updates (entries), Timeline, Messages, Goals, Reports, Profile.
 
 ---
 
@@ -74,7 +74,7 @@ A shared `PortalLayout.astro` provides the chrome: sidebar navigation on desktop
 | `/api/portal/bootstrap` | GET | Master bootstrap — actor, features, branding, summary counts |
 | `/api/portal/claim` | POST | Claim pending entitlements by email |
 | `/api/portal/entries` | GET, POST | List + create metric entries |
-| `/api/portal/goals` | GET, POST, PATCH | Full CRUD for goals |
+| `/api/portal/goals` | GET, POST, PATCH, DELETE | Full CRUD for goals |
 | `/api/portal/sessions` | GET, POST | List + book sessions |
 | `/api/portal/sessions/[id]` | PATCH | Cancel or reschedule a session |
 | `/api/portal/availability` | GET | Bookable time slots |
@@ -126,20 +126,21 @@ This is no longer a landing-page generator with a login screen bolted on. It is 
 
 | Hash | Summary |
 |------|---------|
-| `6652e7c` | feat: full portal v2 — pages, types, APIs, gate system |
-| `ab491ef` | fix: restore polished UI + deep-link support |
-| `fd82c17` | fix: wire /portal lobby + redirect /en/portal to v2 |
-| `fa8a947` | fix: resolve features from operator config |
-| `738030c` | perf: 5x cache TTL + alignment + mobile responsive |
-| `b640179` | fix: null-safe DOM + generation guards for view transitions |
-| `cdfc478` | fix(i18n): manual routing — stop 404-ing portal routes |
-| `16f8321` | fix: messaging 500 + perf + mobile UX |
-| `723a902` | fix(mobile): programs card overflow + reports scroll |
-| `e74d810` | fix: kill onSnapshot leak, center portal content |
-| `47fb57a` | fix: remove eager Firebase import, tighten mobile padding |
-| `8327c13` | fix: tighten desktop layout (920px), mobile dashboard |
-| `4a2bd58` | fix: reports layout — single-column centered config |
-| `4e8eccd` | fix: all 9 portal pages re-init on view-transition navigation |
+| `6652e7c` | feat(portal): full portal v2 — pages, types, APIs, gate system |
+| `fd82c17` | fix(portal): wire /portal lobby + redirect /en/portal to v2 portal |
+| `ab491ef` | fix(portal): restore polished UI + add deep-link support |
+| `431ed56` | fix(vercel): break /portal redirect loop |
+| `738030c` | perf(portal): 5x cache TTL + fix alignment + mobile responsive across all pages |
+| `fa8a947` | fix(portal-api): resolve features from operator config instead of engine defaults |
+| `b640179` | fix(portal): null-safe DOM access + generation guards for view transitions |
+| `cdfc478` | fix(i18n): switch to manual routing — stop 404-ing portal routes |
+| `16f8321` | fix(portal): messaging 500 + perf + mobile UX |
+| `723a902` | fix(mobile): programs card overflow + reports margin/scroll issues |
+| `e74d810` | fix: kill onSnapshot leak on navigation, center portal content, fix chip scroll |
+| `47fb57a` | fix: remove eager Firebase import, tighten mobile padding, fix chip scroll |
+| `8327c13` | fix: tighten desktop layout, fix mobile dashboard alignment |
+| `4a2bd58` | fix: reports layout — single-column config, centered period/sections/button |
+| `4e8eccd` | fix: all portal pages re-init on view-transition navigation |
 
 ---
 
@@ -1284,11 +1285,11 @@ const modules = resolveModules(operator);
 
 | Vertical | Skin ID | Status |
 |----------|---------|--------|
-| `consultancy` | `consultancy-canonical` | ✅ Complete |
+| `consultancy` | `consultancy-canonical` | ✅ Complete (8 components) |
 | `consultancy` | `consultancy-minimal` | 🔄 Planned |
-| `fitness` | `fitness-energetic` | 🔄 Pending |
-| `tours` | `tours-adventurous` | 🔄 Pending |
-| `nightlife` | `nightlife-bold` | 🔄 Pending |
+| `fitness` | `fitness-energetic` | ✅ Complete (8 components) |
+| `tours` | `tours-canonical` | ✅ Complete (13 components) |
+| `nightlife` | `nightlife-bold` | 🔄 Planned |
 
 ### Adding a New Skin
 

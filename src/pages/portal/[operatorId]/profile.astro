@@ -664,16 +664,19 @@ const { operatorId } = Astro.params;
       });
     }
 
-    // Boot
-    initPortal()
-      .then(renderProfile)
-      .catch((err) => {
-        console.error('[Profile] Failed:', err);
-        const content = document.getElementById('portal-content');
-        if (content) {
-          content.innerHTML = errorStateHtml({ title: 'Unable to Load Profile', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-profile' } });
-          document.getElementById('btn-reload-profile')?.addEventListener('click', () => location.reload());
-        }
-      });
+    // Boot — re-runs on every view-transition navigation to this page
+    document.addEventListener('astro:page-load', () => {
+      if (!location.pathname.match(/\/portal\/[^/]+\/profile$/)) return;
+      initPortal()
+        .then(renderProfile)
+        .catch((err) => {
+          console.error('[Profile] Failed:', err);
+          const content = document.getElementById('portal-content');
+          if (content) {
+            content.innerHTML = errorStateHtml({ title: 'Unable to Load Profile', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-profile' } });
+            document.getElementById('btn-reload-profile')?.addEventListener('click', () => location.reload());
+          }
+        });
+    });
   </script>
 </PortalLayout>

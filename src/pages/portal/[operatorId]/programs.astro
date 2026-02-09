@@ -213,15 +213,19 @@ const { operatorId } = Astro.params;
       `;
     }
 
-    initPortal()
-      .then(renderPrograms)
-      .catch((err) => {
-        console.error('[Programs] Failed:', err);
-        const content = document.getElementById('portal-content');
-        if (content) {
-          content.innerHTML = errorStateHtml({ title: 'Unable to Load Programs', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-programs' } });
-          document.getElementById('btn-reload-programs')?.addEventListener('click', () => location.reload());
-        }
-      });
+    // Boot — re-runs on every view-transition navigation to this page
+    document.addEventListener('astro:page-load', () => {
+      if (!location.pathname.match(/\/portal\/[^/]+\/programs$/)) return;
+      initPortal()
+        .then(renderPrograms)
+        .catch((err) => {
+          console.error('[Programs] Failed:', err);
+          const content = document.getElementById('portal-content');
+          if (content) {
+            content.innerHTML = errorStateHtml({ title: 'Unable to Load Programs', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-programs' } });
+            document.getElementById('btn-reload-programs')?.addEventListener('click', () => location.reload());
+          }
+        });
+    });
   </script>
 </PortalLayout>

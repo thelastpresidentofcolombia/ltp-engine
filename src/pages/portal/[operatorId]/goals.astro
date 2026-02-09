@@ -814,16 +814,19 @@ const { operatorId } = Astro.params;
       }
     }
 
-    // Boot
-    initPortal()
-      .then(renderGoalsPage)
-      .catch((err) => {
-        console.error('[Goals] Failed:', err);
-        const content = document.getElementById('portal-content');
-        if (content) {
-          content.innerHTML = errorStateHtml({ title: 'Unable to Load Goals', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-goals' } });
-          document.getElementById('btn-reload-goals')?.addEventListener('click', () => location.reload());
-        }
-      });
+    // Boot — re-runs on every view-transition navigation to this page
+    document.addEventListener('astro:page-load', () => {
+      if (!location.pathname.match(/\/portal\/[^/]+\/goals$/)) return;
+      initPortal()
+        .then(renderGoalsPage)
+        .catch((err) => {
+          console.error('[Goals] Failed:', err);
+          const content = document.getElementById('portal-content');
+          if (content) {
+            content.innerHTML = errorStateHtml({ title: 'Unable to Load Goals', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-goals' } });
+            document.getElementById('btn-reload-goals')?.addEventListener('click', () => location.reload());
+          }
+        });
+    });
   </script>
 </PortalLayout>

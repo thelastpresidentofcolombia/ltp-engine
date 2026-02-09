@@ -490,6 +490,9 @@ const { operatorId } = Astro.params;
     return div.innerHTML;
   }
 
-  // ── Kick off ──
-  init();
+  // ── Kick off — re-runs on every view-transition navigation to this page ──
+  document.addEventListener('astro:page-load', () => {
+    if (!location.pathname.match(/\/portal\/[^/]+\/timeline$/)) return;
+    init();
+  });
 </script>

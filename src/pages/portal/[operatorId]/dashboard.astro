@@ -1034,16 +1034,19 @@ const { operatorId } = Astro.params;
       }
     }
 
-    // Boot
-    initPortal()
-      .then(renderDashboard)
-      .catch((err) => {
-        console.error('[Dashboard] Failed:', err);
-        const content = document.getElementById('portal-content');
-        if (content) {
-          content.innerHTML = errorStateHtml({ title: 'Unable to Load Dashboard', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-dashboard' } });
-          document.getElementById('btn-reload-dashboard')?.addEventListener('click', () => location.reload());
-        }
-      });
+    // Boot — re-runs on every view-transition navigation to this page
+    document.addEventListener('astro:page-load', () => {
+      if (!location.pathname.match(/\/portal\/[^/]+\/dashboard$/)) return;
+      initPortal()
+        .then(renderDashboard)
+        .catch((err) => {
+          console.error('[Dashboard] Failed:', err);
+          const content = document.getElementById('portal-content');
+          if (content) {
+            content.innerHTML = errorStateHtml({ title: 'Unable to Load Dashboard', desc: 'Something went wrong loading this page.', retry: { label: 'Reload Page', id: 'btn-reload-dashboard' } });
+            document.getElementById('btn-reload-dashboard')?.addEventListener('click', () => location.reload());
+          }
+        });
+    });
   </script>
 </PortalLayout>

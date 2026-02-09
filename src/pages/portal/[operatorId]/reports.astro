@@ -1188,6 +1188,10 @@ const { operatorId } = Astro.params;
       return d.innerHTML;
     }
 
-    init();
+    // ── Kick off — re-runs on every view-transition navigation to this page ──
+    document.addEventListener('astro:page-load', () => {
+      if (!location.pathname.match(/\/portal\/[^/]+\/reports$/)) return;
+      init();
+    });
   </script>
 </PortalLayout>

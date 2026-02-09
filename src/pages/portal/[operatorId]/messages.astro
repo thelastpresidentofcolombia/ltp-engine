@@ -730,6 +730,10 @@ const { operatorId } = Astro.params;
     cleanupAllSubscriptions();
     unsubscribeMessages = null;
   });
-  init();
+  // Re-runs on every view-transition navigation to this page
+  document.addEventListener('astro:page-load', () => {
+    if (!location.pathname.match(/\/portal\/[^/]+\/messages$/)) return;
+    init();
+  });
 </script>
 

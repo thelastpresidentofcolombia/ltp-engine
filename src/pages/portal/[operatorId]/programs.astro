@@ -15,10 +15,10 @@ const { operatorId } = Astro.params;
 <PortalLayout title="Programs" activeSection="programs" operatorId={operatorId!}>
   <style is:global>
     /* ── Programs page layout ── */
-    .prg-group { margin-bottom: 2rem; }
+    .prg-group { margin-bottom: 2rem; overflow: hidden; }
     .prg-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
       gap: 12px;
     }
     .prg-card {
@@ -85,6 +85,17 @@ const { operatorId } = Astro.params;
       .prg-card {
         padding: 1rem 1.25rem;
         min-height: 44px;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .prg-card-info {
+        overflow: hidden;
+      }
+      .prg-card-desc {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
     }
     @media (max-width: 480px) {

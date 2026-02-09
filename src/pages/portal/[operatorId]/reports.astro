@@ -460,13 +460,21 @@ const { operatorId } = Astro.params;
        ============================================ */
     @media (max-width: 768px) {
       .r-config { grid-template-columns: 1fr; gap: 12px; }
-      .r-config-section { padding: 18px; }
-      .r-type-cards { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+      .r-config-section { padding: 18px; overflow: hidden; }
+      .r-type-cards { grid-template-columns: repeat(auto-fill, minmax(min(130px, 100%), 1fr)); gap: 8px; }
       .r-type-card { padding: 12px 10px; }
       .r-type-name { font-size: 0.78rem; }
       .r-type-desc { font-size: 0.68rem; }
-      .r-sections-grid { gap: 6px; }
-      .r-section-toggle { padding: 8px 12px; font-size: 0.75rem; min-height: 44px; }
+      .r-sections-grid {
+        gap: 6px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+      }
+      .r-sections-grid::-webkit-scrollbar { display: none; }
+      .r-section-toggle { padding: 8px 12px; font-size: 0.75rem; min-height: 44px; flex-shrink: 0; }
       .r-actions { flex-wrap: wrap; }
       .r-doc-header { flex-direction: column; gap: 12px; padding: 20px; }
       .r-doc-meta { text-align: left; }
@@ -478,12 +486,15 @@ const { operatorId } = Astro.params;
       .r-goal-bar { width: 80px; }
       .r-metrics-table, .r-sessions-table { font-size: 0.75rem; overflow-x: auto; display: block; }
       .r-viewer-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+      #reports-page { overflow: hidden; }
     }
     @media (max-width: 480px) {
+      .r-config-section { padding: 14px; }
       .r-type-cards { grid-template-columns: 1fr; }
       .r-kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
       .r-kpi { padding: 10px; }
       .r-kpi-value { font-size: 1.1rem; }
+      .r-section-toggle { padding: 6px 10px; font-size: 0.7rem; }
     }
   </style>
 

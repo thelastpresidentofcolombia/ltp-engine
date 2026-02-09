@@ -631,7 +631,7 @@ Complete implementation of the tours/nightlife vertical with 11 custom modules:
 |-----|--------|-------|
 | **Stripe Connect** | 🔄 Planned | Direct checkout works; split payouts not yet implemented |
 | **Zod runtime validation** | 🔄 Planned | Build-time validation exists via scripts |
-| **Fitness skin components** | 🔄 Partial | Uses consultancy skin as fallback |
+| **Fitness skin components** | ✅ Complete | 8 dedicated components + skin config |
 | **Nightlife vertical skin** | 🔄 Planned | No dedicated components yet |
 | **Admin / Coach dashboard** | 🔄 Partial | Client portal exists; operator-side UI not yet built |
 | **Subscription billing** | 🔄 Planned | One-time purchases only; Stripe recurring not wired |
@@ -775,8 +775,6 @@ These are no longer debugging tasks — they're business/product choices.
 |------|----------|--------|
 | Stripe Connect | 🟡 Medium | 8-16 hrs |
 | *Multi-operator payouts (platform fee model)* |
-| Fitness skin (dedicated components) | 🟡 Medium | 4-8 hrs |
-| *Replace consultancy fallback with performance-themed skin* |
 | Rate limiting | 🟡 Medium | 2-4 hrs |
 | *Protect API endpoints* |
 | Analytics | 🟢 Low | 2-4 hrs |
@@ -2063,7 +2061,7 @@ Before committing any component changes, verify:
 | ✅ Phase 5 | Portal v2 — full SaaS (9 pages, 12 APIs) | Complete |
 | ✅ Phase 6 | Deploy gate pipeline | Complete |
 | ✅ Phase 7 | View transitions + navigation re-init | Complete |
-| 🔄 Phase 8 | Fitness vertical skin (dedicated) | Partial — using consultancy fallback |
+| ✅ Phase 8 | Fitness vertical skin (dedicated) | Complete — 8 components + skin.ts |
 | 🔄 Phase 9 | Admin / Coach dashboard | Planned |
 | 🔄 Phase 10 | Stripe Connect (split payouts) | Planned |
 | 🔄 Phase 11 | Subscription billing | Planned |

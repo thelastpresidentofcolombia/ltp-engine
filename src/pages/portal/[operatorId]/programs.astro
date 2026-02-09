@@ -98,7 +98,7 @@ const { operatorId } = Astro.params;
   </style>
 
   <script>
-    import { initPortal, getAuthed } from '@/lib/portal/portalAuth.client';
+    import { initPortal } from '@/lib/portal/portalAuth.client';
     import { getIcon, emptyStateHtml, errorStateHtml } from '@/lib/ui/icons';
     import type { PortalBootstrapV2 } from '@/types/portal';
 
@@ -126,17 +126,8 @@ const { operatorId } = Astro.params;
       const content = document.getElementById('portal-content');
       if (!content) return;
 
-      // Fetch full entitlements from bootstrap (they're in the v1 compat layer)
-      let entitlements: any[] = [];
-      try {
-        const bsResp = await getAuthed('/api/portal/bootstrap');
-        if (bsResp.ok) {
-          const fullData = await bsResp.json();
-          entitlements = fullData.entitlements || [];
-        }
-      } catch {
-        entitlements = [];
-      }
+      // Bootstrap v2 includes entitlements in v1-compat layer — no extra fetch needed
+      const entitlements: any[] = (data as any).entitlements || [];
 
       // Group by operator
       const byOperator: Record<string, any[]> = {};

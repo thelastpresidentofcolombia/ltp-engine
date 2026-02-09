@@ -52,49 +52,68 @@ export const GET: APIRoute = async ({ request }) => {
 
   try {
     const convoRef = db.collection(PortalCollections.CONVERSATIONS);
-    let queryRef;
+    let snap;
 
     if (actor.role === 'client') {
-      // Clients see their own conversations
-      queryRef = convoRef
-        .where('clientUid', '==', actor.uid)
-        .where('status', '==', 'active')
-        .orderBy('lastMessageAt', 'desc');
+      // Clients see their own conversations.
+      // Requires composite index: clientUid ASC, status ASC, lastMessageAt DESC
+      // If the index isn't ready yet, fall back to a simpler query.
+      try {
+        snap = await convoRef
+          .where('clientUid', '==', actor.uid)
+          .where('status', '==', 'active')
+          .orderBy('lastMessageAt', 'desc')
+          .get();
+      } catch (indexErr: any) {
+        console.warn('[Conversations GET] Index not ready, falling back:', indexErr?.message);
+        snap = await convoRef
+          .where('clientUid', '==', actor.uid)
+          .get();
+      }
     } else if (actor.operatorIds.length === 0) {
-      // Superadmin: see all active conversations (capped)
-      queryRef = convoRef
-        .where('status', '==', 'active')
-        .orderBy('lastMessageAt', 'desc')
-        .limit(100);
+      // Superadmin: see all active conversations (capped).
+      // Requires composite index: status ASC, lastMessageAt DESC
+      try {
+        snap = await convoRef
+          .where('status', '==', 'active')
+          .orderBy('lastMessageAt', 'desc')
+          .limit(100)
+          .get();
+      } catch (indexErr: any) {
+        console.warn('[Conversations GET] Index not ready, falling back:', indexErr?.message);
+        snap = await convoRef.limit(100).get();
+      }
     } else {
-      // Coaches/admins: see conversations for their operators
-      // Firestore 'in' queries limited to 30 values — fine for coaches
-      queryRef = convoRef
+      // Coaches/admins: see conversations for their operators.
+      // Firestore 'in' queries limited to 30 values — fine for coaches.
+      // Skip orderBy to avoid composite index requirement with 'in'.
+      snap = await convoRef
         .where('operatorId', 'in', actor.operatorIds.slice(0, 30))
-        .where('status', '==', 'active');
-      // Note: Firestore 'in' + orderBy on a different field requires
-      // the composite index (operatorId ASC, status ASC, lastMessageAt DESC).
-      // We sort in JS to avoid issues with 'in' + orderBy limitations.
+        .where('status', '==', 'active')
+        .get();
     }
 
-    const snap = await queryRef.get();
-    const conversations: ConversationSummary[] = snap.docs.map((docSnap) => {
-      const d = docSnap.data() as ConversationDoc;
-      const unreadCount = actor.role === 'client'
-        ? (d.unreadByClient ?? 0)
-        : (d.unreadByCoach ?? 0);
+    const conversations: ConversationSummary[] = snap.docs
+      .map((docSnap) => {
+        const d = docSnap.data() as ConversationDoc;
+        // Fallback filter: if we used the index-less query, filter active in JS
+        if (d.status !== 'active') return null;
+        const unreadCount = actor.role === 'client'
+          ? (d.unreadByClient ?? 0)
+          : (d.unreadByCoach ?? 0);
 
-      return {
-        id: docSnap.id,
-        operatorId: d.operatorId,
-        operatorBrandName: d.operatorId, // TODO: resolve from operator config
-        lastMessageAt: d.lastMessageAt ?? d.createdAt,
-        lastMessagePreview: d.lastMessagePreview ?? '',
-        unreadCount,
-      };
-    });
+        return {
+          id: docSnap.id,
+          operatorId: d.operatorId,
+          operatorBrandName: d.operatorId, // TODO: resolve from operator config
+          lastMessageAt: d.lastMessageAt ?? d.createdAt ?? '',
+          lastMessagePreview: d.lastMessagePreview ?? '',
+          unreadCount,
+        };
+      })
+      .filter(Boolean) as ConversationSummary[];
 
-    // Sort by lastMessageAt DESC (handles coach 'in' query without server orderBy)
+    // Sort by lastMessageAt DESC (always in JS — handles all branches)
     conversations.sort((a, b) => (b.lastMessageAt || '').localeCompare(a.lastMessageAt || ''));
 
     return new Response(
@@ -103,8 +122,9 @@ export const GET: APIRoute = async ({ request }) => {
     );
   } catch (err: any) {
     console.error('[Conversations GET] Error:', err);
+    const detail = import.meta.env.DEV ? err?.message : undefined;
     return new Response(
-      JSON.stringify({ error: 'Failed to load conversations' }),
+      JSON.stringify({ error: 'Failed to load conversations', detail }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -195,8 +215,9 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (err: any) {
     console.error('[Conversations POST] Error:', err);
+    const detail = import.meta.env.DEV ? err?.message : undefined;
     return new Response(
-      JSON.stringify({ error: 'Failed to create conversation' }),
+      JSON.stringify({ error: 'Failed to create conversation', detail }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -281,8 +302,9 @@ export const PATCH: APIRoute = async ({ request }) => {
     );
   } catch (err: any) {
     console.error('[Conversations PATCH] Error:', err);
+    const detail = import.meta.env.DEV ? err?.message : undefined;
     return new Response(
-      JSON.stringify({ error: 'Failed to mark as read' }),
+      JSON.stringify({ error: 'Failed to mark as read', detail }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

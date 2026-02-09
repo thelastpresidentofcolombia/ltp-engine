@@ -196,18 +196,19 @@ async function completeEmailLinkIfPresent() {
 // ============================================================
 
 async function fetchBootstrap(): Promise<PortalBootstrapV2> {
-  // Claim pending entitlements first (engine invariant)
-  try {
-    const claimResp = await postAuthed('/api/portal/claim');
-    // Non-fatal — just consume it
-    if (!claimResp.ok) { /* no pending items, that's fine */ }
-  } catch {
-    // Non-fatal — claim endpoint may not have pending items
-  }
+  // Fire claim + bootstrap in parallel.
+  // Claim is non-fatal — we only need to await bootstrap.
+  const claimPromise = postAuthed('/api/portal/claim').catch(() => {});
 
   const resp = await getAuthed('/api/portal/bootstrap');
   if (!resp.ok) throw new Error(`Bootstrap failed (${resp.status})`);
   const data = await resp.json();
+
+  // Ensure claim is settled before returning (so entitlements are up-to-date).
+  // If claim wrote new entitlements, the bootstrap we already fetched may be stale,
+  // but the background-refresh in initPortal will pick up changes next time.
+  await claimPromise;
+
   return data as PortalBootstrapV2;
 }
 

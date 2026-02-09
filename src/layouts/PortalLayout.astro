@@ -498,15 +498,20 @@ const navItems = [
         flex-direction: column;
         border-right: none;
         border-top: 1px solid var(--portal-border);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        z-index: 100;
       }
       .sidebar-brand, .sidebar-footer { display: none; }
       .sidebar-nav {
         flex-direction: row;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
         padding: 6px 4px;
         gap: 0;
         justify-content: space-around;
       }
+      .sidebar-nav::-webkit-scrollbar { display: none; }
       .nav-item {
         flex-direction: column;
         gap: 2px;
@@ -525,7 +530,8 @@ const navItems = [
       }
       .portal-main {
         margin-left: 0;
-        padding: 20px 16px 90px; /* 90px clears bottom tab bar */
+        /* Clear bottom tab bar + safe area */
+        padding: 20px 16px calc(72px + env(safe-area-inset-bottom, 0px));
       }
       .portal-main > #portal-content {
         max-width: 100%;
@@ -542,6 +548,25 @@ const navItems = [
       }
       .portal-page-title {
         font-size: 1.4rem;
+      }
+    }
+
+    /* ---------- SMALL MOBILE: compact tab labels ---------- */
+    @media (max-width: 480px) {
+      .nav-item {
+        min-width: 48px;
+        padding: 4px 4px;
+        font-size: 0.58rem;
+      }
+      .nav-icon { font-size: 1.05rem; }
+      .portal-main {
+        padding: 16px 12px calc(68px + env(safe-area-inset-bottom, 0px));
+      }
+      .portal-page-title {
+        font-size: 1.25rem;
+      }
+      .portal-page-subtitle {
+        font-size: 0.8rem;
       }
     }
   </style>
@@ -660,13 +685,13 @@ const navItems = [
             <div class="skeleton" style="width: 180px; height: 28px; margin-bottom: 8px;"></div>
             <div class="skeleton" style="width: 280px; height: 16px;"></div>
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
+          <div class="skeleton-grid-3" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:16px; margin-bottom:24px;">
             <div class="skeleton" style="height: 90px; border-radius:var(--portal-radius);"></div>
             <div class="skeleton" style="height: 90px; border-radius:var(--portal-radius);"></div>
             <div class="skeleton" style="height: 90px; border-radius:var(--portal-radius);"></div>
           </div>
           <div class="skeleton" style="height: 200px; border-radius:var(--portal-radius); margin-bottom:16px;"></div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:16px;">
             <div class="skeleton" style="height: 140px; border-radius:var(--portal-radius);"></div>
             <div class="skeleton" style="height: 140px; border-radius:var(--portal-radius);"></div>
           </div>

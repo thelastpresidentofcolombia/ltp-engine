@@ -125,8 +125,9 @@ export const GET: APIRoute = async ({ request }) => {
     );
   } catch (err: any) {
     console.error('[Messages GET] Error:', err);
+    const detail = import.meta.env.DEV ? err?.message : undefined;
     return new Response(
-      JSON.stringify({ error: 'Failed to load messages' }),
+      JSON.stringify({ error: 'Failed to load messages', detail }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -263,8 +264,9 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (err: any) {
     console.error('[Messages POST] Error:', err);
+    const detail = import.meta.env.DEV ? err?.message : undefined;
     return new Response(
-      JSON.stringify({ error: 'Failed to send message' }),
+      JSON.stringify({ error: 'Failed to send message', detail }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

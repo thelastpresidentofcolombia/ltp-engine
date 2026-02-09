@@ -364,7 +364,8 @@ const { operatorId } = Astro.params;
       display: flex;
     }
     .messaging-container {
-      height: calc(100vh - 80px - 80px); /* header + bottom tab bar */
+      /* Use dvh for mobile browsers that hide/show the URL bar */
+      height: calc(100dvh - 80px - 72px - env(safe-area-inset-bottom, 0px));
       border-radius: 8px;
     }
     .btn-send {
@@ -377,6 +378,35 @@ const { operatorId } = Astro.params;
     }
     .convo-item {
       min-height: 56px;
+    }
+    .thread-messages {
+      overscroll-behavior: contain;
+    }
+    .convo-list {
+      overscroll-behavior: contain;
+    }
+    .message-bubble {
+      max-width: 85%;
+    }
+    .send-box {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+
+  /* ── Small mobile ── */
+  @media (max-width: 480px) {
+    .messaging-container {
+      height: calc(100dvh - 68px - 68px - env(safe-area-inset-bottom, 0px));
+    }
+    .convo-list-header h2 {
+      font-size: 1.1rem;
+    }
+    .convo-item {
+      padding: 10px 12px;
+    }
+    .message-bubble {
+      max-width: 90%;
+      font-size: 0.9rem;
     }
   }
 </style>

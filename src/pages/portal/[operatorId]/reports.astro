@@ -22,8 +22,8 @@ const { operatorId } = Astro.params;
        ============================================ */
     .r-config {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      grid-template-columns: 1fr;
+      gap: 20px;
     }
     .r-config-full { grid-column: 1 / -1; }
     .r-type-cards {
@@ -87,6 +87,7 @@ const { operatorId } = Astro.params;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+      justify-content: center;
     }
     .r-section-toggle {
       display: flex;
@@ -114,6 +115,7 @@ const { operatorId } = Astro.params;
       display: flex;
       gap: 10px;
       align-items: center;
+      justify-content: center;
     }
     .r-actions .btn-primary { min-width: 140px; }
     .r-gen-status {
@@ -467,13 +469,10 @@ const { operatorId } = Astro.params;
       .r-type-desc { font-size: 0.68rem; }
       .r-sections-grid {
         gap: 6px;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
+        flex-wrap: wrap;
+        justify-content: center;
         padding-bottom: 4px;
       }
-      .r-sections-grid::-webkit-scrollbar { display: none; }
       .r-section-toggle { padding: 8px 12px; font-size: 0.75rem; min-height: 44px; flex-shrink: 0; }
       .r-actions { flex-wrap: wrap; }
       .r-doc-header { flex-direction: column; gap: 12px; padding: 20px; }
@@ -514,13 +513,13 @@ const { operatorId } = Astro.params;
         </div>
 
         <!-- Date Range -->
-        <div>
+        <div class="r-config-full">
           <label class="form-label">Period</label>
-          <div class="chip-group" id="period-chips"></div>
+          <div class="chip-group" id="period-chips" style="justify-content:center;"></div>
         </div>
 
         <!-- Custom Range -->
-        <div id="custom-range" style="display:none;">
+        <div class="r-config-full" id="custom-range" style="display:none;">
           <label class="form-label">Custom Range</label>
           <div class="r-date-row">
             <input type="date" id="range-from" class="form-input" />

@@ -284,7 +284,7 @@ const { operatorId } = Astro.params;
       .dash-hero .hero-top { flex-direction: column; gap: 16px; }
       .dash-hero .hero-ring-wrap { align-self: center; }
       .dash-hero .hero-metrics,
-      .dash-hero .hero-stat-grid { flex-wrap: wrap; }
+      .dash-hero .hero-stat-grid { flex-wrap: wrap; width: 100%; }
       .dash-hero .hero-metric,
       .dash-hero .hero-stat-card { min-width: calc(50% - 6px); }
       .w-action {
@@ -479,7 +479,7 @@ const { operatorId } = Astro.params;
     }
 
     @media (max-width: 768px) {
-      .w-welcome { flex-direction: column; align-items: flex-start; padding: 24px; }
+      .w-welcome { flex-direction: column; align-items: stretch; padding: 24px; }
       .w-welcome-stats { gap: 16px; }
       .w-welcome-greeting { font-size: 1.1rem; }
       .w-metrics-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }

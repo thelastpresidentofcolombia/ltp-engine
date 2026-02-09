@@ -319,6 +319,7 @@ const navItems = [
     .portal-main > #portal-content {
       max-width: 1080px;
       width: 100%;
+      margin: 0 auto;
     }
 
     .portal-page-header {
@@ -706,6 +707,14 @@ const navItems = [
 
   <!-- View transition lifecycle: preserves shell state + instant nav active state -->
   <script>
+    // ── Global Firestore cleanup on every navigation ──
+    // This is the SAFETY NET: even if messages.astro's per-page handler
+    // fails to fire, this kills any orphaned Firestore listeners.
+    import { cleanupAllSubscriptions } from '../lib/portal/messaging.client';
+    document.addEventListener('astro:before-swap', () => {
+      cleanupAllSubscriptions();
+    });
+
     // ── Preserve shell visibility during view transitions ──
     // Without this, the new page's portal-shell starts display:none
     document.addEventListener('astro:before-swap', (ev: any) => {

@@ -460,7 +460,7 @@ const { operatorId } = Astro.params;
        ============================================ */
     @media (max-width: 768px) {
       .r-config { grid-template-columns: 1fr; gap: 12px; }
-      .r-config-section { padding: 18px; overflow: hidden; }
+      .r-config-section { padding: 18px; }
       .r-type-cards { grid-template-columns: repeat(auto-fill, minmax(min(130px, 100%), 1fr)); gap: 8px; }
       .r-type-card { padding: 12px 10px; }
       .r-type-name { font-size: 0.78rem; }
@@ -486,7 +486,7 @@ const { operatorId } = Astro.params;
       .r-goal-bar { width: 80px; }
       .r-metrics-table, .r-sessions-table { font-size: 0.75rem; overflow-x: auto; display: block; }
       .r-viewer-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; }
-      #reports-page { overflow: hidden; }
+      #reports-page { overflow-x: clip; }
     }
     @media (max-width: 480px) {
       .r-config-section { padding: 14px; }

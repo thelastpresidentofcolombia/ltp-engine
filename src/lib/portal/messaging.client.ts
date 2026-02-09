@@ -15,6 +15,10 @@
  *   Conversation list uses API fetch (refreshed on send / convo switch).
  *   Firestore rules require authentication — API guard stack is the
  *   primary access control layer.
+ *
+ * SUBSCRIPTION LIFECYCLE:
+ *   Module-level singleton ensures only ONE active Firestore listener exists.
+ *   cleanupAllSubscriptions() must be called on page transitions.
  */
 
 import {
@@ -26,6 +30,25 @@ import {
 } from '../firebase/firestore.client';
 import { getAuthed, postAuthed } from './portalAuth.client';
 import type { ConversationSummary, MessageDoc } from '../../types/messaging';
+
+// ============================================================
+// MODULE-LEVEL SUBSCRIPTION TRACKING
+// ============================================================
+
+/** Active Firestore onSnapshot unsubscribe function (singleton). */
+let _activeUnsub: (() => void) | null = null;
+
+/**
+ * Kill any active Firestore subscription.
+ * Safe to call multiple times. Idempotent.
+ * Called by messages.astro before-swap AND by subscribeToMessages itself.
+ */
+export function cleanupAllSubscriptions(): void {
+  if (_activeUnsub) {
+    try { _activeUnsub(); } catch { /* swallow */ }
+    _activeUnsub = null;
+  }
+}
 
 // ============================================================
 // CONVERSATION OPERATIONS (via API)
@@ -104,12 +127,20 @@ export async function loadMessages(
  * The first snapshot fires with all existing messages (initial load).
  * Subsequent snapshots fire on any new/changed/deleted message.
  *
+ * SINGLETON: Only one active subscription at a time.
+ * Calling this again automatically cleans up the previous listener.
+ *
  * @returns An unsubscribe function. Call it when switching conversations.
  */
 export function subscribeToMessages(
   conversationId: string,
   callback: (messages: MessageDoc[]) => void
 ): () => void {
+  // Kill previous subscription (singleton pattern)
+  cleanupAllSubscriptions();
+
+  let disposed = false;
+
   const messagesRef = collection(
     firestoreDb,
     'conversations',
@@ -118,9 +149,10 @@ export function subscribeToMessages(
   );
   const q = query(messagesRef, orderBy('createdAt', 'asc'));
 
-  return onSnapshot(
+  const unsub = onSnapshot(
     q,
     (snapshot) => {
+      if (disposed) return; // guard: ignore callbacks after unsubscribe
       const messages: MessageDoc[] = snapshot.docs.map((doc) => {
         const d = doc.data();
         return {
@@ -137,13 +169,23 @@ export function subscribeToMessages(
       callback(messages);
     },
     (error) => {
-      console.error('[Messaging] onSnapshot error:', error);
-      // Fallback: load via API on error
+      if (disposed) return; // guard: suppress errors after cleanup
+      console.warn('[Messaging] onSnapshot error:', error.message);
+      // Fallback: load via API on error (one attempt, no retry loop)
       loadMessages(conversationId)
-        .then(callback)
-        .catch((err) => console.error('[Messaging] Fallback load failed:', err));
+        .then((msgs) => { if (!disposed) callback(msgs); })
+        .catch(() => {}); // silent — page may have navigated away
     }
   );
+
+  // Store as singleton and return a wrapped unsubscribe
+  const cleanup = () => {
+    disposed = true;
+    try { unsub(); } catch { /* swallow */ }
+    if (_activeUnsub === cleanup) _activeUnsub = null;
+  };
+  _activeUnsub = cleanup;
+  return cleanup;
 }
 
 /**

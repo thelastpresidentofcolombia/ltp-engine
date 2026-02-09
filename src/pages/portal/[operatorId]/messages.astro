@@ -420,6 +420,7 @@ const { operatorId } = Astro.params;
     subscribeToMessages,
     sendMessage,
     markConversationRead,
+    cleanupAllSubscriptions,
   } from '@/lib/portal/messaging.client';
   import type { PortalBootstrapV2 } from '@/types/portal';
   import type { ConversationSummary, MessageDoc } from '@/types/messaging';
@@ -721,11 +722,14 @@ const { operatorId } = Astro.params;
   }
 
   // ── Kick off ──
-  // Cleanup Firestore subscription on page swap
+  // Cleanup Firestore subscription on page swap.
+  // NOT { once: true } — we use a persistent listener that checks relevance.
+  // cleanupAllSubscriptions is idempotent and module-level, so safe to call repeatedly.
   document.addEventListener('astro:before-swap', () => {
     ++_gen; // Invalidate any in-flight async ops
-    if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
-  }, { once: true });
+    cleanupAllSubscriptions();
+    unsubscribeMessages = null;
+  });
   init();
 </script>
 

@@ -512,6 +512,8 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     padding-bottom: 4px;
+    min-width: 0;
+    max-width: 100%;
   }
   .chip-group::-webkit-scrollbar { display: none; }
   .chip { flex-shrink: 0; }

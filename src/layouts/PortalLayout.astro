@@ -532,11 +532,11 @@ const navItems = [
       .portal-main {
         margin-left: 0;
         /* Clear bottom tab bar + safe area */
-        padding: 20px 16px calc(72px + env(safe-area-inset-bottom, 0px));
+        padding: 16px 12px calc(72px + env(safe-area-inset-bottom, 0px));
       }
       .portal-main > #portal-content {
         max-width: 100%;
-        overflow-x: hidden;
+        overflow-x: clip;
       }
       .portal-login-card {
         padding: 28px 24px;
@@ -562,7 +562,7 @@ const navItems = [
       }
       .nav-icon { font-size: 1.05rem; }
       .portal-main {
-        padding: 16px 12px calc(68px + env(safe-area-inset-bottom, 0px));
+        padding: 12px 8px calc(68px + env(safe-area-inset-bottom, 0px));
       }
       .portal-page-title {
         font-size: 1.25rem;
@@ -708,11 +708,10 @@ const navItems = [
   <!-- View transition lifecycle: preserves shell state + instant nav active state -->
   <script>
     // ── Global Firestore cleanup on every navigation ──
-    // This is the SAFETY NET: even if messages.astro's per-page handler
-    // fails to fire, this kills any orphaned Firestore listeners.
-    import { cleanupAllSubscriptions } from '../lib/portal/messaging.client';
+    // Uses window bridge — does NOT import messaging.client.ts, so Firebase
+    // Firestore SDK is only loaded when the user actually visits Messages.
     document.addEventListener('astro:before-swap', () => {
-      cleanupAllSubscriptions();
+      (window as any).__cleanupFirestoreListeners?.();
     });
 
     // ── Preserve shell visibility during view transitions ──

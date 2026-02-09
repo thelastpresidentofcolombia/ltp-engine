@@ -41,13 +41,25 @@ let _activeUnsub: (() => void) | null = null;
 /**
  * Kill any active Firestore subscription.
  * Safe to call multiple times. Idempotent.
- * Called by messages.astro before-swap AND by subscribeToMessages itself.
  */
 export function cleanupAllSubscriptions(): void {
   if (_activeUnsub) {
     try { _activeUnsub(); } catch { /* swallow */ }
     _activeUnsub = null;
   }
+}
+
+// ── Self-registering cleanup ──
+// This module only loads when messages.astro imports it.
+// Once loaded, it persists across Astro view transitions (module scripts survive).
+// The listener below fires on EVERY subsequent navigation, killing any orphaned
+// Firestore onSnapshot listener before the DOM swaps.
+if (typeof document !== 'undefined') {
+  document.addEventListener('astro:before-swap', () => {
+    cleanupAllSubscriptions();
+  });
+  // Window bridge so PortalLayout doesn't need to import this module
+  (window as any).__cleanupFirestoreListeners = cleanupAllSubscriptions;
 }
 
 // ============================================================

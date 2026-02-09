@@ -10,12 +10,14 @@ export default defineConfig({
   adapter: vercel(),
   
   // i18n configuration for multilingual support
+  // routing: 'manual' disables Astro's built-in i18n middleware.
+  // Without this, prefixDefaultLocale: true makes Astro return 404 for
+  // any route missing a locale prefix (e.g. /portal/*).
+  // Our [lang] params + middleware handle locale routing explicitly.
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'es'],
-    routing: {
-      prefixDefaultLocale: true, // /en/... and /es/...
-    },
+    routing: 'manual',
   },
   
   integrations: [

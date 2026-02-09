@@ -44,5 +44,8 @@
       "destination": "/portal",
       "permanent": false
     }
+  ],
+  "rewrites": [
+    { "source": "/favicon.ico", "destination": "/favicon.svg" }
   ]
 }
